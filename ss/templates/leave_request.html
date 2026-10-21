@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                Xin nghỉ phép
+            </h1>
+            <p>
+                Gửi đơn xin nghỉ phép đến quản lý để phê duyệt.
+            </p>
+        </div>
+    </div>
+    <div class="card fm">
+        <form method="post">
+            <input type="hidden" name="_csrf" value="{{csrf}}">
+            <div class="fg">
+                <div>
+                    <label for="f_NgayBD">Từ ngày <span class="req">*</span></label>
+                    <input id="f_NgayBD" name="NgayBD" type="date" required>
+                </div>
+                <div>
+                    <label for="f_NgayKT">Đến ngày <span class="req">*</span></label>
+                    <input id="f_NgayKT" name="NgayKT" type="date" required>
+                </div>
+                <div class="full">
+                    <label for="f_LyDo">Lý do nghỉ phép</label>
+                    <input id="f_LyDo" name="LyDo" type="text" placeholder="Ví dụ: Việc gia đình, việc cá nhân, nghỉ ốm...">
+                </div>
+            </div>
+            <p style="margin:22px 0 0;display:flex;gap:10px">
+                <button class="btn">
+                    {{icon('check')}}
+                    Gửi đơn xin nghỉ
+                </button>
+                <a class="btn g" href="{{url_for('main.me')}}">
+                    Hủy
+                </a>
+            </p>
+        </form>
+    </div>
+{% endblock %}

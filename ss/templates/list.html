@@ -6,15 +6,20 @@
                 {{m.title}}
             </h1>
             <p>
-                {{rows|length}}
-                bản ghi
-                {{' khớp với tìm kiếm' if q or thang}}
+                {{total_records}} bản ghi
+                {{' khớp với tìm kiếm / bộ lọc' if q or thang or status}}
             </p>
         </div>
-        <a class="btn" href="{{url_for('mnew',mod=mod)}}">
-            {{icon('plus')}}
-            Thêm mới
-        </a>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <a class="btn g" href="{{url_for('modules.mexport', mod=mod, q=q, thang=thang, status=status, sort=sort, d=(1 if desc else 0))}}" title="Tải xuống danh sách dưới dạng Excel/CSV">
+                {{icon('download')}}
+                Xuất Excel/CSV
+            </a>
+            <a class="btn" href="{{url_for('mnew',mod=mod)}}">
+                {{icon('plus')}}
+                Thêm mới
+            </a>
+        </div>
     </div>
     <div class="card flush">
         <form class="bar" method="get">
@@ -24,6 +29,14 @@
             </div>
             {% if m.date %}
                 <input type="month" name="thang" value="{{thang}}" aria-label="Lọc theo tháng">
+            {% endif %}
+            {% if mod == 'nghiphep' %}
+                <select name="status" style="width:auto" aria-label="Lọc theo trạng thái">
+                    <option value="">-- Tất cả trạng thái --</option>
+                    <option value="Chờ duyệt" {{'selected' if status=='Chờ duyệt'}}>Chờ duyệt</option>
+                    <option value="Đã duyệt" {{'selected' if status=='Đã duyệt'}}>Đã duyệt</option>
+                    <option value="Từ chối" {{'selected' if status=='Từ chối'}}>Từ chối</option>
+                </select>
             {% endif %}
             <button class="btn">
                 Tìm kiếm
@@ -38,13 +51,14 @@
                     <tr>
                         {% for k,l in m.cols %}
                             <th class="{{'num' if k in ('LuongCung','LuongThuong','PhuCap','LuongUngTruoc','ThucLinh','SoGio','LuongCoBan')}}">
-                                <a href="{{url_for('mlist',mod=mod,q=q,thang=thang,sort=k,d=(0 if (sort==k and desc) else 1) if sort==k else 0)}}">
+                                <a href="{{url_for('mlist',mod=mod,q=q,thang=thang,status=status,sort=k,d=(0 if (sort==k and desc) else 1) if sort==k else 0)}}">
                                     {{l}}
                                     {{' ▼' if sort==k and desc else (' ▲' if sort==k else '')}}
                                 </a>
                             </th>
                         {% endfor %}
                         <th>
+                            Thao tác
                         </th>
                     </tr>
                 </thead>
@@ -73,6 +87,36 @@
                             </td>
                         {% endfor %}
                         <td class="act">
+                            {% if mod == 'nghiphep' %}
+                                {% if r.TrangThai == 'Chờ duyệt' %}
+                                    <form method="post" action="{{url_for('modules.approve_leave', lid=r[m.pk])}}" style="display:inline">
+                                        <input type="hidden" name="_csrf" value="{{csrf}}">
+                                        <button class="btn" style="padding:4px 8px;font-size:11px;background:var(--ok);border-color:var(--ok)" title="Duyệt đơn nghỉ phép">
+                                            {{icon('check')}} Duyệt
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{{url_for('modules.reject_leave', lid=r[m.pk])}}" style="display:inline" onsubmit="return confirm('Từ chối đơn nghỉ phép này?')">
+                                        <input type="hidden" name="_csrf" value="{{csrf}}">
+                                        <button class="btn g" style="padding:4px 8px;font-size:11px;color:var(--bad);border-color:var(--bad)" title="Từ chối đơn nghỉ phép">
+                                            {{icon('x')}} Từ chối
+                                        </button>
+                                    </form>
+                                {% elif r.TrangThai == 'Đã duyệt' %}
+                                    <form method="post" action="{{url_for('modules.reject_leave', lid=r[m.pk])}}" style="display:inline" onsubmit="return confirm('Hủy duyệt đơn này?')">
+                                        <input type="hidden" name="_csrf" value="{{csrf}}">
+                                        <button class="btn g" style="padding:3px 7px;font-size:11px;color:var(--mut)" title="Hủy duyệt">
+                                            Hủy duyệt
+                                        </button>
+                                    </form>
+                                {% elif r.TrangThai == 'Từ chối' %}
+                                    <form method="post" action="{{url_for('modules.approve_leave', lid=r[m.pk])}}" style="display:inline" onsubmit="return confirm('Duyệt lại đơn này?')">
+                                        <input type="hidden" name="_csrf" value="{{csrf}}">
+                                        <button class="btn g" style="padding:3px 7px;font-size:11px;color:var(--ok)" title="Duyệt lại">
+                                            Duyệt lại
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
                             <a class="ib" title="Sửa" aria-label="Sửa" href="{{url_for('medit',mod=mod,rid=r[m.pk])}}">
                                 {{icon('edit')}}
                             </a>
@@ -97,6 +141,41 @@
             </tbody>
         </table>
     </div>
+    {% if total_records > 0 %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-top:1px solid var(--line);flex-wrap:wrap;gap:10px">
+            <div style="color:var(--mut);font-size:13px">
+                Hiển thị <b>{{ (page - 1) * per_page + 1 }}</b> - <b>{{ [page * per_page, total_records]|min }}</b> trong tổng số <b>{{ total_records }}</b> bản ghi
+            </div>
+            {% if total_pages > 1 %}
+                <div style="display:flex;align-items:center;gap:4px">
+                    {% if page > 1 %}
+                        <a class="ib" href="{{url_for('modules.mlist', mod=mod, q=q, thang=thang, status=status, sort=sort, d=(1 if desc else 0), page=page-1)}}" title="Trang trước">
+                            {{icon('chevron-left')}}
+                        </a>
+                    {% endif %}
+
+                    {% for p in range(1, total_pages + 1) %}
+                        {% if p == page %}
+                            <span class="btn" style="padding:4px 10px;font-size:12px;cursor:default">
+                                {{p}}
+                            </span>
+                        {% elif p <= 2 or p >= total_pages - 1 or (p >= page - 1 and p <= page + 1) %}
+                            <a class="btn g" style="padding:4px 10px;font-size:12px" href="{{url_for('modules.mlist', mod=mod, q=q, thang=thang, status=status, sort=sort, d=(1 if desc else 0), page=p)}}">
+                                {{p}}
+                            </a>
+                        {% elif p == 3 or p == total_pages - 2 %}
+                            <span style="padding:0 4px;color:var(--mut)">...</span>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page < total_pages %}
+                        <a class="ib" href="{{url_for('modules.mlist', mod=mod, q=q, thang=thang, status=status, sort=sort, d=(1 if desc else 0), page=page+1)}}" title="Trang sau">
+                            {{icon('chevron-right')}}
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
 </div>
 {% endblock %}
-

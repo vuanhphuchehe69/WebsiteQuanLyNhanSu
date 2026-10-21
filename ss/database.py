@@ -126,7 +126,7 @@ def build_mssql_connection_string(database=None):
         f"DRIVER={{{MSSQL_DRIVER}}};SERVER={MSSQL_SERVER};DATABASE={db_target};"
         f"Trusted_Connection={MSSQL_TRUSTED_CONNECTION};TrustServerCertificate=yes;"
     )
-  #kết nối database
+
 def get_db():
     """Get or create database connection for the current Flask application context."""
     if 'db' not in g:
@@ -203,7 +203,9 @@ CREATE TABLE NghiPhep(
     MaNP INT IDENTITY(1,1) PRIMARY KEY,
     MaNV NVARCHAR(50) NOT NULL REFERENCES NhanVien(MaNV) ON DELETE CASCADE ON UPDATE CASCADE,
     NgayBD NVARCHAR(20) NOT NULL,
-    NgayKT NVARCHAR(20) NOT NULL
+    NgayKT NVARCHAR(20) NOT NULL,
+    TrangThai NVARCHAR(50) DEFAULT N'Chờ duyệt',
+    LyDo NVARCHAR(255)
 );
 
 IF OBJECT_ID(N'TangCa', N'U') IS NULL
@@ -251,6 +253,12 @@ def init_db():
                 db.execute(s)
         db.commit()
 
+        # Step 2.1: Schema migration for existing databases
+        db.execute("IF COL_LENGTH('NghiPhep', 'TrangThai') IS NULL ALTER TABLE NghiPhep ADD TrangThai NVARCHAR(50) DEFAULT N'Đã duyệt' WITH VALUES")
+        db.execute("IF COL_LENGTH('NghiPhep', 'LyDo') IS NULL ALTER TABLE NghiPhep ADD LyDo NVARCHAR(255)")
+        db.execute("UPDATE NghiPhep SET TrangThai=N'Đã duyệt' WHERE TrangThai IS NULL")
+        db.commit()
+
         # Step 3: Seed initial data if TaiKhoanAdmin is empty
         admin_row = db.execute("SELECT 1 FROM TaiKhoanAdmin").fetchone()
         if not admin_row:
@@ -292,7 +300,7 @@ def init_db():
                     (f'NV00{i}', current_month, 12000000 + i * 2000000, 1000000, 0, 500000)
                 )
 
-            db.execute("INSERT INTO NghiPhep(MaNV, NgayBD, NgayKT) VALUES(?, ?, ?)", ('NV003', day_prefix + '03', day_prefix + '04'))
+            db.execute("INSERT INTO NghiPhep(MaNV, NgayBD, NgayKT, TrangThai, LyDo) VALUES(?, ?, ?, N'Đã duyệt', N'Việc gia đình')", ('NV003', day_prefix + '03', day_prefix + '04'))
             db.execute("INSERT INTO TangCa(MaNV, SoGio, Ngay, Loai) VALUES(?, ?, ?, ?)", ('NV005', 3, day_prefix + '05', 'Ngày thường'))
 
             db.executemany(

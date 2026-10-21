@@ -10,13 +10,10 @@
                     {{emp.HoTen}}
                 </h2>
                 <p>
-                    {{emp.TenCV}}
-                    ,
-                    {{emp.TenPB}}
+                    {{emp.TenCV}}, {{emp.TenPB}}
                 </p>
                 <p>
-                    Mã nhân viên
-                    {{emp.MaNV}}
+                    Mã nhân viên: {{emp.MaNV}}
                 </p>
             </div>
         </div>
@@ -26,14 +23,13 @@
             <b>
                 {{fmt(L[0].ThucLinh) if L else '0'}}
             </b>
-            Thực lĩnh tháng
-            {{L[0].ThangNam if L else 'gần nhất'}}
+            Thực lĩnh tháng {{L[0].ThangNam if L else 'gần nhất'}}
         </div>
         <div>
             <b>
-                {{P|sum(attribute='SoNgay')}}
+                {{P|selectattr('TrangThai','equalto','Đã duyệt')|sum(attribute='SoNgay')}}
             </b>
-            Tổng ngày nghỉ phép
+            Ngày nghỉ (đã duyệt)
         </div>
         <div>
             <b>
@@ -123,9 +119,15 @@
         </div>
     </div>
     <div class="card flush">
-        <h3>
-            Nghỉ phép
-        </h3>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 18px 12px">
+            <h3 style="margin:0">
+                Nghỉ phép
+            </h3>
+            <a class="btn" style="padding:6px 12px;font-size:12px" href="{{url_for('main.leave_request')}}">
+                {{icon('plus')}}
+                Xin nghỉ phép
+            </a>
+        </div>
         <div class="tw">
             <table>
                 <thead>
@@ -138,6 +140,15 @@
                         </th>
                         <th class="num">
                             Số ngày
+                        </th>
+                        <th>
+                            Lý do
+                        </th>
+                        <th>
+                            Trạng thái
+                        </th>
+                        <th>
+                            Thao tác
                         </th>
                     </tr>
                 </thead>
@@ -153,11 +164,34 @@
                             <td class="num">
                                 {{r.SoNgay}}
                             </td>
+                            <td>
+                                {{r.LyDo or '-'}}
+                            </td>
+                            <td>
+                                <span class="tag {{TONE.get(r.TrangThai,'n')}}">
+                                    {{r.TrangThai}}
+                                </span>
+                            </td>
+                            <td class="act">
+                                {% if r.TrangThai == 'Chờ duyệt' %}
+                                    <form method="post" action="{{url_for('main.leave_cancel', lid=r.MaNP)}}" onsubmit="return confirm('Hủy đơn xin nghỉ này?')">
+                                        <input type="hidden" name="_csrf" value="{{csrf}}">
+                                        <button class="btn g" style="padding:4px 8px;font-size:11px" title="Hủy đơn">
+                                            Hủy đơn
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span style="color:var(--mut);font-size:12px">-</span>
+                                {% endif %}
+                            </td>
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan=3 class="empty">
-                                Chưa có lần nghỉ phép nào.
+                            <td colspan=6 class="empty">
+                                Chưa có đơn nghỉ phép nào.
+                                <a href="{{url_for('main.leave_request')}}">
+                                    Gửi đơn đầu tiên
+                                </a>
                             </td>
                         </tr>
                     {% endfor %}

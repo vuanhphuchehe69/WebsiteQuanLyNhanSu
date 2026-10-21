@@ -120,13 +120,17 @@ MODS = {
             ('NgayBD', 'Từ ngày'),
             ('NgayKT', 'Đến ngày'),
             ('SoNgay', 'Số ngày'),
+            ('LyDo', 'Lý do'),
+            ('TrangThai', 'Trạng thái'),
         ],
-        'search': ['x.MaNV', 'n.HoTen', 'c.TenCV', 'p.TenPB', 'x.MaNP'],
+        'search': ['x.MaNV', 'n.HoTen', 'c.TenCV', 'p.TenPB', 'x.MaNP', 'x.TrangThai', 'x.LyDo'],
         'order': 'NgayBD DESC',
         'fields': [
             ('MaNV', 'Nhân viên', 'select', 1, 'nv'),
             ('NgayBD', 'Nghỉ từ ngày', 'date', 1, None),
             ('NgayKT', 'Nghỉ đến ngày', 'date', 1, None),
+            ('LyDo', 'Lý do nghỉ', 'text', 0, None),
+            ('TrangThai', 'Trạng thái', 'select', 1, 'tt_np'),
         ]
     },
     'tangca': {
@@ -268,6 +272,11 @@ STATIC_OPT = {
         ('Hiệu lực', 'Hiệu lực'),
         ('Hết hạn', 'Hết hạn'),
         ('Đã chấm dứt', 'Đã chấm dứt')
+    ],
+    'tt_np': [
+        ('Chờ duyệt', 'Chờ duyệt'),
+        ('Đã duyệt', 'Đã duyệt'),
+        ('Từ chối', 'Từ chối')
     ]
 }
 
@@ -332,7 +341,10 @@ TONE = {
     'Hết hạn': 'bad',
     'Đã chấm dứt': 'n',
     'Thử việc': 'w',
-    'Không xác định thời hạn': 'b'
+    'Không xác định thời hạn': 'b',
+    'Chờ duyệt': 'w',
+    'Đã duyệt': 'ok',
+    'Từ chối': 'bad'
 }
 
 ICONS = {
@@ -355,5 +367,10 @@ ICONS = {
     'trash': '<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',
     'refresh': '<path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/>',
     'menu': '<path d="M3 6h18M3 12h18M3 18h18"/>',
+    'check': '<polyline points="20 6 9 17 4 12"/>',
+    'x': '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    'download': '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+    'chevron-left': '<polyline points="15 18 9 12 15 6"/>',
+    'chevron-right': '<polyline points="9 18 15 12 9 6"/>',
 }
 

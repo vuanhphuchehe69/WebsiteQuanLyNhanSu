@@ -6,14 +6,18 @@
                 Chi tiết nghỉ phép
             </h1>
             <p>
-                Tổng hợp theo tháng bắt đầu nghỉ.
+                Tổng hợp theo tháng bắt đầu nghỉ (chỉ tính các đơn đã duyệt).
             </p>
         </div>
-        <form style="display:flex;gap:8px">
+        <form style="display:flex;gap:8px;flex-wrap:wrap">
             <input type="month" name="thang" value="{{thang}}" style="width:auto" aria-label="Tháng">
             <button class="btn">
                 Xem
             </button>
+            <a class="btn g" href="{{url_for('main.report_leave', thang=thang, export=1)}}" title="Tải xuống báo cáo dưới dạng CSV/Excel">
+                {{icon('download')}}
+                Xuất Excel/CSV
+            </a>
         </form>
     </div>
     <div class="card flush">
@@ -74,7 +78,7 @@
                     {% else %}
                         <tr>
                             <td colspan=6 class="empty">
-                                Không có nghỉ phép trong tháng này.
+                                Không có nghỉ phép đã duyệt trong tháng này.
                             </td>
                         </tr>
                     {% endfor %}
@@ -105,6 +109,12 @@
                         <th>
                             Đến ngày
                         </th>
+                        <th>
+                            Lý do
+                        </th>
+                        <th>
+                            Trạng thái
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -128,10 +138,18 @@
                             <td>
                                 {{r.NgayKT}}
                             </td>
+                            <td>
+                                {{r.LyDo or '-'}}
+                            </td>
+                            <td>
+                                <span class="tag {{TONE.get(r.TrangThai,'n')}}">
+                                    {{r.TrangThai}}
+                                </span>
+                            </td>
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan=5 class="empty">
+                            <td colspan=7 class="empty">
                                 Không có dữ liệu.
                             </td>
                         </tr>

@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                Báo cáo nhân sự
+            </h1>
+            <p>
+                Thống kê số lượng, chấm công, tăng ca, nghỉ phép và hiệu suất KPI theo phòng ban.
+            </p>
+        </div>
+        <form style="display:flex;gap:8px;flex-wrap:wrap">
+            {% if role == 'Admin' %}
+                <select name="dept" style="width:auto" aria-label="Chọn phòng ban">
+                    <option value="">-- Toàn công ty --</option>
+                    {% for d in departments %}
+                        <option value="{{d.MaPB}}" {{'selected' if d.MaPB==selected_dept}}>
+                            {{d.TenPB}}
+                        </option>
+                    {% endfor %}
+                </select>
+            {% endif %}
+            <input type="month" name="thang" value="{{current_month}}" style="width:auto" aria-label="Tháng">
+            <button class="btn">
+                Xem báo cáo
+            </button>
+            <a class="btn g" href="{{url_for('main.report_hr', dept=selected_dept, thang=current_month, export=1)}}" title="Tải xuống báo cáo dưới dạng Excel/CSV">
+                {{icon('download')}}
+                Xuất Excel/CSV
+            </a>
+        </form>
+    </div>
+
+    <div class="grid">
+        <div class="stat">
+            <div class="ic">
+                {{icon('users')}}
+            </div>
+            <div>
+                <b>{{total_staff}}</b>
+                <span>Tổng nhân sự</span>
+            </div>
+        </div>
+        <div class="stat">
+            <div class="ic">
+                {{icon('user')}}
+            </div>
+            <div>
+                <b>{{male_count}} Nam / {{female_count}} Nữ</b>
+                <span>Cơ cấu giới tính</span>
+            </div>
+        </div>
+        <div class="stat">
+            <div class="ic">
+                {{icon('check-square')}}
+            </div>
+            <div>
+                <b>{{total_working_days}}</b>
+                <span>Tổng ngày công tháng</span>
+            </div>
+        </div>
+        <div class="stat">
+            <div class="ic">
+                {{icon('clock')}}
+            </div>
+            <div>
+                <b>{{fmt(total_ot)}} giờ</b>
+                <span>Tổng giờ tăng ca</span>
+            </div>
+        </div>
+        <div class="stat">
+            <div class="ic">
+                {{icon('calendar')}}
+            </div>
+            <div>
+                <b>{{total_leave_days}} ngày</b>
+                <span>Nghỉ phép đã duyệt</span>
+            </div>
+        </div>
+        <div class="stat">
+            <div class="ic">
+                {{icon('award')}}
+            </div>
+            <div>
+                <b>{{ "%.1f"|format(avg_kpi) }}</b>
+                <span>Điểm KPI trung bình</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card flush">
+        <h3>
+            Danh sách nhân sự thuộc phạm vi báo cáo
+        </h3>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã NV</th>
+                        <th>Họ tên</th>
+                        <th>Giới tính</th>
+                        <th>Chức vụ</th>
+                        <th>Phòng ban</th>
+                        <th>Số điện thoại</th>
+                        <th>Email</th>
+                        <th>Ngày vào công ty</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in staff %}
+                        <tr>
+                            <td>{{s.MaNV}}</td>
+                            <td>
+                                <span class="av">
+                                    {{s.HoTen|ini}}
+                                </span>
+                                {{s.HoTen}}
+                            </td>
+                            <td>{{s.GioiTinh or '-'}}</td>
+                            <td>{{s.TenCV or '-'}}</td>
+                            <td>{{s.TenPB or '-'}}</td>
+                            <td>{{s.SDT or '-'}}</td>
+                            <td>{{s.Email or '-'}}</td>
+                            <td>{{s.NgayVaoCT or '-'}}</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="empty">
+                                Không có nhân viên nào trong phạm vi này.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

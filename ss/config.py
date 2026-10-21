@@ -255,6 +255,92 @@ MODS = {
             ('GhiChu', 'Ghi chú', 'text', 0, None),
         ]
     },
+    'chamcong': {
+        'title': 'Chấm công',
+        'table': 'ChamCong',
+        'pk': 'MaCC',
+        'auto': True,
+        'roles': (QL, AD),
+        'date': 'x.Ngay',
+        'sel': "SELECT x.*, n.HoTen, c.TenCV, p.TenPB FROM ChamCong x" + EMP_JOIN,
+        'cols': [
+            ('MaCC', 'Mã'),
+            ('MaNV', 'Mã NV'),
+            ('HoTen', 'Họ tên'),
+            ('TenPB', 'Phòng ban'),
+            ('Ngay', 'Ngày'),
+            ('GioVao', 'Giờ vào'),
+            ('GioRa', 'Giờ ra'),
+            ('TrangThai', 'Trạng thái'),
+            ('GhiChu', 'Ghi chú'),
+        ],
+        'search': ['x.MaNV', 'n.HoTen', 'c.TenCV', 'p.TenPB', 'x.TrangThai'],
+        'order': 'x.Ngay DESC, x.MaNV',
+        'fields': [
+            ('MaNV', 'Nhân viên', 'select', 1, 'nv'),
+            ('Ngay', 'Ngày chấm công', 'date', 1, None),
+            ('GioVao', 'Giờ vào (HH:MM)', 'text', 0, None),
+            ('GioRa', 'Giờ ra (HH:MM)', 'text', 0, None),
+            ('TrangThai', 'Trạng thái', 'select', 1, 'tt_cc'),
+            ('GhiChu', 'Ghi chú', 'text', 0, None),
+        ]
+    },
+    'danhgia': {
+        'title': 'Đánh giá KPI',
+        'table': 'DanhGia',
+        'pk': 'MaDG',
+        'auto': True,
+        'roles': (QL, AD),
+        'date': 'x.ThangNam',
+        'sel': "SELECT x.*, n.HoTen, c.TenCV, p.TenPB FROM DanhGia x" + EMP_JOIN,
+        'cols': [
+            ('MaDG', 'Mã'),
+            ('MaNV', 'Mã NV'),
+            ('HoTen', 'Họ tên'),
+            ('TenPB', 'Phòng ban'),
+            ('ThangNam', 'Tháng'),
+            ('DiemKPI', 'Điểm KPI'),
+            ('XepLoai', 'Xếp loại'),
+            ('NhanXet', 'Nhận xét'),
+            ('NguoiDanhGia', 'Người đánh giá'),
+        ],
+        'search': ['x.MaNV', 'n.HoTen', 'c.TenCV', 'p.TenPB', 'x.XepLoai', 'x.ThangNam'],
+        'order': 'x.ThangNam DESC, x.DiemKPI DESC',
+        'fields': [
+            ('MaNV', 'Nhân viên', 'select', 1, 'nv'),
+            ('ThangNam', 'Tháng đánh giá', 'month', 1, None),
+            ('DiemKPI', 'Điểm KPI (0 - 100)', 'number', 1, None),
+            ('XepLoai', 'Xếp loại', 'select', 1, 'loai_xl'),
+            ('NhanXet', 'Nhận xét / Đánh giá', 'text', 0, None),
+            ('NguoiDanhGia', 'Người đánh giá', 'text', 1, None),
+        ]
+    },
+    'thongbao': {
+        'title': 'Quản lý thông báo',
+        'table': 'ThongBao',
+        'pk': 'MaTB',
+        'auto': True,
+        'roles': (QL, AD),
+        'date': 'x.NgayGui',
+        'sel': "SELECT x.*, p.TenPB FROM ThongBao x LEFT JOIN PhongBan p ON x.MaPB=p.MaPB",
+        'cols': [
+            ('MaTB', 'Mã'),
+            ('TieuDe', 'Tiêu đề'),
+            ('PhamVi', 'Phạm vi'),
+            ('TenPB', 'Phòng ban nhận'),
+            ('NguoiGui', 'Người gửi'),
+            ('NgayGui', 'Ngày gửi'),
+        ],
+        'search': ['x.TieuDe', 'x.NguoiGui', 'x.PhamVi', 'p.TenPB'],
+        'order': 'x.NgayGui DESC',
+        'fields': [
+            ('TieuDe', 'Tiêu đề thông báo', 'text', 1, None),
+            ('NoiDung', 'Nội dung thông báo', 'text', 1, None),
+            ('PhamVi', 'Phạm vi áp dụng', 'select', 1, 'pham_vi_tb'),
+            ('MaPB', 'Phòng ban nhận (nếu theo phòng ban)', 'select', 0, 'pb'),
+            ('NguoiGui', 'Người gửi', 'text', 1, None),
+        ]
+    },
 }
 
 STATIC_OPT = {
@@ -277,6 +363,23 @@ STATIC_OPT = {
         ('Chờ duyệt', 'Chờ duyệt'),
         ('Đã duyệt', 'Đã duyệt'),
         ('Từ chối', 'Từ chối')
+    ],
+    'tt_cc': [
+        ('Đúng giờ', 'Đúng giờ'),
+        ('Đi muộn', 'Đi muộn'),
+        ('Về sớm', 'Về sớm'),
+        ('Nghỉ', 'Nghỉ')
+    ],
+    'loai_xl': [
+        ('Xuất sắc', 'Xuất sắc'),
+        ('Tốt', 'Tốt'),
+        ('Khá', 'Khá'),
+        ('Trung bình', 'Trung bình'),
+        ('Yếu', 'Yếu')
+    ],
+    'pham_vi_tb': [
+        ('Toàn công ty', 'Toàn công ty'),
+        ('Theo phòng ban', 'Theo phòng ban')
     ]
 }
 
@@ -289,45 +392,64 @@ DB_OPT = {
 NAV = [
     ('Trang chủ', 'dash', None, (QL, AD)),
     ('Thông tin cá nhân', 'me', None, (NV, QL)),
+    ('Thông báo', 'announcements', None, (NV, QL, AD)),
     ('Nhân viên', 'mlist', 'nhanvien', (QL, AD)),
-    ('Hợp đồng', 'mlist', 'hopdong', (QL, AD)),
-    ('Lương', 'mlist', 'luong', (QL, AD)),
+    ('Chấm công', 'mlist', 'chamcong', (QL, AD)),
     ('Nghỉ phép', 'mlist', 'nghiphep', (QL, AD)),
-    ('Chi tiết nghỉ phép', 'report_leave', None, (QL, AD)),
     ('Tăng ca', 'mlist', 'tangca', (QL, AD)),
+    ('Lương', 'mlist', 'luong', (QL, AD)),
+    ('Hợp đồng', 'mlist', 'hopdong', (QL, AD)),
+    ('Đánh giá KPI', 'mlist', 'danhgia', (QL, AD)),
+    ('Báo cáo nghỉ phép', 'report_leave', None, (QL, AD)),
+    ('Báo cáo nhân sự', 'report_hr', None, (QL, AD)),
     ('Phòng ban', 'mlist', 'phongban', (AD,)),
     ('Chức vụ', 'mlist', 'chucvu', (AD,)),
     ('Tài khoản', 'mlist', 'taikhoan', (AD,)),
+    ('Quản lý thông báo', 'mlist', 'thongbao', (QL, AD)),
+    ('Sao lưu dữ liệu', 'backup_view', None, (AD,)),
     ('Đổi mật khẩu', 'change_pw', None, (NV, QL, AD)),
 ]
 
 NAV_ICON = {
     'Trang chủ': 'home',
     'Thông tin cá nhân': 'user',
+    'Thông báo': 'bell',
     'Nhân viên': 'users',
+    'Chấm công': 'check-square',
     'Hợp đồng': 'file-text',
     'Lương': 'wallet',
     'Nghỉ phép': 'calendar',
     'Chi tiết nghỉ phép': 'list',
+    'Báo cáo nghỉ phép': 'list',
+    'Báo cáo nhân sự': 'pie-chart',
     'Tăng ca': 'clock',
+    'Đánh giá KPI': 'award',
     'Phòng ban': 'building',
     'Chức vụ': 'briefcase',
     'Tài khoản': 'key',
+    'Quản lý thông báo': 'send',
+    'Sao lưu dữ liệu': 'database',
     'Đổi mật khẩu': 'lock',
 }
 
 NAV_GROUP = {
     'Trang chủ': None,
     'Thông tin cá nhân': None,
+    'Thông báo': None,
     'Nhân viên': 'Nghiệp vụ',
+    'Chấm công': 'Nghiệp vụ',
     'Hợp đồng': 'Nghiệp vụ',
     'Lương': 'Nghiệp vụ',
     'Nghỉ phép': 'Nghiệp vụ',
-    'Chi tiết nghỉ phép': 'Nghiệp vụ',
     'Tăng ca': 'Nghiệp vụ',
+    'Đánh giá KPI': 'Nghiệp vụ',
+    'Báo cáo nghỉ phép': 'Báo cáo',
+    'Báo cáo nhân sự': 'Báo cáo',
     'Phòng ban': 'Danh mục',
     'Chức vụ': 'Danh mục',
     'Tài khoản': 'Hệ thống',
+    'Quản lý thông báo': 'Hệ thống',
+    'Sao lưu dữ liệu': 'Hệ thống',
     'Đổi mật khẩu': 'Hệ thống',
 }
 
@@ -344,7 +466,18 @@ TONE = {
     'Không xác định thời hạn': 'b',
     'Chờ duyệt': 'w',
     'Đã duyệt': 'ok',
-    'Từ chối': 'bad'
+    'Từ chối': 'bad',
+    'Đúng giờ': 'ok',
+    'Đi muộn': 'w',
+    'Về sớm': 'w',
+    'Nghỉ': 'bad',
+    'Xuất sắc': 'ok',
+    'Tốt': 'b',
+    'Khá': 'n',
+    'Trung bình': 'w',
+    'Yếu': 'bad',
+    'Toàn công ty': 'b',
+    'Theo phòng ban': 'n'
 }
 
 ICONS = {
@@ -372,5 +505,11 @@ ICONS = {
     'download': '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
     'chevron-left': '<polyline points="15 18 9 12 15 6"/>',
     'chevron-right': '<polyline points="9 18 15 12 9 6"/>',
+    'bell': '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+    'check-square': '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+    'award': '<circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>',
+    'pie-chart': '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
+    'send': '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+    'database': '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>',
 }
 

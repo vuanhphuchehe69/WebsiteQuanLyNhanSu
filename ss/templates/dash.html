@@ -44,6 +44,10 @@
                 {{icon('plus')}}
                 Thêm nghỉ phép
             </a>
+            <a class="btn g" href="{{url_for('mnew',mod='chamcong')}}">
+                {{icon('plus')}}
+                Ghi nhận chấm công
+            </a>
             <a class="btn g" href="{{url_for('mnew',mod='tangca')}}">
                 {{icon('plus')}}
                 Thêm tăng ca
@@ -52,13 +56,28 @@
                 {{icon('plus')}}
                 Thêm bảng lương
             </a>
+            <a class="btn g" href="{{url_for('mnew',mod='danhgia')}}">
+                {{icon('award')}}
+                Đánh giá KPI
+            </a>
+            <a class="btn g" href="{{url_for('mnew',mod='thongbao')}}">
+                {{icon('send')}}
+                Đăng thông báo
+            </a>
+            <a class="btn g" href="{{url_for('main.report_hr')}}">
+                {{icon('pie-chart')}}
+                Báo cáo nhân sự
+            </a>
             {% if role=='Admin' %}
                 <a class="btn g" href="{{url_for('mnew',mod='taikhoan')}}">
                     {{icon('plus')}}
                     Thêm tài khoản
                 </a>
+                <a class="btn g" href="{{url_for('main.backup_view')}}">
+                    {{icon('database')}}
+                    Sao lưu dữ liệu
+                </a>
             {% endif %}
         </div>
     </div>
 {% endblock %}
-

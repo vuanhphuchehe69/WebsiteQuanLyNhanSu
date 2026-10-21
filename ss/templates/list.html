@@ -11,6 +11,15 @@
             </p>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
+            {% if mod == 'chamcong' %}
+                <form method="post" action="{{url_for('main.quick_checkin')}}" style="display:inline">
+                    <input type="hidden" name="_csrf" value="{{csrf}}">
+                    <button class="btn g" title="Tự động ghi nhận chấm công đúng giờ hôm nay cho nhân viên chưa chấm">
+                        {{icon('check-square')}}
+                        Chấm công nhanh hôm nay
+                    </button>
+                </form>
+            {% endif %}
             <a class="btn g" href="{{url_for('modules.mexport', mod=mod, q=q, thang=thang, status=status, sort=sort, d=(1 if desc else 0))}}" title="Tải xuống danh sách dưới dạng Excel/CSV">
                 {{icon('download')}}
                 Xuất Excel/CSV

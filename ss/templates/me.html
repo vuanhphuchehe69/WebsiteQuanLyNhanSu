@@ -1,23 +1,30 @@
 {% extends 'base.html' %}
 {% block body %}
     <div class="card">
-        <div class="prof">
-            <span class="av lg">
-                {{emp.HoTen|ini}}
-            </span>
-            <div>
-                <h2>
-                    {{emp.HoTen}}
-                </h2>
-                <p>
-                    {{emp.TenCV}}, {{emp.TenPB}}
-                </p>
-                <p>
-                    Mã nhân viên: {{emp.MaNV}}
-                </p>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+            <div class="prof">
+                <span class="av lg">
+                    {{emp.HoTen|ini}}
+                </span>
+                <div>
+                    <h2>
+                        {{emp.HoTen}}
+                    </h2>
+                    <p>
+                        {{emp.TenCV}}, {{emp.TenPB}}
+                    </p>
+                    <p>
+                        Mã nhân viên: <b>{{emp.MaNV}}</b>
+                    </p>
+                </div>
             </div>
+            <a class="btn g" href="{{url_for('main.edit_profile')}}">
+                {{icon('edit')}}
+                Cập nhật thông tin cá nhân
+            </a>
         </div>
     </div>
+
     <div class="sum">
         <div>
             <b>
@@ -27,23 +34,87 @@
         </div>
         <div>
             <b>
-                {{P|selectattr('TrangThai','equalto','Đã duyệt')|sum(attribute='SoNgay')}}
+                {{working_days}} ngày
             </b>
-            Ngày nghỉ (đã duyệt)
+            Ngày công tháng {{current_month}}
         </div>
         <div>
             <b>
-                {{fmt(T|sum(attribute='SoGio'))}}
+                {{P|selectattr('TrangThai','equalto','Đã duyệt')|sum(attribute='SoNgay')}} ngày
+            </b>
+            Nghỉ phép (đã duyệt)
+        </div>
+        <div>
+            <b>
+                {{fmt(T|sum(attribute='SoGio'))}} giờ
             </b>
             Tổng giờ tăng ca
         </div>
     </div>
+
+    <!-- Thông tin công việc -->
     <div class="card">
         <h3>
-            Thông tin cá nhân
+            Thông tin công việc
         </h3>
         <dl>
-            {% for l,k in [('Giới tính','GioiTinh'),('Ngày sinh','NgaySinh'),('Địa chỉ','DiaChi'),('Số điện thoại','SDT'),('Căn cước công dân','CCCD'),('Email','Email'),('Chức vụ','TenCV'),('Phòng ban','TenPB'),('Ngày vào công ty','NgayVaoCT')] %}
+            <div>
+                <dt>Chức danh công việc</dt>
+                <dd>{{emp.TenCV or '-'}}</dd>
+            </div>
+            <div>
+                <dt>Phòng ban trực thuộc</dt>
+                <dd>{{emp.TenPB or '-'}}</dd>
+            </div>
+            <div>
+                <dt>Quản lý trực tiếp</dt>
+                <dd>{{manager.HoTen if manager else 'Ban Giám Đốc'}}</dd>
+            </div>
+            <div>
+                <dt>Ngày vào công ty</dt>
+                <dd>{{emp.NgayVaoCT or '-'}}</dd>
+            </div>
+            <div>
+                <dt>Loại hợp đồng hiện tại</dt>
+                <dd>
+                    {% if HD %}
+                        <span class="tag {{TONE.get(HD[0].LoaiHD, 'b')}}">
+                            {{HD[0].LoaiHD}}
+                        </span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </dd>
+            </div>
+            <div>
+                <dt>Lương cơ bản hợp đồng</dt>
+                <dd><b>{{fmt(HD[0].LuongCoBan) if HD else '-'}}</b></dd>
+            </div>
+            <div>
+                <dt>Trạng thái hợp đồng</dt>
+                <dd>
+                    {% if HD %}
+                        <span class="tag {{TONE.get(HD[0].TrangThai, 'n')}}">
+                            {{HD[0].TrangThai}}
+                        </span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </dd>
+            </div>
+        </dl>
+    </div>
+
+    <!-- Thông tin cá nhân -->
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h3 style="margin:0">
+                Thông tin cá nhân & Liên hệ
+            </h3>
+            <a href="{{url_for('main.edit_profile')}}" style="font-size:13px;font-weight:600">Chỉnh sửa</a>
+        </div>
+        <dl>
+            {% for l,k in [('Giới tính','GioiTinh'),('Ngày sinh','NgaySinh'),('Địa chỉ','DiaChi'),('Số điện thoại','SDT'),('Căn cước công dân','CCCD'),('Email','Email')] %}
                 <div>
                     <dt>
                         {{l}}
@@ -55,62 +126,45 @@
             {% endfor %}
         </dl>
     </div>
+
+    <!-- Lịch sử chấm công và ngày công -->
     <div class="card flush">
-        <h3>
-            Lương
-        </h3>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 18px 12px">
+            <h3 style="margin:0">
+                Lịch sử chấm công & Ngày công
+            </h3>
+            <span class="tag ok">
+                Tổng ngày công tháng {{current_month}}: <b>{{working_days}}</b> ngày
+            </span>
+        </div>
         <div class="tw">
             <table>
                 <thead>
                     <tr>
-                        <th>
-                            Tháng
-                        </th>
-                        <th class="num">
-                            Lương cứng
-                        </th>
-                        <th class="num">
-                            Thưởng
-                        </th>
-                        <th class="num">
-                            Phụ cấp
-                        </th>
-                        <th class="num">
-                            Ứng trước
-                        </th>
-                        <th class="num">
-                            Thực lĩnh
-                        </th>
+                        <th>Ngày</th>
+                        <th>Giờ vào</th>
+                        <th>Giờ ra</th>
+                        <th>Trạng thái</th>
+                        <th>Ghi chú</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for r in L %}
+                    {% for r in CC %}
                         <tr>
+                            <td>{{r.Ngay}}</td>
+                            <td>{{r.GioVao or '-'}}</td>
+                            <td>{{r.GioRa or '-'}}</td>
                             <td>
-                                {{r.ThangNam}}
+                                <span class="tag {{TONE.get(r.TrangThai, 'n')}}">
+                                    {{r.TrangThai}}
+                                </span>
                             </td>
-                            <td class="num">
-                                {{fmt(r.LuongCung)}}
-                            </td>
-                            <td class="num">
-                                {{fmt(r.LuongThuong)}}
-                            </td>
-                            <td class="num">
-                                {{fmt(r.PhuCap)}}
-                            </td>
-                            <td class="num">
-                                {{fmt(r.LuongUngTruoc)}}
-                            </td>
-                            <td class="num">
-                                <b>
-                                    {{fmt(r.ThucLinh)}}
-                                </b>
-                            </td>
+                            <td>{{r.GhiChu or '-'}}</td>
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan=6 class="empty">
-                                Chưa có bảng lương.
+                            <td colspan="5" class="empty">
+                                Chưa có dữ liệu chấm công.
                             </td>
                         </tr>
                     {% endfor %}
@@ -118,6 +172,49 @@
             </table>
         </div>
     </div>
+
+    <!-- Đánh giá hiệu suất & KPI -->
+    <div class="card flush">
+        <h3>
+            Đánh giá hiệu suất công việc & KPI
+        </h3>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tháng</th>
+                        <th class="num">Điểm KPI</th>
+                        <th>Xếp loại</th>
+                        <th>Nhận xét của quản lý</th>
+                        <th>Người đánh giá</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in DG %}
+                        <tr>
+                            <td>{{r.ThangNam}}</td>
+                            <td class="num"><b>{{r.DiemKPI}}</b></td>
+                            <td>
+                                <span class="tag {{TONE.get(r.XepLoai, 'n')}}">
+                                    {{r.XepLoai}}
+                                </span>
+                            </td>
+                            <td>{{r.NhanXet or '-'}}</td>
+                            <td>{{r.NguoiDanhGia}}</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="empty">
+                                Chưa có kỳ đánh giá hiệu suất nào.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Nghỉ phép -->
     <div class="card flush">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 18px 12px">
             <h3 style="margin:0">
@@ -132,41 +229,21 @@
             <table>
                 <thead>
                     <tr>
-                        <th>
-                            Từ ngày
-                        </th>
-                        <th>
-                            Đến ngày
-                        </th>
-                        <th class="num">
-                            Số ngày
-                        </th>
-                        <th>
-                            Lý do
-                        </th>
-                        <th>
-                            Trạng thái
-                        </th>
-                        <th>
-                            Thao tác
-                        </th>
+                        <th>Từ ngày</th>
+                        <th>Đến ngày</th>
+                        <th class="num">Số ngày</th>
+                        <th>Lý do</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for r in P %}
                         <tr>
-                            <td>
-                                {{r.NgayBD}}
-                            </td>
-                            <td>
-                                {{r.NgayKT}}
-                            </td>
-                            <td class="num">
-                                {{r.SoNgay}}
-                            </td>
-                            <td>
-                                {{r.LyDo or '-'}}
-                            </td>
+                            <td>{{r.NgayBD}}</td>
+                            <td>{{r.NgayKT}}</td>
+                            <td class="num">{{r.SoNgay}}</td>
+                            <td>{{r.LyDo or '-'}}</td>
                             <td>
                                 <span class="tag {{TONE.get(r.TrangThai,'n')}}">
                                     {{r.TrangThai}}
@@ -187,7 +264,7 @@
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan=6 class="empty">
+                            <td colspan="6" class="empty">
                                 Chưa có đơn nghỉ phép nào.
                                 <a href="{{url_for('main.leave_request')}}">
                                     Gửi đơn đầu tiên
@@ -199,6 +276,49 @@
             </table>
         </div>
     </div>
+
+    <!-- Lương -->
+    <div class="card flush">
+        <h3>
+            Lương
+        </h3>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tháng</th>
+                        <th class="num">Lương cứng</th>
+                        <th class="num">Thưởng</th>
+                        <th class="num">Phụ cấp</th>
+                        <th class="num">Ứng trước</th>
+                        <th class="num">Thực lĩnh</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in L %}
+                        <tr>
+                            <td>{{r.ThangNam}}</td>
+                            <td class="num">{{fmt(r.LuongCung)}}</td>
+                            <td class="num">{{fmt(r.LuongThuong)}}</td>
+                            <td class="num">{{fmt(r.PhuCap)}}</td>
+                            <td class="num">{{fmt(r.LuongUngTruoc)}}</td>
+                            <td class="num">
+                                <b>{{fmt(r.ThucLinh)}}</b>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="empty">
+                                Chưa có bảng lương.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tăng ca -->
     <div class="card flush">
         <h3>
             Tăng ca
@@ -207,26 +327,16 @@
             <table>
                 <thead>
                     <tr>
-                        <th>
-                            Ngày
-                        </th>
-                        <th class="num">
-                            Số giờ
-                        </th>
-                        <th>
-                            Loại
-                        </th>
+                        <th>Ngày</th>
+                        <th class="num">Số giờ</th>
+                        <th>Loại</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for r in T %}
                         <tr>
-                            <td>
-                                {{r.Ngay}}
-                            </td>
-                            <td class="num">
-                                {{fmt(r.SoGio)}}
-                            </td>
+                            <td>{{r.Ngay}}</td>
+                            <td class="num">{{fmt(r.SoGio)}}</td>
                             <td>
                                 <span class="tag {{TONE.get(r.Loai,'n')}}">
                                     {{r.Loai}}
@@ -235,7 +345,7 @@
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan=3 class="empty">
+                            <td colspan="3" class="empty">
                                 Chưa có lần tăng ca nào.
                             </td>
                         </tr>
@@ -244,6 +354,8 @@
             </table>
         </div>
     </div>
+
+    <!-- Hợp đồng lao động -->
     <div class="card flush">
         <h3>
             Hợp đồng lao động
@@ -282,7 +394,7 @@
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan=7 class="empty">
+                            <td colspan="7" class="empty">
                                 Chưa có thông tin hợp đồng nào.
                             </td>
                         </tr>

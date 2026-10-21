@@ -232,6 +232,41 @@ CREATE TABLE TaiKhoanAdmin(
     TenDN NVARCHAR(100) UNIQUE NOT NULL,
     MatKhau NVARCHAR(255) NOT NULL
 );
+
+IF OBJECT_ID(N'ChamCong', N'U') IS NULL
+CREATE TABLE ChamCong(
+    MaCC INT IDENTITY(1,1) PRIMARY KEY,
+    MaNV NVARCHAR(50) NOT NULL REFERENCES NhanVien(MaNV) ON DELETE CASCADE ON UPDATE CASCADE,
+    Ngay NVARCHAR(20) NOT NULL,
+    GioVao NVARCHAR(10),
+    GioRa NVARCHAR(10),
+    TrangThai NVARCHAR(50) DEFAULT N'Đúng giờ',
+    GhiChu NVARCHAR(255),
+    CONSTRAINT UQ_ChamCong_NV_Ngay UNIQUE(MaNV, Ngay)
+);
+
+IF OBJECT_ID(N'DanhGia', N'U') IS NULL
+CREATE TABLE DanhGia(
+    MaDG INT IDENTITY(1,1) PRIMARY KEY,
+    MaNV NVARCHAR(50) NOT NULL REFERENCES NhanVien(MaNV) ON DELETE CASCADE ON UPDATE CASCADE,
+    ThangNam NVARCHAR(20) NOT NULL,
+    DiemKPI FLOAT NOT NULL,
+    XepLoai NVARCHAR(50) NOT NULL,
+    NhanXet NVARCHAR(MAX),
+    NguoiDanhGia NVARCHAR(100),
+    CONSTRAINT UQ_DanhGia_NV_Thang UNIQUE(MaNV, ThangNam)
+);
+
+IF OBJECT_ID(N'ThongBao', N'U') IS NULL
+CREATE TABLE ThongBao(
+    MaTB INT IDENTITY(1,1) PRIMARY KEY,
+    TieuDe NVARCHAR(255) NOT NULL,
+    NoiDung NVARCHAR(MAX) NOT NULL,
+    NgayGui NVARCHAR(25) NOT NULL,
+    NguoiGui NVARCHAR(100) NOT NULL,
+    PhamVi NVARCHAR(50) DEFAULT N'Toàn công ty',
+    MaPB NVARCHAR(50) REFERENCES PhongBan(MaPB) ON DELETE SET NULL ON UPDATE CASCADE
+);
 """
 
 def init_db():
@@ -312,6 +347,65 @@ def init_db():
                     ('HD004', 'NV004', 'Xác định thời hạn (1 năm)', '2021-04-12', '2022-04-12', 20000000, 'Hiệu lực', 'Hợp đồng 1 năm'),
                     ('HD005', 'NV005', 'Thử việc', '2022-08-08', '2022-10-08', 22000000, 'Hiệu lực', 'Hợp đồng thử việc')
                 ]
+            )
+
+        # Seed initial data for new tables if empty
+        cc_count = db.execute("SELECT COUNT(*) FROM ChamCong").fetchone()[0]
+        if cc_count == 0:
+            today_str = date.today().strftime('%Y-%m-%d')
+            sample_cc = [
+                ('NV001', today_str, '08:00', '17:30', 'Đúng giờ', 'Chấm công máy vân tay'),
+                ('NV002', today_str, '08:05', '17:30', 'Đúng giờ', 'Chấm công máy vân tay'),
+                ('NV003', today_str, '08:25', '17:30', 'Đi muộn', 'Muộn 25 phút'),
+                ('NV004', today_str, '07:55', '17:30', 'Đúng giờ', 'Chấm công máy vân tay'),
+                ('NV005', today_str, '08:00', '16:30', 'Về sớm', 'Có việc gia đình')
+            ]
+            for mnv_c, d_c, in_c, out_c, st_c, nt_c in sample_cc:
+                db.execute(
+                    "INSERT INTO ChamCong(MaNV, Ngay, GioVao, GioRa, TrangThai, GhiChu) VALUES(?, ?, ?, ?, ?, ?)",
+                    (mnv_c, d_c, in_c, out_c, st_c, nt_c)
+                )
+
+        dg_count = db.execute("SELECT COUNT(*) FROM DanhGia").fetchone()[0]
+        if dg_count == 0:
+            current_month = date.today().strftime('%Y-%m')
+            sample_dg = [
+                ('NV001', current_month, 95.0, 'Xuất sắc', 'Hoàn thành xuất sắc nhiệm vụ quản lý nhân sự', 'Ban Giám Đốc'),
+                ('NV002', current_month, 88.0, 'Tốt', 'Tuyển dụng đạt KPI, tinh thần trách nhiệm cao', 'Nguyễn Văn An'),
+                ('NV003', current_month, 85.0, 'Tốt', 'Quyết toán sổ sách đúng hạn, chính xác', 'Nguyễn Văn An'),
+                ('NV004', current_month, 78.0, 'Khá', 'Doanh số đạt 90% chỉ tiêu', 'Nguyễn Văn An'),
+                ('NV005', current_month, 90.0, 'Xuất sắc', 'Phát triển module phần mềm tốt, tiến độ nhanh', 'Nguyễn Văn An')
+            ]
+            for mnv_d, m_d, kpi_d, xl_d, nx_d, dg_d in sample_dg:
+                db.execute(
+                    "INSERT INTO DanhGia(MaNV, ThangNam, DiemKPI, XepLoai, NhanXet, NguoiDanhGia) VALUES(?, ?, ?, ?, ?, ?)",
+                    (mnv_d, m_d, kpi_d, xl_d, nx_d, dg_d)
+                )
+
+        tb_count = db.execute("SELECT COUNT(*) FROM ThongBao").fetchone()[0]
+        if tb_count == 0:
+            today_time = date.today().strftime('%Y-%m-%d 09:00')
+            db.execute(
+                "INSERT INTO ThongBao(TieuDe, NoiDung, NgayGui, NguoiGui, PhamVi, MaPB) VALUES(?, ?, ?, ?, ?, ?)",
+                (
+                    'Thông báo về lịch nghỉ lễ và kế hoạch công tác',
+                    'Kính gửi toàn thể cán bộ nhân viên, đề nghị các bộ phận hoàn thành báo cáo tháng và sắp xếp lịch nghỉ lễ đúng quy định.',
+                    today_time,
+                    'Phòng Nhân sự',
+                    'Toàn công ty',
+                    None
+                )
+            )
+            db.execute(
+                "INSERT INTO ThongBao(TieuDe, NoiDung, NgayGui, NguoiGui, PhamVi, MaPB) VALUES(?, ?, ?, ?, ?, ?)",
+                (
+                    'Kế hoạch triển khai dự án quý mới phòng Kỹ thuật',
+                    'Các thành viên phòng kỹ thuật chuẩn bị tài liệu họp kickoff dự án mới vào 9h sáng thứ Hai.',
+                    today_time,
+                    'Trưởng phòng Kỹ thuật',
+                    'Theo phòng ban',
+                    'PB04'
+                )
             )
 
         db.commit()

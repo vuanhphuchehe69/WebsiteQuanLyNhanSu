@@ -1,30 +1,34 @@
 # Phần mềm quản lý nhân sự – Nhóm 9
 
-Flask + Microsoft SQL Server (MSSQL), xây dựng theo phân tích trong báo cáo (8 module, 3 actor).
+Flask + Microsoft SQL Server (MSSQL), xây dựng theo phân tích nghiệp vụ và phân quyền đầy đủ cho 3 actors: **Nhân viên**, **Quản lý**, và **Admin**.
 
 ## Cấu trúc thư mục (Đã module hóa chuyên nghiệp)
 
 ```text
 ss/
-├── config.py              # Cấu hình app, kết nối Microsoft SQL Server, quyền actor, 8 module, menu
-├── database.py            # Kết nối MSSQL qua pyodbc, DDL Schema và hàm khởi tạo CSDL/dữ liệu mẫu (init_db)
+├── config.py              # Cấu hình app, kết nối MSSQL, 11 modules, options, menu, tone màu & icons
+├── database.py            # Kết nối MSSQL qua pyodbc, DDL Schema và hàm khởi tạo/seed data (init_db)
 ├── utils.py               # Decorators (@login_required, @roles_required), CSRF guard, validate & parse form
 │
 ├── routes/                # Các routes chia theo nghiệp vụ (Flask Blueprints)
 │   ├── __init__.py        # Đăng ký các blueprints vào ứng dụng
 │   ├── auth.py            # Đăng nhập, đăng xuất, đổi mật khẩu
-│   ├── main.py            # Bảng điều khiển (Dashboard), hồ sơ cá nhân (me), xin nghỉ phép, báo cáo nghỉ phép
-│   └── modules.py         # Quản lý CRUD chung (Nhân viên, Hợp đồng, Lương, Nghỉ phép, Tăng ca...), phân trang, xuất Excel/CSV, duyệt đơn
+│   ├── main.py            # Dashboard, hồ sơ (me), sửa profile, thông báo, xin nghỉ phép, báo cáo HR, backup dữ liệu
+│   └── modules.py         # Quản lý CRUD chung (11 modules), phân trang, xuất Excel/CSV, duyệt đơn nghỉ phép
 │
 ├── templates/             # Giao diện Jinja2 HTML tách rời
-│   ├── base.html          # Khung layout tổng thể (Sidebar, Header, Flash Toast)
+│   ├── base.html          # Khung layout tổng thể (Sidebar, Header, Flash Toast với nút đóng)
 │   ├── login.html         # Màn hình đăng nhập
-│   ├── dash.html          # Màn hình tổng quan / Dashboard
-│   ├── me.html            # Thông tin cá nhân, lịch sử hợp đồng, lương, nghỉ phép, tăng ca
+│   ├── dash.html          # Màn hình tổng quan / Dashboard với thao tác nhanh
+│   ├── me.html            # Hồ sơ cá nhân, thông tin công việc, lịch sử chấm công, KPI, lương, nghỉ phép, hợp đồng
+│   ├── profile_edit.html  # Form cập nhật thông tin cá nhân (SĐT, Email, Địa chỉ, Ngày sinh, Giới tính)
+│   ├── announcements.html # Bảng tin xem thông báo nội bộ
 │   ├── leave_request.html # Form gửi đơn xin nghỉ phép của nhân viên
 │   ├── list.html          # Danh sách dữ liệu, phân trang (pagination), tìm kiếm, lọc trạng thái, duyệt đơn, xuất Excel/CSV
 │   ├── form.html          # Form thêm mới / chỉnh sửa dữ liệu động
 │   ├── report.html        # Chi tiết và tổng hợp nghỉ phép (hỗ trợ xuất CSV/Excel)
+│   ├── report_hr.html     # Báo cáo nhân sự phòng ban / toàn công ty (thống kê giới tính, ngày công, KPI, xuất CSV)
+│   ├── backup.html        # Trung tâm sao lưu & quản lý dữ liệu hệ thống cho Admin
 │   ├── password.html      # Form đổi mật khẩu
 │   └── msg.html           # Màn hình thông báo lỗi (403, 400)
 │
@@ -33,26 +37,41 @@ ss/
 │       └── style.css      # Toàn bộ CSS giao diện hiện đại, responsive
 │
 ├── app.py                 # File thực thi chính của ứng dụng Flask
-├── test_app.py            # Script kiểm thử tự động toàn bộ tính năng và phân quyền (16 test cases)
+├── test_app.py            # Script kiểm thử tự động toàn bộ 26 kịch bản kiểm thử (PASS 100%)
 ├── requirements.txt       # Danh sách thư viện phụ thuộc (Flask, pyodbc)
 └── README.md              # Tài liệu hướng dẫn
 ```
 
-## Các tính năng mới bổ sung
-1. **Phân trang dữ liệu (Pagination)**:
-   - Các danh sách dữ liệu (Nhân viên, Hợp đồng, Bảng lương, Nghỉ phép, Tăng ca...) tự động chia trang (10 bản ghi/trang), kèm thanh chuyển trang, số trang hiện tại và tổng số bản ghi.
-2. **Xuất file Excel / CSV**:
-   - Nút **"Xuất Excel/CSV"** ở đầu mỗi trang danh mục và trang báo cáo nghỉ phép.
-   - Định dạng CSV có UTF-8 BOM (`\ufeff`) hiển thị tiếng Việt có dấu chuẩn xác 100% khi mở trực tiếp bằng Microsoft Excel.
-3. **Quy trình Quản lý Nghỉ phép (Workflow Đơn nghỉ phép)**:
-   - **Actor Nhân viên**:
-     - Vào trang **Thông tin cá nhân (`/me`)**, bấm **"Xin nghỉ phép"** để tạo đơn với ngày bắt đầu, ngày kết thúc và lý do.
-     - Kiểm tra tính hợp lệ: ngày kết thúc $\ge$ ngày bắt đầu, ngăn chặn đăng ký trùng lịch nghỉ.
-     - Đơn tạo mới có trạng thái **"Chờ duyệt"**. Nhân viên có thể bấm **"Hủy đơn"** khi đang chờ duyệt.
-   - **Actor Quản lý / Admin**:
-     - Vào trang **Nghỉ phép (`/m/nghiphep`)**: Lọc theo trạng thái (*Chờ duyệt*, *Đã duyệt*, *Từ chối*).
-     - Với mỗi đơn "Chờ duyệt", có nút thao tác nhanh **"Duyệt"** (Xanh) và **"Từ chối"** (Đỏ) ngay trên bảng mà không cần vào form sửa.
-     - Bảng điều khiển (Dashboard) tự động hiển thị số lượng **"Đơn nghỉ chờ duyệt"** để Quản lý nắm bắt ngay khi đăng nhập.
+## Các tính năng hệ thống theo 3 Actors
+
+### 1. Actor Nhân viên
+- **Cập nhật thông tin cá nhân**: Cập nhật số điện thoại, email, địa chỉ liên hệ, ngày sinh, giới tính tại `/me/profile/edit`.
+- **Xem thông tin công việc**: Xem chi tiết chức vụ, phòng ban trực thuộc, người quản lý trực tiếp, ngày vào công ty, loại hợp đồng và mức lương cơ bản hiện tại.
+- **Xem lịch sử chấm công & ngày công**: Theo dõi chi tiết giờ vào, giờ ra, trạng thái chấm công (Đúng giờ, Đi muộn, Về sớm) và tổng số ngày công tích lũy trong tháng.
+- **Xem thông báo nội bộ**: Đọc các thông báo từ Ban Giám Đốc, Phòng Nhân sự hoặc thông báo riêng của phòng ban tại `/announcements`.
+- **Xem đánh giá hiệu suất & KPI**: Xem điểm số KPI, xếp loại và nhận xét đánh giá của quản lý theo từng tháng.
+- **Quy trình xin nghỉ phép**: Tạo đơn xin nghỉ phép, tự động kiểm tra trùng lịch nghỉ, xem trạng thái (*Chờ duyệt*, *Đã duyệt*, *Từ chối*) và hủy đơn khi đang chờ duyệt.
+- **Xem bảng lương, hợp đồng, tăng ca**: Lịch sử chi tiết bảng lương thực lĩnh, tăng ca và hợp đồng lao động.
+
+### 2. Actor Quản lý
+- **Theo dõi chấm công & tình hình đi làm**: Xem danh sách chấm công nhân viên phòng ban, tìm kiếm, lọc theo ngày/tháng, trạng thái đi làm tại `/m/chamcong`.
+- **Chấm công nhanh hôm nay**: Nút thao tác nhanh tự động ghi nhận chấm công đúng giờ cho nhân viên chưa chấm công trong ngày.
+- **Đánh giá hiệu suất làm việc (KPI)**: Đánh giá nhân viên theo tháng với thang điểm KPI (0 - 100), xếp loại (*Xuất sắc, Tốt, Khá, Trung bình, Yếu*) và ghi nhận xét tại `/m/danhgia`.
+- **Lập báo cáo nhân sự phòng ban**: Xem và xuất file Excel/CSV báo cáo nhân sự phòng ban tại `/report/hr` gồm: tổng số lượng nhân sự, cơ cấu giới tính Nam/Nữ, tổng ngày công, giờ tăng ca, số ngày nghỉ phép và điểm KPI trung bình.
+- **Gửi thông báo cho nhân viên**: Đăng thông báo áp dụng cho toàn công ty hoặc theo phòng ban tại `/m/thongbao`.
+- **Duyệt đơn nghỉ phép**: Phê duyệt hoặc từ chối đơn nghỉ phép của nhân viên trực tiếp trên danh sách `/m/nghiphep`.
+
+### 3. Actor Admin
+- **Quản lý chấm công toàn diện**: Xem, tạo mới, chỉnh sửa, xóa bản ghi chấm công và chấm công nhanh cho toàn thể nhân viên.
+- **Thống kê & Báo cáo nhân sự**: Báo cáo tổng thể toàn công ty hoặc lọc chi tiết theo từng phòng ban, xuất file Excel/CSV.
+- **Quản lý thông báo**: Quản lý toàn bộ thông báo hệ thống, tạo thông báo mới, chỉnh sửa hoặc xóa thông báo.
+- **Sao lưu và quản lý dữ liệu**:
+  - Xem thống kê số lượng bản ghi của tất cả 12 bảng trong cơ sở dữ liệu tại `/admin/backup`.
+  - Tải bản sao lưu JSON toàn bộ hệ thống (`/admin/backup/export`) chỉ với 1 cú click.
+  - Tải kịch bản SQL Script (`/admin/backup/sql`) chứa đầy đủ dữ liệu để phục hồi vào SQL Server.
+- **Quản trị danh mục & tài khoản**: Quản lý phòng ban, chức vụ, tài khoản đăng nhập người dùng.
+
+---
 
 ## Cấu hình Cơ sở dữ liệu thật (Microsoft SQL Server)
 Mặc định hệ thống kết nối tới SQL Server cục bộ trên máy tính của bạn:
@@ -69,7 +88,7 @@ pip install -r requirements.txt
 py app.py          # mở http://127.0.0.1:5000
 ```
 
-Chạy kiểm thử tự động:
+Chạy kiểm thử tự động toàn bộ 26 kịch bản:
 ```bash
 py test_app.py
 ```
@@ -80,14 +99,3 @@ py test_app.py
 | Admin | Admin | admin | admin123 |
 | Quản lý | Quản lý | ql001 | 123456 |
 | Nhân viên | Nhân viên | nv002 … nv005 | 123456 |
-
-## Phân quyền (theo use case trong báo cáo)
-| Chức năng | Nhân viên | Quản lý | Admin |
-|---|---|---|---|
-| Đăng nhập / Đăng xuất / Đổi mật khẩu | ✔ | ✔ | ✔ |
-| Xem hồ sơ cá nhân, lịch sử lương, hợp đồng, tăng ca | ✔ | ✔ | – |
-| Gửi đơn xin nghỉ phép / Hủy đơn chờ duyệt | ✔ | ✔ | – |
-| Xem danh sách đơn nghỉ phép, Duyệt / Từ chối đơn | – | ✔ | ✔ |
-| Nhân viên, Hợp đồng, Lương, Tăng ca: xem, tìm kiếm, xuất file, CRUD | – | ✔ | ✔ |
-| Xem và xuất chi tiết báo cáo nghỉ phép theo tháng | – | ✔ | ✔ |
-| Phòng ban, Chức vụ, Tài khoản: xem, tìm kiếm, xuất file, CRUD | – | – | ✔ |

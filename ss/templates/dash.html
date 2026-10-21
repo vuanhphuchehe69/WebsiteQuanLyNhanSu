@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                Tổng quan
+            </h1>
+            <p>
+                Số liệu hiện tại của công ty.
+            </p>
+        </div>
+    </div>
+    <div class="grid">
+        {% for l,v,ic in stats %}
+            <div class="stat">
+                <div class="ic">
+                    {{icon(ic)}}
+                </div>
+                <div>
+                    <b>
+                        {{fmt(v)}}
+                    </b>
+                    <span>
+                        {{l}}
+                    </span>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <div class="card">
+        <h3>
+            Thao tác nhanh
+        </h3>
+        <div class="quick">
+            <a class="btn" href="{{url_for('mnew',mod='nhanvien')}}">
+                {{icon('plus')}}
+                Thêm nhân viên
+            </a>
+            <a class="btn g" href="{{url_for('mnew',mod='hopdong')}}">
+                {{icon('plus')}}
+                Thêm hợp đồng
+            </a>
+            <a class="btn g" href="{{url_for('mnew',mod='nghiphep')}}">
+                {{icon('plus')}}
+                Thêm nghỉ phép
+            </a>
+            <a class="btn g" href="{{url_for('mnew',mod='tangca')}}">
+                {{icon('plus')}}
+                Thêm tăng ca
+            </a>
+            <a class="btn g" href="{{url_for('mnew',mod='luong')}}">
+                {{icon('plus')}}
+                Thêm bảng lương
+            </a>
+            {% if role=='Admin' %}
+                <a class="btn g" href="{{url_for('mnew',mod='taikhoan')}}">
+                    {{icon('plus')}}
+                    Thêm tài khoản
+                </a>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+

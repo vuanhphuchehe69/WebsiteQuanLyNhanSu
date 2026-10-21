@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                {{m.title}}
+            </h1>
+            <p>
+                {{rows|length}}
+                bản ghi
+                {{' khớp với tìm kiếm' if q or thang}}
+            </p>
+        </div>
+        <a class="btn" href="{{url_for('mnew',mod=mod)}}">
+            {{icon('plus')}}
+            Thêm mới
+        </a>
+    </div>
+    <div class="card flush">
+        <form class="bar" method="get">
+            <div class="sbox">
+                {{icon('search')}}
+                <input name="q" value="{{q}}" placeholder="Tìm kiếm" aria-label="Tìm kiếm">
+            </div>
+            {% if m.date %}
+                <input type="month" name="thang" value="{{thang}}" aria-label="Lọc theo tháng">
+            {% endif %}
+            <button class="btn">
+                Tìm kiếm
+            </button>
+            <a class="ib" href="{{url_for('mlist',mod=mod)}}" title="Tải lại" aria-label="Tải lại">
+                {{icon('refresh')}}
+            </a>
+        </form>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        {% for k,l in m.cols %}
+                            <th class="{{'num' if k in ('LuongCung','LuongThuong','PhuCap','LuongUngTruoc','ThucLinh','SoGio','LuongCoBan')}}">
+                                <a href="{{url_for('mlist',mod=mod,q=q,thang=thang,sort=k,d=(0 if (sort==k and desc) else 1) if sort==k else 0)}}">
+                                    {{l}}
+                                    {{' ▼' if sort==k and desc else (' ▲' if sort==k else '')}}
+                                </a>
+                            </th>
+                        {% endfor %}
+                        <th>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rows %}
+                        <tr>
+                            {% for k,l in m.cols %}
+                                {% set v=r[k] %}
+                                <td class="{{'num' if (v is float or k=='LuongCoBan')}}">
+                                    {%- if k=='HoTen' %}
+                                    <span class="av">
+                                        {{v|ini}}
+                                    </span>
+                                    {{v}}
+                                {% elif k in ('LoaiTK','Loai','LoaiHD','TrangThai') %}
+                                    <span class="tag {{TONE.get(v,'n')}}">
+                                        {{ROLE_NAME.get(v,v)}}
+                                    </span>
+                                {% elif k=='ThucLinh' %}
+                                    <b>
+                                        {{fmt(v)}}
+                                    </b>
+                                {% else %}
+                                    {{fmt(v)}}
+                                {% endif -%}
+                            </td>
+                        {% endfor %}
+                        <td class="act">
+                            <a class="ib" title="Sửa" aria-label="Sửa" href="{{url_for('medit',mod=mod,rid=r[m.pk])}}">
+                                {{icon('edit')}}
+                            </a>
+                            <form method="post" action="{{url_for('mdel',mod=mod,rid=r[m.pk])}}" onsubmit="return confirm('Xóa bản ghi này?')">
+                                <input type="hidden" name="_csrf" value="{{csrf}}">
+                                <button class="ib d" title="Xóa" aria-label="Xóa">
+                                    {{icon('trash')}}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="99" class="empty">
+                            Chưa có dữ liệu.
+                            <a href="{{url_for('mnew',mod=mod)}}">
+                                Thêm bản ghi đầu tiên
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

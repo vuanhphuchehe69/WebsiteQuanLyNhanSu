@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="login">
+        <section class="hero">
+            <div class="brand" style="padding:0;color:#fff">
+                <b style="background:#fff;color:var(--brand)">
+                    NS
+                </b>
+                Quản lý nhân sự
+            </div>
+            <div>
+                <h1>
+                    Hồ sơ, lương, nghỉ phép và tăng ca trong một nơi.
+                </h1>
+                <p>
+                    Đăng nhập để xem thông tin của bạn hoặc quản lý nhân sự của công ty.
+                </p>
+            </div>
+            <small style="color:#a9c4f2">
+                Bài tập lớn, nhóm 2
+            </small>
+        </section>
+        <section class="lf">
+            <form method="post">
+                <input type="hidden" name="_csrf" value="{{csrf}}">
+                <h2>
+                    Đăng nhập
+                </h2>
+                <p>
+                    Chọn loại tài khoản rồi nhập thông tin.
+                </p>
+                <div class="seg">
+                    {% for k,v in [('NhanVien','Nhân viên'),('QuanLy','Quản lý'),('Admin','Admin')] %}
+                        <label>
+                            <input type="radio" name="role" value="{{k}}" {{'checked' if k==sel}}>
+                            <span>
+                                {{v}}
+                            </span>
+                        </label>
+                    {% endfor %}
+                </div>
+                <label for="u">
+                    Tên đăng nhập
+                </label>
+                <input id="u" name="user" required autofocus autocomplete="username">
+                <div style="height:14px">
+                </div>
+                <label for="p">
+                    Mật khẩu
+                </label>
+                <input id="p" type="password" name="pw" required autocomplete="current-password">
+                <div style="height:20px">
+                </div>
+                <button class="btn" style="width:100%;justify-content:center;padding:11px">
+                    Đăng nhập
+                </button>
+            </form>
+        </section>
+    </div>
+{% endblock %}
+

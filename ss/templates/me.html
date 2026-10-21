@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="card">
+        <div class="prof">
+            <span class="av lg">
+                {{emp.HoTen|ini}}
+            </span>
+            <div>
+                <h2>
+                    {{emp.HoTen}}
+                </h2>
+                <p>
+                    {{emp.TenCV}}
+                    ,
+                    {{emp.TenPB}}
+                </p>
+                <p>
+                    Mã nhân viên
+                    {{emp.MaNV}}
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="sum">
+        <div>
+            <b>
+                {{fmt(L[0].ThucLinh) if L else '0'}}
+            </b>
+            Thực lĩnh tháng
+            {{L[0].ThangNam if L else 'gần nhất'}}
+        </div>
+        <div>
+            <b>
+                {{P|sum(attribute='SoNgay')}}
+            </b>
+            Tổng ngày nghỉ phép
+        </div>
+        <div>
+            <b>
+                {{fmt(T|sum(attribute='SoGio'))}}
+            </b>
+            Tổng giờ tăng ca
+        </div>
+    </div>
+    <div class="card">
+        <h3>
+            Thông tin cá nhân
+        </h3>
+        <dl>
+            {% for l,k in [('Giới tính','GioiTinh'),('Ngày sinh','NgaySinh'),('Địa chỉ','DiaChi'),('Số điện thoại','SDT'),('Căn cước công dân','CCCD'),('Email','Email'),('Chức vụ','TenCV'),('Phòng ban','TenPB'),('Ngày vào công ty','NgayVaoCT')] %}
+                <div>
+                    <dt>
+                        {{l}}
+                    </dt>
+                    <dd>
+                        {{fmt(emp[k]) or '-'}}
+                    </dd>
+                </div>
+            {% endfor %}
+        </dl>
+    </div>
+    <div class="card flush">
+        <h3>
+            Lương
+        </h3>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>
+                            Tháng
+                        </th>
+                        <th class="num">
+                            Lương cứng
+                        </th>
+                        <th class="num">
+                            Thưởng
+                        </th>
+                        <th class="num">
+                            Phụ cấp
+                        </th>
+                        <th class="num">
+                            Ứng trước
+                        </th>
+                        <th class="num">
+                            Thực lĩnh
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in L %}
+                        <tr>
+                            <td>
+                                {{r.ThangNam}}
+                            </td>
+                            <td class="num">
+                                {{fmt(r.LuongCung)}}
+                            </td>
+                            <td class="num">
+                                {{fmt(r.LuongThuong)}}
+                            </td>
+                            <td class="num">
+                                {{fmt(r.PhuCap)}}
+                            </td>
+                            <td class="num">
+                                {{fmt(r.LuongUngTruoc)}}
+                            </td>
+                            <td class="num">
+                                <b>
+                                    {{fmt(r.ThucLinh)}}
+                                </b>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan=6 class="empty">
+                                Chưa có bảng lương.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card flush">
+        <h3>
+            Nghỉ phép
+        </h3>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>
+                            Từ ngày
+                        </th>
+                        <th>
+                            Đến ngày
+                        </th>
+                        <th class="num">
+                            Số ngày
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in P %}
+                        <tr>
+                            <td>
+                                {{r.NgayBD}}
+                            </td>
+                            <td>
+                                {{r.NgayKT}}
+                            </td>
+                            <td class="num">
+                                {{r.SoNgay}}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan=3 class="empty">
+                                Chưa có lần nghỉ phép nào.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card flush">
+        <h3>
+            Tăng ca
+        </h3>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>
+                            Ngày
+                        </th>
+                        <th class="num">
+                            Số giờ
+                        </th>
+                        <th>
+                            Loại
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in T %}
+                        <tr>
+                            <td>
+                                {{r.Ngay}}
+                            </td>
+                            <td class="num">
+                                {{fmt(r.SoGio)}}
+                            </td>
+                            <td>
+                                <span class="tag {{TONE.get(r.Loai,'n')}}">
+                                    {{r.Loai}}
+                                </span>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan=3 class="empty">
+                                Chưa có lần tăng ca nào.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card flush">
+        <h3>
+            Hợp đồng lao động
+        </h3>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã HĐ</th>
+                        <th>Loại hợp đồng</th>
+                        <th>Từ ngày</th>
+                        <th>Đến ngày</th>
+                        <th class="num">Lương cơ bản</th>
+                        <th>Trạng thái</th>
+                        <th>Ghi chú</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in HD %}
+                        <tr>
+                            <td>{{r.MaHD}}</td>
+                            <td>
+                                <span class="tag {{TONE.get(r.LoaiHD,'b')}}">
+                                    {{r.LoaiHD}}
+                                </span>
+                            </td>
+                            <td>{{r.NgayBD}}</td>
+                            <td>{{r.NgayKT or 'Không xác định'}}</td>
+                            <td class="num">{{fmt(r.LuongCoBan)}}</td>
+                            <td>
+                                <span class="tag {{TONE.get(r.TrangThai,'n')}}">
+                                    {{r.TrangThai}}
+                                </span>
+                            </td>
+                            <td>{{r.GhiChu or '-'}}</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan=7 class="empty">
+                                Chưa có thông tin hợp đồng nào.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

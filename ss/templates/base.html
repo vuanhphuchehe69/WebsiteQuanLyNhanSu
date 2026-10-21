@@ -1,0 +1,89 @@
+<!doctype html>
+    <html lang="vi">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>
+                Quản lý nhân sự
+            </title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+            <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+        </head>
+        <body>
+            {% if role %}
+                <input type="checkbox" id="mt" hidden>
+                <aside class="side">
+                    <div class="brand">
+                        <b>
+                            NS
+                        </b>
+                        <div>
+                            Quản lý nhân sự
+                            <small>
+                                Nhóm 2
+                            </small>
+                        </div>
+                    </div>
+                    <nav class="nav">
+                        {% for g,t,u,ic in nav %}
+                            {% if g %}
+                                <h6>
+                                    {{g}}
+                                </h6>
+                            {% endif %}
+                            <a href="{{u}}" class="{{'on' if (u=='/' and request.path=='/') or (u!='/' and request.path.startswith(u)) else ''}}">
+                                {{icon(ic)}}
+                                {{t}}
+                            </a>
+                        {% endfor %}
+                    </nav>
+                </aside>
+                <div class="main">
+                    <header class="top">
+                        <div class="who">
+                            <label for="mt" class="ib menu" aria-label="Mở menu">
+                                {{icon('menu')}}
+                            </label>
+                            <span class="av" style="margin:0">
+                                {{uname|ini}}
+                            </span>
+                            <div>
+                                <b>
+                                    {{uname}}
+                                </b>
+                                <small>
+                                    {{role_name}}
+                                </small>
+                            </div>
+                        </div>
+                        <form method="post" action="{{url_for('logout')}}">
+                            <input type="hidden" name="_csrf" value="{{csrf}}">
+                            <button class="btn g">
+                                {{icon('logout')}}
+                                Đăng xuất
+                            </button>
+                        </form>
+                    </header>
+                    <div class="content">
+                    {% endif %}
+                    <div class="toasts">
+                        {% for c,m in get_flashed_messages(with_categories=true) %}
+                            <div class="toast {{c}}" role="status">
+                                {{m}}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% block body %}
+                    {% endblock %}
+                    {% if role %}
+                    </div>
+                </div>
+            {% endif %}
+            <script>
+                setTimeout(()=>document.querySelectorAll('.toast.ok').forEach(e=>e.remove()),4000)
+            </script>
+        </body>
+    </html>
+

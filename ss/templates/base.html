@@ -83,7 +83,48 @@
             </div>
         {% endif %}
         <script>
-            setTimeout(()=>document.querySelectorAll('.toast.ok').forEach(e=>e.remove()),4000)
+            // Tự động ẩn thông báo thành công sau 4 giây
+            setTimeout(() => document.querySelectorAll('.toast.ok').forEach(e => e.remove()), 4000);
+
+            // Tự động cuộn theo chức năng và giữ vị trí cuộn của thanh menu
+            (function() {
+                var nav = document.querySelector('.nav');
+                if (!nav) return;
+
+                var savedPos = sessionStorage.getItem('hrm_nav_scroll_pos');
+                var activeItem = nav.querySelector('a.on');
+
+                // 1. Phục hồi vị trí cuộn đã lưu trước đó nếu có
+                if (savedPos !== null) {
+                    nav.scrollTop = parseInt(savedPos, 10);
+                }
+
+                // 2. Tự động cuộn theo chức năng đang được chọn để luôn hiển thị trong tầm mắt
+                if (activeItem) {
+                    var navRect = nav.getBoundingClientRect();
+                    var itemRect = activeItem.getBoundingClientRect();
+                    if (itemRect.top < navRect.top + 30 || itemRect.bottom > navRect.bottom - 30) {
+                        activeItem.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
+                        sessionStorage.setItem('hrm_nav_scroll_pos', nav.scrollTop);
+                    }
+                }
+
+                // 3. Ghi nhớ vị trí khi người dùng cuộn menu
+                var scrollTimer;
+                nav.addEventListener('scroll', function() {
+                    clearTimeout(scrollTimer);
+                    scrollTimer = setTimeout(function() {
+                        sessionStorage.setItem('hrm_nav_scroll_pos', nav.scrollTop);
+                    }, 60);
+                }, { passive: true });
+
+                // 4. Khi bấm chọn chức năng, lưu ngay vị trí cuộn
+                nav.querySelectorAll('a').forEach(function(link) {
+                    link.addEventListener('click', function() {
+                        sessionStorage.setItem('hrm_nav_scroll_pos', nav.scrollTop);
+                    });
+                });
+            })();
         </script>
     </body>
 </html>

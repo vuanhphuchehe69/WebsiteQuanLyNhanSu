@@ -116,6 +116,21 @@ a:hover { color: var(--brand-d); }
   padding: 12px 14px 20px;
   overflow-y: auto;
   flex: 1;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}
+.nav::-webkit-scrollbar {
+  width: 5px;
+}
+.nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+.nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 .nav h6 {
   margin: 18px 10px 8px;

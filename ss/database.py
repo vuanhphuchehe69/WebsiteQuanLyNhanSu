@@ -1,6 +1,6 @@
 """Database management supporting Microsoft SQL Server (MSSQL) with SQLite fallback."""
 import sqlite3
-from datetime import date
+from datetime import date, datetime
 from flask import g
 from werkzeug.security import generate_password_hash
 
@@ -171,6 +171,11 @@ CREATE TABLE NhanVien(
     NgaySinh NVARCHAR(20),
     NgayVaoCT NVARCHAR(20),
     GioiTinh NVARCHAR(10),
+    TrinhDo NVARCHAR(100),
+    ChuyenMon NVARCHAR(100),
+    LoaiNhanVien NVARCHAR(50) DEFAULT N'Chính thức',
+    SoBHXH NVARCHAR(50),
+    MaSoThue NVARCHAR(50),
     MaCV NVARCHAR(50) NOT NULL REFERENCES ChucVu(MaCV) ON DELETE NO ACTION ON UPDATE CASCADE
 );
 
@@ -195,6 +200,9 @@ CREATE TABLE Luong(
     LuongThuong FLOAT DEFAULT 0,
     LuongUngTruoc FLOAT DEFAULT 0,
     PhuCap FLOAT DEFAULT 0,
+    BaoHiem FLOAT DEFAULT 0,
+    ThueTNCN FLOAT DEFAULT 0,
+    KhauTruKhac FLOAT DEFAULT 0,
     CONSTRAINT UQ_Luong_NV_Thang UNIQUE(MaNV, ThangNam)
 );
 
@@ -214,7 +222,10 @@ CREATE TABLE TangCa(
     MaNV NVARCHAR(50) NOT NULL REFERENCES NhanVien(MaNV) ON DELETE CASCADE ON UPDATE CASCADE,
     SoGio FLOAT NOT NULL,
     Ngay NVARCHAR(20) NOT NULL,
-    Loai NVARCHAR(50)
+    Loai NVARCHAR(50),
+    TrangThai NVARCHAR(50) DEFAULT N'Đã duyệt',
+    LyDo NVARCHAR(255),
+    NguoiDuyet NVARCHAR(100)
 );
 
 IF OBJECT_ID(N'TaiKhoan', N'U') IS NULL
@@ -254,6 +265,8 @@ CREATE TABLE DanhGia(
     XepLoai NVARCHAR(50) NOT NULL,
     NhanXet NVARCHAR(MAX),
     NguoiDanhGia NVARCHAR(100),
+    DiemTuDanhGia FLOAT,
+    NhanXetCaNhan NVARCHAR(MAX),
     CONSTRAINT UQ_DanhGia_NV_Thang UNIQUE(MaNV, ThangNam)
 );
 
@@ -266,6 +279,176 @@ CREATE TABLE ThongBao(
     NguoiGui NVARCHAR(100) NOT NULL,
     PhamVi NVARCHAR(50) DEFAULT N'Toàn công ty',
     MaPB NVARCHAR(50) REFERENCES PhongBan(MaPB) ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+IF OBJECT_ID(N'TaiLieuNhanVien', N'U') IS NULL
+CREATE TABLE TaiLieuNhanVien(
+    MaTL INT IDENTITY(1,1) PRIMARY KEY,
+    MaNV NVARCHAR(50) NOT NULL REFERENCES NhanVien(MaNV) ON DELETE CASCADE ON UPDATE CASCADE,
+    TenTaiLieu NVARCHAR(255) NOT NULL,
+    Loai NVARCHAR(100) NOT NULL,
+    NgayCap NVARCHAR(20),
+    NoiCap NVARCHAR(255),
+    TepDinhKem NVARCHAR(255),
+    NgayTai NVARCHAR(25) NOT NULL,
+    GhiChu NVARCHAR(MAX)
+);
+
+IF OBJECT_ID(N'GiaiTrinhCong', N'U') IS NULL
+CREATE TABLE GiaiTrinhCong(
+    MaGT INT IDENTITY(1,1) PRIMARY KEY,
+    MaNV NVARCHAR(50) NOT NULL REFERENCES NhanVien(MaNV) ON DELETE CASCADE ON UPDATE CASCADE,
+    Ngay NVARCHAR(20) NOT NULL,
+    GioVaoDeXuat NVARCHAR(10),
+    GioRaDeXuat NVARCHAR(10),
+    LyDo NVARCHAR(MAX) NOT NULL,
+    TrangThai NVARCHAR(50) DEFAULT N'Chờ duyệt',
+    NguoiDuyet NVARCHAR(100),
+    NgayGui NVARCHAR(25) NOT NULL,
+    PhanHoi NVARCHAR(MAX)
+);
+
+IF OBJECT_ID(N'KhenThuongKyLuat', N'U') IS NULL
+CREATE TABLE KhenThuongKyLuat(
+    MaKTKL INT IDENTITY(1,1) PRIMARY KEY,
+    MaNV NVARCHAR(50) NOT NULL REFERENCES NhanVien(MaNV) ON DELETE CASCADE ON UPDATE CASCADE,
+    Loai NVARCHAR(50) NOT NULL,
+    SoQuyetDinh NVARCHAR(100) NOT NULL,
+    NgayQuyetDinh NVARCHAR(20) NOT NULL,
+    HinhThuc NVARCHAR(150) NOT NULL,
+    SoTien FLOAT DEFAULT 0,
+    LyDo NVARCHAR(MAX) NOT NULL,
+    NguoiKy NVARCHAR(100)
+);
+
+IF OBJECT_ID(N'KhoaDaoTao', N'U') IS NULL
+CREATE TABLE KhoaDaoTao(
+    MaKDT INT IDENTITY(1,1) PRIMARY KEY,
+    TenKhoa NVARCHAR(255) NOT NULL,
+    GiangVien NVARCHAR(100),
+    ThoiGian NVARCHAR(100),
+    DiaDiem NVARCHAR(255),
+    SoLuong INT DEFAULT 30,
+    MoTa NVARCHAR(MAX),
+    TrangThai NVARCHAR(50) DEFAULT N'Sắp diễn ra'
+);
+
+IF OBJECT_ID(N'DangKyDaoTao', N'U') IS NULL
+CREATE TABLE DangKyDaoTao(
+    MaDK INT IDENTITY(1,1) PRIMARY KEY,
+    MaKDT INT NOT NULL REFERENCES KhoaDaoTao(MaKDT) ON DELETE CASCADE,
+    MaNV NVARCHAR(50) NOT NULL REFERENCES NhanVien(MaNV) ON DELETE CASCADE ON UPDATE CASCADE,
+    NgayDangKy NVARCHAR(25) NOT NULL,
+    TrangThai NVARCHAR(50) DEFAULT N'Đã đăng ký',
+    CONSTRAINT UQ_DangKy_KDT_NV UNIQUE(MaKDT, MaNV)
+);
+
+IF OBJECT_ID(N'DeXuatKhieuNai', N'U') IS NULL
+CREATE TABLE DeXuatKhieuNai(
+    MaDX INT IDENTITY(1,1) PRIMARY KEY,
+    MaNV NVARCHAR(50) NOT NULL REFERENCES NhanVien(MaNV) ON DELETE CASCADE ON UPDATE CASCADE,
+    TieuDe NVARCHAR(255) NOT NULL,
+    Loai NVARCHAR(100) NOT NULL,
+    NoiDung NVARCHAR(MAX) NOT NULL,
+    NgayGui NVARCHAR(25) NOT NULL,
+    TrangThai NVARCHAR(50) DEFAULT N'Chờ xử lý',
+    PhanHoi NVARCHAR(MAX),
+    NguoiXuLy NVARCHAR(100)
+);
+
+IF OBJECT_ID(N'TamUng', N'U') IS NULL
+CREATE TABLE TamUng(
+    MaTU INT IDENTITY(1,1) PRIMARY KEY,
+    MaNV NVARCHAR(50) NOT NULL REFERENCES NhanVien(MaNV) ON DELETE CASCADE ON UPDATE CASCADE,
+    ThangNam NVARCHAR(20) NOT NULL,
+    SoTien FLOAT NOT NULL,
+    LyDo NVARCHAR(MAX) NOT NULL,
+    NgayYeuCau NVARCHAR(25) NOT NULL,
+    TrangThai NVARCHAR(50) DEFAULT N'Chờ duyệt',
+    NguoiDuyet NVARCHAR(100)
+);
+
+IF OBJECT_ID(N'PhanCa', N'U') IS NULL
+CREATE TABLE PhanCa(
+    MaPC INT IDENTITY(1,1) PRIMARY KEY,
+    MaNV NVARCHAR(50) NOT NULL REFERENCES NhanVien(MaNV) ON DELETE CASCADE ON UPDATE CASCADE,
+    Ngay NVARCHAR(20) NOT NULL,
+    CaLam NVARCHAR(100) NOT NULL,
+    GhiChu NVARCHAR(255),
+    CONSTRAINT UQ_PhanCa_NV_Ngay UNIQUE(MaNV, Ngay)
+);
+
+IF OBJECT_ID(N'DeXuatNhanSu', N'U') IS NULL
+CREATE TABLE DeXuatNhanSu(
+    MaDXNS INT IDENTITY(1,1) PRIMARY KEY,
+    MaNV NVARCHAR(50) NOT NULL REFERENCES NhanVien(MaNV) ON DELETE CASCADE ON UPDATE CASCADE,
+    NguoiDeXuat NVARCHAR(50) NOT NULL,
+    LoaiDeXuat NVARCHAR(100) NOT NULL,
+    MucDeXuat NVARCHAR(255),
+    LyDo NVARCHAR(MAX) NOT NULL,
+    NgayDeXuat NVARCHAR(25) NOT NULL,
+    TrangThai NVARCHAR(50) DEFAULT N'Chờ HR phê duyệt',
+    YKienPheDuyet NVARCHAR(MAX),
+    NguoiPheDuyet NVARCHAR(100)
+);
+
+IF OBJECT_ID(N'YeuCauTuyenDung', N'U') IS NULL
+CREATE TABLE YeuCauTuyenDung(
+    MaYC INT IDENTITY(1,1) PRIMARY KEY,
+    MaPB NVARCHAR(50) NOT NULL REFERENCES PhongBan(MaPB) ON DELETE CASCADE ON UPDATE CASCADE,
+    ViTri NVARCHAR(100) NOT NULL,
+    SoLuong INT NOT NULL,
+    YeuCau NVARCHAR(MAX),
+    LyDo NVARCHAR(MAX),
+    HanTuyen NVARCHAR(20),
+    TrangThai NVARCHAR(50) DEFAULT N'Chờ duyệt'
+);
+
+IF OBJECT_ID(N'UngVien', N'U') IS NULL
+CREATE TABLE UngVien(
+    MaUV INT IDENTITY(1,1) PRIMARY KEY,
+    MaYC INT REFERENCES YeuCauTuyenDung(MaYC) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    HoTen NVARCHAR(255) NOT NULL,
+    Email NVARCHAR(100),
+    SDT NVARCHAR(20),
+    ViTriUngTuyen NVARCHAR(100) NOT NULL,
+    MaPB NVARCHAR(50) REFERENCES PhongBan(MaPB) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    NgayPV NVARCHAR(25),
+    NguoiPV NVARCHAR(100),
+    KetQua NVARCHAR(50) DEFAULT N'Chờ phỏng vấn',
+    NhanXet NVARCHAR(MAX)
+);
+
+IF OBJECT_ID(N'QuyTrinhNhanSu', N'U') IS NULL
+CREATE TABLE QuyTrinhNhanSu(
+    MaQT INT IDENTITY(1,1) PRIMARY KEY,
+    MaNV NVARCHAR(50) NOT NULL REFERENCES NhanVien(MaNV) ON DELETE CASCADE ON UPDATE CASCADE,
+    Loai NVARCHAR(50) NOT NULL,
+    NgayBD NVARCHAR(20) NOT NULL,
+    TrangThai NVARCHAR(50) DEFAULT N'Đang thực hiện',
+    CacBuocJson NVARCHAR(MAX),
+    GhiChu NVARCHAR(MAX)
+);
+
+IF OBJECT_ID(N'NhatKyHoatDong', N'U') IS NULL
+CREATE TABLE NhatKyHoatDong(
+    MaNK INT IDENTITY(1,1) PRIMARY KEY,
+    ThoiGian NVARCHAR(25) NOT NULL,
+    NguoiDung NVARCHAR(100) NOT NULL,
+    VaiTro NVARCHAR(50) NOT NULL,
+    HanhDong NVARCHAR(100) NOT NULL,
+    ChiTiet NVARCHAR(MAX),
+    IP NVARCHAR(50)
+);
+
+IF OBJECT_ID(N'ChotCong', N'U') IS NULL
+CREATE TABLE ChotCong(
+    MaCC_Thang INT IDENTITY(1,1) PRIMARY KEY,
+    ThangNam NVARCHAR(20) UNIQUE NOT NULL,
+    NgayChot NVARCHAR(25) NOT NULL,
+    NguoiChot NVARCHAR(100) NOT NULL,
+    TongSoCong FLOAT DEFAULT 0,
+    GhiChu NVARCHAR(MAX)
 );
 """
 
@@ -289,9 +472,25 @@ def init_db():
         db.commit()
 
         # Step 2.1: Schema migration for existing databases
-        db.execute("IF COL_LENGTH('NghiPhep', 'TrangThai') IS NULL ALTER TABLE NghiPhep ADD TrangThai NVARCHAR(50) DEFAULT N'Đã duyệt' WITH VALUES")
-        db.execute("IF COL_LENGTH('NghiPhep', 'LyDo') IS NULL ALTER TABLE NghiPhep ADD LyDo NVARCHAR(255)")
-        db.execute("UPDATE NghiPhep SET TrangThai=N'Đã duyệt' WHERE TrangThai IS NULL")
+        migrations = [
+            "IF COL_LENGTH('NghiPhep', 'TrangThai') IS NULL ALTER TABLE NghiPhep ADD TrangThai NVARCHAR(50) DEFAULT N'Đã duyệt' WITH VALUES",
+            "IF COL_LENGTH('NghiPhep', 'LyDo') IS NULL ALTER TABLE NghiPhep ADD LyDo NVARCHAR(255)",
+            "IF COL_LENGTH('NhanVien', 'TrinhDo') IS NULL ALTER TABLE NhanVien ADD TrinhDo NVARCHAR(100)",
+            "IF COL_LENGTH('NhanVien', 'ChuyenMon') IS NULL ALTER TABLE NhanVien ADD ChuyenMon NVARCHAR(100)",
+            "IF COL_LENGTH('NhanVien', 'LoaiNhanVien') IS NULL ALTER TABLE NhanVien ADD LoaiNhanVien NVARCHAR(50) DEFAULT N'Chính thức' WITH VALUES",
+            "IF COL_LENGTH('NhanVien', 'SoBHXH') IS NULL ALTER TABLE NhanVien ADD SoBHXH NVARCHAR(50)",
+            "IF COL_LENGTH('NhanVien', 'MaSoThue') IS NULL ALTER TABLE NhanVien ADD MaSoThue NVARCHAR(50)",
+            "IF COL_LENGTH('TangCa', 'TrangThai') IS NULL ALTER TABLE TangCa ADD TrangThai NVARCHAR(50) DEFAULT N'Đã duyệt' WITH VALUES",
+            "IF COL_LENGTH('TangCa', 'LyDo') IS NULL ALTER TABLE TangCa ADD LyDo NVARCHAR(255)",
+            "IF COL_LENGTH('TangCa', 'NguoiDuyet') IS NULL ALTER TABLE TangCa ADD NguoiDuyet NVARCHAR(100)",
+            "IF COL_LENGTH('DanhGia', 'DiemTuDanhGia') IS NULL ALTER TABLE DanhGia ADD DiemTuDanhGia FLOAT",
+            "IF COL_LENGTH('DanhGia', 'NhanXetCaNhan') IS NULL ALTER TABLE DanhGia ADD NhanXetCaNhan NVARCHAR(MAX)",
+            "IF COL_LENGTH('Luong', 'BaoHiem') IS NULL ALTER TABLE Luong ADD BaoHiem FLOAT DEFAULT 0 WITH VALUES",
+            "IF COL_LENGTH('Luong', 'ThueTNCN') IS NULL ALTER TABLE Luong ADD ThueTNCN FLOAT DEFAULT 0 WITH VALUES",
+            "IF COL_LENGTH('Luong', 'KhauTruKhac') IS NULL ALTER TABLE Luong ADD KhauTruKhac FLOAT DEFAULT 0 WITH VALUES",
+        ]
+        for mig in migrations:
+            db.execute(mig)
         db.commit()
 
         # Step 3: Seed initial data if TaiKhoanAdmin is empty
@@ -314,12 +513,12 @@ def init_db():
                 ('CV05', 'Lập trình viên', 'PB04')
             ])
 
-            db.executemany("INSERT INTO NhanVien VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [
-                ('NV001', 'Nguyễn Văn An', 'Hà Nội', '0901000001', '001090000001', 'an@vnm.vn', '1985-03-12', '2015-06-01', 'Nam', 'CV01'),
-                ('NV002', 'Trần Thị Bình', 'Hà Nội', '0901000002', '001090000002', 'binh@vnm.vn', '1992-07-21', '2019-02-15', 'Nữ', 'CV02'),
-                ('NV003', 'Lê Minh Cường', 'Hải Phòng', '0901000003', '001090000003', 'cuong@vnm.vn', '1994-11-02', '2020-09-01', 'Nam', 'CV03'),
-                ('NV004', 'Phạm Thu Dung', 'Bắc Ninh', '0901000004', '001090000004', 'dung@vnm.vn', '1996-01-30', '2021-04-12', 'Nữ', 'CV04'),
-                ('NV005', 'Hoàng Quốc Em', 'Nam Định', '0901000005', '001090000005', 'em@vnm.vn', '1998-05-18', '2022-08-08', 'Nam', 'CV05')
+            db.executemany("INSERT INTO NhanVien(MaNV, HoTen, DiaChi, SDT, CCCD, Email, NgaySinh, NgayVaoCT, GioiTinh, TrinhDo, ChuyenMon, LoaiNhanVien, SoBHXH, MaSoThue, MaCV) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [
+                ('NV001', 'Nguyễn Văn An', 'Hà Nội', '0901000001', '001090000001', 'an@vnm.vn', '1985-03-12', '2015-06-01', 'Nam', 'Thạc sĩ', 'Quản trị nhân sự', 'Chính thức', 'BH001859', 'MST001859', 'CV01'),
+                ('NV002', 'Trần Thị Bình', 'Hà Nội', '0901000002', '001090000002', 'binh@vnm.vn', '1992-07-21', '2019-02-15', 'Nữ', 'Đại học', 'Quản lý lao động', 'Chính thức', 'BH002927', 'MST002927', 'CV02'),
+                ('NV003', 'Lê Minh Cường', 'Hải Phòng', '0901000003', '001090000003', 'cuong@vnm.vn', '1994-11-02', '2020-09-01', 'Nam', 'Đại học', 'Kế toán doanh nghiệp', 'Chính thức', 'BH003941', 'MST003941', 'CV03'),
+                ('NV004', 'Phạm Thu Dung', 'Bắc Ninh', '0901000004', '001090000004', 'dung@vnm.vn', '1996-01-30', '2021-04-12', 'Nữ', 'Đại học', 'Quản trị kinh doanh', 'Chính thức', 'BH004961', 'MST004961', 'CV04'),
+                ('NV005', 'Hoàng Quốc Em', 'Nam Định', '0901000005', '001090000005', 'em@vnm.vn', '1998-05-18', '2022-08-08', 'Nam', 'Đại học', 'Kỹ thuật phần mềm', 'Chính thức', 'BH005985', 'MST005985', 'CV05')
             ])
 
             db.executemany("INSERT INTO TaiKhoan(TenDN, MatKhau, MaNV, LoaiTK) VALUES(?, ?, ?, ?)",
@@ -330,13 +529,15 @@ def init_db():
             day_prefix = date.today().strftime('%Y-%m-')
 
             for i in range(1, 6):
+                base_sal = 12000000 + i * 2000000
+                bh = base_sal * 0.105
                 db.execute(
-                    "INSERT INTO Luong(MaNV, ThangNam, LuongCung, LuongThuong, LuongUngTruoc, PhuCap) VALUES(?, ?, ?, ?, ?, ?)",
-                    (f'NV00{i}', current_month, 12000000 + i * 2000000, 1000000, 0, 500000)
+                    "INSERT INTO Luong(MaNV, ThangNam, LuongCung, LuongThuong, LuongUngTruoc, PhuCap, BaoHiem, ThueTNCN, KhauTruKhac) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (f'NV00{i}', current_month, base_sal, 1000000, 0, 500000, bh, 200000, 0)
                 )
 
             db.execute("INSERT INTO NghiPhep(MaNV, NgayBD, NgayKT, TrangThai, LyDo) VALUES(?, ?, ?, N'Đã duyệt', N'Việc gia đình')", ('NV003', day_prefix + '03', day_prefix + '04'))
-            db.execute("INSERT INTO TangCa(MaNV, SoGio, Ngay, Loai) VALUES(?, ?, ?, ?)", ('NV005', 3, day_prefix + '05', 'Ngày thường'))
+            db.execute("INSERT INTO TangCa(MaNV, SoGio, Ngay, Loai, TrangThai, LyDo, NguoiDuyet) VALUES(?, ?, ?, ?, N'Đã duyệt', N'Fix lỗi hệ thống', N'Nguyễn Văn An')", ('NV005', 3, day_prefix + '05', 'Ngày thường'))
 
             db.executemany(
                 "INSERT INTO HopDong(MaHD, MaNV, LoaiHD, NgayBD, NgayKT, LuongCoBan, TrangThai, GhiChu) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
@@ -366,47 +567,64 @@ def init_db():
                     (mnv_c, d_c, in_c, out_c, st_c, nt_c)
                 )
 
-        dg_count = db.execute("SELECT COUNT(*) FROM DanhGia").fetchone()[0]
-        if dg_count == 0:
-            current_month = date.today().strftime('%Y-%m')
-            sample_dg = [
-                ('NV001', current_month, 95.0, 'Xuất sắc', 'Hoàn thành xuất sắc nhiệm vụ quản lý nhân sự', 'Ban Giám Đốc'),
-                ('NV002', current_month, 88.0, 'Tốt', 'Tuyển dụng đạt KPI, tinh thần trách nhiệm cao', 'Nguyễn Văn An'),
-                ('NV003', current_month, 85.0, 'Tốt', 'Quyết toán sổ sách đúng hạn, chính xác', 'Nguyễn Văn An'),
-                ('NV004', current_month, 78.0, 'Khá', 'Doanh số đạt 90% chỉ tiêu', 'Nguyễn Văn An'),
-                ('NV005', current_month, 90.0, 'Xuất sắc', 'Phát triển module phần mềm tốt, tiến độ nhanh', 'Nguyễn Văn An')
+        # Seed training courses
+        kdt_count = db.execute("SELECT COUNT(*) FROM KhoaDaoTao").fetchone()[0]
+        if kdt_count == 0:
+            sample_kdt = [
+                ('Quản trị hiệu suất và thiết lập mục tiêu OKR', 'TS. Trần Minh Khoa', '15/11/2026 - 18/11/2026', 'Phòng Hội nghị A', 35, 'Nâng cao kỹ năng thiết lập mục tiêu và đo lường kết quả công việc then chốt.', 'Sắp diễn ra'),
+                ('Phát triển ứng dụng Web Hiện đại & An toàn thông tin', 'ThS. Lê Hoàng Long', '20/11/2026 - 25/11/2026', 'Phòng Lab Kỹ thuật', 25, 'Kiến trúc bảo mật, tối ưu hóa cơ sở dữ liệu và bảo mật ứng dụng.', 'Sắp diễn ra'),
+                ('Văn hóa doanh nghiệp & Kỹ năng giao tiếp chuyên nghiệp', 'ThS. Nguyễn Lan Hương', '05/11/2026 - 06/11/2026', 'Hội trường Tầng 3', 50, 'Xây dựng môi trường làm việc cởi mở, chuyên nghiệp và gắn kết đội ngũ.', 'Đang diễn ra')
             ]
-            for mnv_d, m_d, kpi_d, xl_d, nx_d, dg_d in sample_dg:
+            for tk, gv, tg, dd, sl, mt, st in sample_kdt:
                 db.execute(
-                    "INSERT INTO DanhGia(MaNV, ThangNam, DiemKPI, XepLoai, NhanXet, NguoiDanhGia) VALUES(?, ?, ?, ?, ?, ?)",
-                    (mnv_d, m_d, kpi_d, xl_d, nx_d, dg_d)
+                    "INSERT INTO KhoaDaoTao(TenKhoa, GiangVien, ThoiGian, DiaDiem, SoLuong, MoTa, TrangThai) VALUES(?, ?, ?, ?, ?, ?, ?)",
+                    (tk, gv, tg, dd, sl, mt, st)
                 )
 
-        tb_count = db.execute("SELECT COUNT(*) FROM ThongBao").fetchone()[0]
-        if tb_count == 0:
-            today_time = date.today().strftime('%Y-%m-%d 09:00')
-            db.execute(
-                "INSERT INTO ThongBao(TieuDe, NoiDung, NgayGui, NguoiGui, PhamVi, MaPB) VALUES(?, ?, ?, ?, ?, ?)",
-                (
-                    'Thông báo về lịch nghỉ lễ và kế hoạch công tác',
-                    'Kính gửi toàn thể cán bộ nhân viên, đề nghị các bộ phận hoàn thành báo cáo tháng và sắp xếp lịch nghỉ lễ đúng quy định.',
-                    today_time,
-                    'Phòng Nhân sự',
-                    'Toàn công ty',
-                    None
+        # Seed sample documents/certificates
+        tl_count = db.execute("SELECT COUNT(*) FROM TaiLieuNhanVien").fetchone()[0]
+        if tl_count == 0:
+            sample_tl = [
+                ('NV002', 'Bằng Cử nhân Quản trị Nhân lực', 'Bằng đại học', '2014-06-20', 'Đại học Kinh tế Quốc dân', None, '2026-10-01 09:00', 'Bằng tốt nghiệp loại Giỏi'),
+                ('NV002', 'Chứng chỉ Tiếng Anh TOEIC 850', 'Chứng chỉ', '2023-04-10', 'IIG Vietnam', None, '2026-10-01 09:05', 'Hiệu lực 2 năm'),
+                ('NV005', 'Bằng Kỹ sư Công nghệ Thông tin', 'Bằng đại học', '2020-07-15', 'Đại học Bách Khoa Hà Nội', None, '2026-10-02 10:00', 'Bằng tốt nghiệp loại Xuất sắc')
+            ]
+            for mnv_t, ten_t, loai_t, nc_t, noic_t, tep_t, nt_t, gc_t in sample_tl:
+                db.execute(
+                    "INSERT INTO TaiLieuNhanVien(MaNV, TenTaiLieu, Loai, NgayCap, NoiCap, TepDinhKem, NgayTai, GhiChu) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+                    (mnv_t, ten_t, loai_t, nc_t, noic_t, tep_t, nt_t, gc_t)
                 )
-            )
+
+        # Seed sample rewards & discipline
+        kt_count = db.execute("SELECT COUNT(*) FROM KhenThuongKyLuat").fetchone()[0]
+        if kt_count == 0:
             db.execute(
-                "INSERT INTO ThongBao(TieuDe, NoiDung, NgayGui, NguoiGui, PhamVi, MaPB) VALUES(?, ?, ?, ?, ?, ?)",
-                (
-                    'Kế hoạch triển khai dự án quý mới phòng Kỹ thuật',
-                    'Các thành viên phòng kỹ thuật chuẩn bị tài liệu họp kickoff dự án mới vào 9h sáng thứ Hai.',
-                    today_time,
-                    'Trưởng phòng Kỹ thuật',
-                    'Theo phòng ban',
-                    'PB04'
-                )
+                "INSERT INTO KhenThuongKyLuat(MaNV, Loai, SoQuyetDinh, NgayQuyetDinh, HinhThuc, SoTien, LyDo, NguoiKy) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+                ('NV002', 'Khen thưởng', 'QĐ-KT/2026-08', '2026-08-15', 'Giấy khen và tiền thưởng', 2000000, 'Hoàn thành xuất sắc kế hoạch tuyển dụng nhân sự quý 2/2026', 'Ban Giám Đốc')
             )
+
+        # Seed sample recruitment
+        yc_count = db.execute("SELECT COUNT(*) FROM YeuCauTuyenDung").fetchone()[0]
+        if yc_count == 0:
+            db.execute(
+                "INSERT INTO YeuCauTuyenDung(MaPB, ViTri, SoLuong, YeuCau, LyDo, HanTuyen, TrangThai) VALUES(?, ?, ?, ?, ?, ?, ?)",
+                ('PB04', 'Kỹ sư Lập trình Fullstack', 2, 'Kinh nghiệm 2 năm Python/Flask, React, SQL Server.', 'Mở rộng dự án ERP', '2026-12-01', 'Đang tuyển')
+            )
+            y_id = db.execute("SELECT @@IDENTITY").fetchone()[0] if PYODBC_AVAILABLE else 1
+            db.execute(
+                "INSERT INTO UngVien(MaYC, HoTen, Email, SDT, ViTriUngTuyen, MaPB, NgayPV, NguoiPV, KetQua, NhanXet) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (y_id, 'Vũ Đình Mạnh', 'manh.vu@gmail.com', '0912345678', 'Kỹ sư Lập trình Fullstack', 'PB04', '2026-11-05 14:00', 'Nguyễn Văn An', 'Chờ phỏng vấn', 'Hồ sơ ứng viên tiềm năng')
+            )
+
+        # Seed sample shift assignments
+        pc_count = db.execute("SELECT COUNT(*) FROM PhanCa").fetchone()[0]
+        if pc_count == 0:
+            today_str = date.today().strftime('%Y-%m-%d')
+            for i in range(1, 6):
+                db.execute(
+                    "INSERT INTO PhanCa(MaNV, Ngay, CaLam, GhiChu) VALUES(?, ?, ?, ?)",
+                    (f'NV00{i}', today_str, 'Ca hành chính (08:00 - 17:30)', 'Ca làm việc tiêu chuẩn')
+                )
 
         db.commit()
         db.close()

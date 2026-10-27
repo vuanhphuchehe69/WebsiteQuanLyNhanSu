@@ -10,6 +10,18 @@
                 Số liệu thời gian thực và các chức năng thao tác nhanh của hệ thống quản lý nhân sự.
             </p>
         </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <a class="btn" href="{{ url_for('main.manager_approvals') }}">
+                {{ icon('check-square') }}
+                Trung tâm phê duyệt
+            </a>
+            {% if role == 'Admin' %}
+                <a class="btn g" href="{{ url_for('main.payroll_calc_view') }}">
+                    {{ icon('dollar-sign') }}
+                    Tính bảng lương tự động
+                </a>
+            {% endif %}
+        </div>
     </div>
     
     <div class="grid">
@@ -40,6 +52,32 @@
         </p>
 
         <div class="action-grid">
+            <a class="action-card" href="{{ url_for('main.manager_approvals') }}">
+                <div class="ac-icon theme-emerald">
+                    {{ icon('check-square') }}
+                </div>
+                <div class="ac-body">
+                    <div class="ac-title">
+                        <span>Trung tâm phê duyệt</span>
+                        <span class="ac-arrow">→</span>
+                    </div>
+                    <div class="ac-desc">Duyệt nghỉ phép, OT, giải trình công & tạm ứng</div>
+                </div>
+            </a>
+
+            <a class="action-card" href="{{ url_for('main.manager_proposals') }}">
+                <div class="ac-icon theme-purple">
+                    {{ icon('layers') }}
+                </div>
+                <div class="ac-body">
+                    <div class="ac-title">
+                        <span>Đề xuất nhân sự</span>
+                        <span class="ac-arrow">→</span>
+                    </div>
+                    <div class="ac-desc">Tăng lương, thăng chức, điều động, khen thưởng</div>
+                </div>
+            </a>
+
             <a class="action-card" href="{{ url_for('mnew', mod='nhanvien') }}">
                 <div class="ac-icon theme-blue">
                     {{ icon('users') }}
@@ -105,19 +143,6 @@
                 </div>
             </a>
 
-            <a class="action-card" href="{{ url_for('mnew', mod='luong') }}">
-                <div class="ac-icon theme-rose">
-                    {{ icon('wallet') }}
-                </div>
-                <div class="ac-body">
-                    <div class="ac-title">
-                        <span>Thêm bảng lương</span>
-                        <span class="ac-arrow">→</span>
-                    </div>
-                    <div class="ac-desc">Tính toán lương, phụ cấp và thực lĩnh</div>
-                </div>
-            </a>
-
             <a class="action-card" href="{{ url_for('mnew', mod='danhgia') }}">
                 <div class="ac-icon theme-cyan">
                     {{ icon('award') }}
@@ -131,16 +156,29 @@
                 </div>
             </a>
 
-            <a class="action-card" href="{{ url_for('mnew', mod='thongbao') }}">
-                <div class="ac-icon theme-blue">
-                    {{ icon('send') }}
+            <a class="action-card" href="{{ url_for('main.training_view') }}">
+                <div class="ac-icon theme-rose">
+                    {{ icon('book-open') }}
                 </div>
                 <div class="ac-body">
                     <div class="ac-title">
-                        <span>Đăng thông báo</span>
+                        <span>Khóa đào tạo</span>
                         <span class="ac-arrow">→</span>
                     </div>
-                    <div class="ac-desc">Gửi thông báo tới nhân viên phòng ban</div>
+                    <div class="ac-desc">Xem chương trình học & đăng ký đào tạo</div>
+                </div>
+            </a>
+
+            <a class="action-card" href="{{ url_for('main.feedback_view') }}">
+                <div class="ac-icon theme-blue">
+                    {{ icon('message-square') }}
+                </div>
+                <div class="ac-body">
+                    <div class="ac-title">
+                        <span>Đề xuất & Khiếu nại</span>
+                        <span class="ac-arrow">→</span>
+                    </div>
+                    <div class="ac-desc">Hộp thư đóng góp ý kiến & phản ánh</div>
                 </div>
             </a>
 
@@ -158,8 +196,47 @@
             </a>
 
             {% if role == 'Admin' %}
-                <a class="action-card" href="{{ url_for('mnew', mod='taikhoan') }}">
+                <a class="action-card" href="{{ url_for('main.payroll_calc_view') }}">
+                    <div class="ac-icon theme-rose">
+                        {{ icon('dollar-sign') }}
+                    </div>
+                    <div class="ac-body">
+                        <div class="ac-title">
+                            <span>Tính bảng lương tự động</span>
+                            <span class="ac-arrow">→</span>
+                        </div>
+                        <div class="ac-desc">Quét công, OT, bảo hiểm & tính lương</div>
+                    </div>
+                </a>
+
+                <a class="action-card" href="{{ url_for('main.analytics_view') }}">
+                    <div class="ac-icon theme-cyan">
+                        {{ icon('bar-chart-2') }}
+                    </div>
+                    <div class="ac-body">
+                        <div class="ac-title">
+                            <span>Thống kê chi phí lương</span>
+                            <span class="ac-arrow">→</span>
+                        </div>
+                        <div class="ac-desc">Phân tích biến động & ngân sách theo PB</div>
+                    </div>
+                </a>
+
+                <a class="action-card" href="{{ url_for('main.audit_log_view') }}">
                     <div class="ac-icon theme-indigo">
+                        {{ icon('activity') }}
+                    </div>
+                    <div class="ac-body">
+                        <div class="ac-title">
+                            <span>Nhật ký hoạt động</span>
+                            <span class="ac-arrow">→</span>
+                        </div>
+                        <div class="ac-desc">Theo dõi audit log & bảo mật hệ thống</div>
+                    </div>
+                </a>
+
+                <a class="action-card" href="{{ url_for('mnew', mod='taikhoan') }}">
+                    <div class="ac-icon theme-slate">
                         {{ icon('key') }}
                     </div>
                     <div class="ac-body">

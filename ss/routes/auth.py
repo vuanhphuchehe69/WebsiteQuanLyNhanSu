@@ -4,7 +4,7 @@ from flask import Blueprint, request, session, redirect, url_for, flash, render_
 from werkzeug.security import generate_password_hash, check_password_hash
 from config import NV, QL, AD
 from database import get_db
-from utils import login_required
+from utils import login_required, log_activity
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -45,6 +45,7 @@ def login():
                 emp = db_conn.execute('SELECT HoTen FROM NhanVien WHERE MaNV=?', (row['MaNV'],)).fetchone()
                 session['name'] = emp['HoTen'] if emp else user
 
+            log_activity(db_conn, 'Đăng nhập hệ thống', f'Tài khoản: {user} ({role})')
             return redirect(url_for('main.me') if role == NV else url_for('main.dash'))
 
         flash('Sai tên đăng nhập, mật khẩu hoặc loại tài khoản.', 'err')
@@ -55,6 +56,8 @@ def login():
 @login_required
 def logout():
     """Log out user and clear current session."""
+    db_conn = get_db()
+    log_activity(db_conn, 'Đăng xuất hệ thống', f"Người dùng: {session.get('name')}")
     session.clear()
     return redirect(url_for('auth.login'))
 
@@ -90,8 +93,8 @@ def change_pw():
                 (new, session['uid'])
             )
             db_conn.commit()
+            log_activity(db_conn, 'Đổi mật khẩu', f"Tài khoản ID: {session['uid']}")
             flash('Đổi mật khẩu thành công.', 'ok')
             return redirect(url_for('auth.change_pw'))
 
     return render_template('password.html')
-

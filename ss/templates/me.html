@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% block body %}
+    <!-- Hero Profile -->
     <div class="prof">
         <span class="av lg">
             {{ emp.HoTen|ini }}
@@ -16,7 +17,7 @@
                     {{ icon('user') }} Mã NV: <b>{{ emp.MaNV }}</b>
                 </span>
                 <span class="tag ok" style="background:rgba(16,185,129,0.2);color:#34d399">
-                    ● Đang làm việc
+                    ● {{ emp.LoaiNhanVien or 'Chính thức' }}
                 </span>
             </p>
         </div>
@@ -28,6 +29,54 @@
         </div>
     </div>
 
+    <!-- Chấm công trực tuyến thời gian thực (Check-in / Check-out) -->
+    <div class="card" style="border: 2px solid #bfdbfe; background: linear-gradient(to right, #ffffff, #eff6ff)">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+            <div style="display:flex;align-items:center;gap:14px">
+                <div style="width:48px;height:48px;border-radius:12px;background:var(--brand);color:#fff;display:grid;place-items:center">
+                    {{ icon('clock') }}
+                </div>
+                <div>
+                    <h3 style="margin:0 0 2px;font-size:16px">
+                        Chấm công hôm nay ({{ today_str }})
+                    </h3>
+                    <div style="font-size:13px;color:var(--mut)">
+                        {% if today_cc %}
+                            Giờ vào: <b>{{ today_cc.GioVao or '--:--' }}</b> • Giờ ra: <b>{{ today_cc.GioRa or '--:--' }}</b> • Trạng thái: <span class="tag {{ TONE.get(today_cc.TrangThai, 'ok') }}">{{ today_cc.TrangThai }}</span>
+                        {% else %}
+                            Hôm nay bạn chưa ghi nhận chấm công vào làm.
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div style="display:flex;gap:10px">
+                {% if not today_cc or not today_cc.GioVao %}
+                    <form method="post" action="{{ url_for('main.checkin') }}">
+                        <input type="hidden" name="_csrf" value="{{ csrf }}">
+                        <button class="btn" style="padding:9px 18px;font-size:13.5px">
+                            {{ icon('check-square') }} Check-in vào làm
+                        </button>
+                    </form>
+                {% elif not today_cc.GioRa %}
+                    <form method="post" action="{{ url_for('main.checkout') }}">
+                        <input type="hidden" name="_csrf" value="{{ csrf }}">
+                        <button class="btn g" style="padding:9px 18px;font-size:13.5px;color:var(--brand);border-color:var(--brand)">
+                            {{ icon('log-in') }} Check-out ra về
+                        </button>
+                    </form>
+                {% else %}
+                    <button class="btn g" style="cursor:default;color:var(--ok);border-color:#a7f3d0" disabled>
+                        {{ icon('check') }} Đã hoàn thành chấm công hôm nay
+                    </button>
+                {% endif %}
+                <a class="btn g" href="{{ url_for('main.explain_attendance') }}" title="Gửi giải trình trong trường hợp quên quẹt thẻ hoặc máy lỗi">
+                    {{ icon('activity') }} Giải trình công
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thống kê tổng hợp -->
     <div class="sum">
         <div>
             <b>
@@ -49,13 +98,13 @@
         </div>
         <div>
             <b>
-                {{ fmt(T|sum(attribute='SoGio')) }} giờ
+                {{ fmt(T|selectattr('TrangThai','equalto','Đã duyệt')|sum(attribute='SoGio')) }} giờ
             </b>
-            <span>{{ icon('clock') }} Tổng giờ tăng ca</span>
+            <span>{{ icon('clock') }} Tăng ca (đã duyệt)</span>
         </div>
     </div>
 
-    <!-- Thông tin công việc -->
+    <!-- Thông tin công việc & Vị trí -->
     <div class="card">
         <h3>
             {{ icon('briefcase') }}
@@ -73,6 +122,10 @@
             <div>
                 <dt>Quản lý trực tiếp</dt>
                 <dd>{{ manager.HoTen if manager else 'Ban Giám Đốc' }}</dd>
+            </div>
+            <div>
+                <dt>Loại hình nhân viên</dt>
+                <dd><span class="tag ok">{{ emp.LoaiNhanVien or 'Chính thức' }}</span></dd>
             </div>
             <div>
                 <dt>Ngày vào công ty</dt>
@@ -109,41 +162,132 @@
         </dl>
     </div>
 
-    <!-- Thông tin cá nhân -->
+    <!-- Thông tin cá nhân, Học vấn, Bảo hiểm & Thuế -->
     <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
             <h3 style="margin:0">
                 {{ icon('user') }}
-                Thông tin cá nhân & Liên hệ
+                Thông tin cá nhân, Học vấn, Bảo hiểm & Thuế
             </h3>
             <a class="btn g" style="padding:4px 10px;font-size:12px" href="{{ url_for('main.edit_profile') }}">
-                {{ icon('edit') }} Chỉnh sửa
+                {{ icon('edit') }} Chỉnh sửa thông tin
             </a>
         </div>
         <dl>
-            {% for l,k in [('Giới tính','GioiTinh'),('Ngày sinh','NgaySinh'),('Địa chỉ','DiaChi'),('Số điện thoại','SDT'),('Căn cước công dân','CCCD'),('Email','Email')] %}
-                <div>
-                    <dt>
-                        {{ l }}
-                    </dt>
-                    <dd>
-                        {{ fmt(emp[k]) or '-' }}
-                    </dd>
-                </div>
-            {% endfor %}
+            <div>
+                <dt>Giới tính</dt>
+                <dd>{{ emp.GioiTinh or '-' }}</dd>
+            </div>
+            <div>
+                <dt>Ngày sinh</dt>
+                <dd>{{ emp.NgaySinh or '-' }}</dd>
+            </div>
+            <div>
+                <dt>Căn cước công dân (CCCD)</dt>
+                <dd><b>{{ emp.CCCD or '-' }}</b></dd>
+            </div>
+            <div>
+                <dt>Số điện thoại</dt>
+                <dd>{{ emp.SDT or '-' }}</dd>
+            </div>
+            <div>
+                <dt>Email</dt>
+                <dd>{{ emp.Email or '-' }}</dd>
+            </div>
+            <div>
+                <dt>Địa chỉ thường trú</dt>
+                <dd>{{ emp.DiaChi or '-' }}</dd>
+            </div>
+            <div>
+                <dt>Trình độ học vấn</dt>
+                <dd><b>{{ emp.TrinhDo or 'Đại học' }}</b></dd>
+            </div>
+            <div>
+                <dt>Chuyên môn đào tạo</dt>
+                <dd>{{ emp.ChuyenMon or '-' }}</dd>
+            </div>
+            <div>
+                <dt>Số sổ BHXH</dt>
+                <dd><code>{{ emp.SoBHXH or 'Chưa cập nhật' }}</code></dd>
+            </div>
+            <div>
+                <dt>Mã số thuế TNCN</dt>
+                <dd><code>{{ emp.MaSoThue or 'Chưa cập nhật' }}</code></dd>
+            </div>
         </dl>
     </div>
 
-    <!-- Lịch sử chấm công và ngày công -->
+    <!-- Bằng cấp & Giấy tờ cá nhân -->
+    <div class="card flush">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 14px">
+            <h3 style="margin:0">
+                {{ icon('file') }}
+                Bằng cấp & Giấy tờ lưu trữ ({{ TL|length }})
+            </h3>
+            <a class="btn" style="padding:5px 12px;font-size:12px" href="{{ url_for('main.upload_document') }}">
+                {{ icon('upload') }}
+                Tải lên bằng cấp / giấy tờ
+            </a>
+        </div>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tên văn bằng / Giấy tờ</th>
+                        <th>Phân loại</th>
+                        <th>Ngày cấp</th>
+                        <th>Nơi cấp</th>
+                        <th>Ngày tải lên</th>
+                        <th>Ghi chú</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in TL %}
+                        <tr>
+                            <td><b>{{ doc.TenTaiLieu }}</b></td>
+                            <td><span class="tag b">{{ doc.Loai }}</span></td>
+                            <td>{{ doc.NgayCap or '-' }}</td>
+                            <td>{{ doc.NoiCap or '-' }}</td>
+                            <td><small style="color:var(--mut)">{{ doc.NgayTai }}</small></td>
+                            <td>{{ doc.GhiChu or '-' }}</td>
+                            <td class="act">
+                                <form method="post" action="{{ url_for('main.delete_document', doc_id=doc.MaTL) }}" onsubmit="return confirm('Xóa văn bằng/giấy tờ này?')">
+                                    <input type="hidden" name="_csrf" value="{{ csrf }}">
+                                    <button class="ib d" title="Xóa">
+                                        {{ icon('trash') }}
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="empty">
+                                Chưa có văn bằng, chứng chỉ hoặc giấy tờ nào được lưu trữ.
+                                <a href="{{ url_for('main.upload_document') }}">Tải lên bằng cấp đầu tiên</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Lịch sử chấm công & Bảng công -->
     <div class="card flush">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 14px">
             <h3 style="margin:0">
                 {{ icon('check-square') }}
                 Lịch sử chấm công & Ngày công
             </h3>
-            <span class="tag ok">
-                Tổng ngày công tháng {{ current_month }}: <b>{{ working_days }}</b> ngày
-            </span>
+            <div style="display:flex;gap:8px;align-items:center">
+                <span class="tag ok">
+                    Tổng ngày công tháng {{ current_month }}: <b>{{ working_days }}</b> ngày
+                </span>
+                <a class="btn g" style="padding:5px 10px;font-size:12px" href="{{ url_for('main.explain_attendance') }}">
+                    {{ icon('activity') }} Giải trình công
+                </a>
+            </div>
         </div>
         <div class="tw">
             <table>
@@ -159,7 +303,7 @@
                 <tbody>
                     {% for r in CC %}
                         <tr>
-                            <td>{{ r.Ngay }}</td>
+                            <td><b>{{ r.Ngay }}</b></td>
                             <td>{{ r.GioVao or '-' }}</td>
                             <td>{{ r.GioRa or '-' }}</td>
                             <td>
@@ -181,20 +325,70 @@
         </div>
     </div>
 
-    <!-- Đánh giá hiệu suất & KPI -->
+    <!-- Lịch sử giải trình công -->
+    {% if GT %}
+        <div class="card flush">
+            <div style="padding:16px 20px 14px">
+                <h3 style="margin:0">
+                    {{ icon('activity') }}
+                    Lịch sử giải trình chấm công
+                </h3>
+            </div>
+            <div class="tw">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ngày giải trình</th>
+                            <th>Giờ vào đề xuất</th>
+                            <th>Giờ ra đề xuất</th>
+                            <th>Lý do</th>
+                            <th>Thời gian gửi</th>
+                            <th>Trạng thái</th>
+                            <th>Người duyệt</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for g in GT %}
+                            <tr>
+                                <td><b>{{ g.Ngay }}</b></td>
+                                <td>{{ g.GioVaoDeXuat }}</td>
+                                <td>{{ g.GioRaDeXuat }}</td>
+                                <td>{{ g.LyDo }}</td>
+                                <td><small style="color:var(--mut)">{{ g.NgayGui }}</small></td>
+                                <td>
+                                    <span class="tag {{ TONE.get(g.TrangThai, 'n') }}">
+                                        {{ g.TrangThai }}
+                                    </span>
+                                </td>
+                                <td>{{ g.NguoiDuyet or '-' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Đánh giá hiệu suất công việc & KPI -->
     <div class="card flush">
-        <div style="padding:16px 20px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 14px">
             <h3 style="margin:0">
                 {{ icon('award') }}
                 Đánh giá hiệu suất công việc & KPI
             </h3>
+            <a class="btn" style="padding:5px 12px;font-size:12px" href="{{ url_for('main.self_eval_kpi') }}">
+                {{ icon('edit') }}
+                Tự đánh giá KPI tháng này
+            </a>
         </div>
         <div class="tw">
             <table>
                 <thead>
                     <tr>
                         <th>Tháng</th>
-                        <th class="num">Điểm KPI</th>
+                        <th class="num">Điểm tự chấm</th>
+                        <th>Nhận xét cá nhân</th>
+                        <th class="num">Điểm chính thức</th>
                         <th>Xếp loại</th>
                         <th>Nhận xét của quản lý</th>
                         <th>Người đánh giá</th>
@@ -203,7 +397,9 @@
                 <tbody>
                     {% for r in DG %}
                         <tr>
-                            <td>{{ r.ThangNam }}</td>
+                            <td><b>{{ r.ThangNam }}</b></td>
+                            <td class="num"><b>{{ r.DiemTuDanhGia or '-' }}</b></td>
+                            <td style="max-width:200px;font-size:12.5px">{{ r.NhanXetCaNhan or '-' }}</td>
                             <td class="num"><b style="font-size:15px;color:var(--brand)">{{ r.DiemKPI }}</b></td>
                             <td>
                                 <span class="tag {{ TONE.get(r.XepLoai, 'n') }}">
@@ -215,7 +411,7 @@
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan="5" class="empty">
+                            <td colspan="7" class="empty">
                                 Chưa có kỳ đánh giá hiệu suất nào.
                             </td>
                         </tr>
@@ -224,6 +420,50 @@
             </table>
         </div>
     </div>
+
+    <!-- Khen thưởng & Kỷ luật của bản thân -->
+    {% if KT %}
+        <div class="card flush">
+            <div style="padding:16px 20px 14px">
+                <h3 style="margin:0">
+                    {{ icon('award') }}
+                    Quyết định Khen thưởng & Kỷ luật của bản thân
+                </h3>
+            </div>
+            <div class="tw">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Số quyết định</th>
+                            <th>Phân loại</th>
+                            <th>Ngày ban hành</th>
+                            <th>Hình thức</th>
+                            <th class="num">Số tiền</th>
+                            <th>Lý do & Căn cứ</th>
+                            <th>Người ký</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for k in KT %}
+                            <tr>
+                                <td><b>{{ k.SoQuyetDinh }}</b></td>
+                                <td>
+                                    <span class="tag {{ 'ok' if k.Loai == 'Khen thưởng' else 'bad' }}">
+                                        {{ k.Loai }}
+                                    </span>
+                                </td>
+                                <td>{{ k.NgayQuyetDinh }}</td>
+                                <td><b>{{ k.HinhThuc }}</b></td>
+                                <td class="num">{{ fmt(k.SoTien) }}</td>
+                                <td>{{ k.LyDo }}</td>
+                                <td>{{ k.NguoiKy }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
 
     <!-- Nghỉ phép -->
     <div class="card flush">
@@ -289,57 +529,17 @@
         </div>
     </div>
 
-    <!-- Lương -->
+    <!-- Tăng ca (OT) -->
     <div class="card flush">
-        <div style="padding:16px 20px 14px">
-            <h3 style="margin:0">
-                {{ icon('wallet') }}
-                Bảng lương chi tiết
-            </h3>
-        </div>
-        <div class="tw">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Tháng</th>
-                        <th class="num">Lương cứng</th>
-                        <th class="num">Thưởng</th>
-                        <th class="num">Phụ cấp</th>
-                        <th class="num">Ứng trước</th>
-                        <th class="num">Thực lĩnh</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for r in L %}
-                        <tr>
-                            <td>{{ r.ThangNam }}</td>
-                            <td class="num">{{ fmt(r.LuongCung) }}</td>
-                            <td class="num">{{ fmt(r.LuongThuong) }}</td>
-                            <td class="num">{{ fmt(r.PhuCap) }}</td>
-                            <td class="num">{{ fmt(r.LuongUngTruoc) }}</td>
-                            <td class="num">
-                                <b style="color:var(--brand);font-size:15px">{{ fmt(r.ThucLinh) }}</b>
-                            </td>
-                        </tr>
-                    {% else %}
-                        <tr>
-                            <td colspan="6" class="empty">
-                                Chưa có bảng lương.
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Tăng ca -->
-    <div class="card flush">
-        <div style="padding:16px 20px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 14px">
             <h3 style="margin:0">
                 {{ icon('clock') }}
-                Lịch sử tăng ca (OT)
+                Lịch sử làm thêm giờ (OT)
             </h3>
+            <a class="btn" style="padding:6px 14px;font-size:12.5px" href="{{ url_for('main.register_ot') }}">
+                {{ icon('plus') }}
+                Đăng ký làm thêm giờ
+            </a>
         </div>
         <div class="tw">
             <table>
@@ -347,7 +547,9 @@
                     <tr>
                         <th>Ngày</th>
                         <th class="num">Số giờ</th>
-                        <th>Loại</th>
+                        <th>Loại ngày</th>
+                        <th>Trạng thái</th>
+                        <th>Lý do</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -360,11 +562,69 @@
                                     {{ r.Loai }}
                                 </span>
                             </td>
+                            <td>
+                                <span class="tag {{ TONE.get(r.TrangThai,'n') }}">
+                                    {{ r.TrangThai }}
+                                </span>
+                            </td>
+                            <td>{{ r.LyDo or '-' }}</td>
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan="3" class="empty">
+                            <td colspan="5" class="empty">
                                 Chưa có lần tăng ca nào.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Phiếu lương & Khấu trừ bảo hiểm, thuế, tạm ứng -->
+    <div class="card flush">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 14px">
+            <h3 style="margin:0">
+                {{ icon('wallet') }}
+                Phiếu lương chi tiết & Khấu trừ
+            </h3>
+            <a class="btn g" style="padding:5px 12px;font-size:12px" href="{{ url_for('main.request_advance') }}">
+                {{ icon('dollar-sign') }}
+                Đề nghị tạm ứng lương
+            </a>
+        </div>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tháng</th>
+                        <th class="num">Lương cứng</th>
+                        <th class="num">Thưởng</th>
+                        <th class="num">Phụ cấp</th>
+                        <th class="num">BHXH (10.5%)</th>
+                        <th class="num">Thuế TNCN</th>
+                        <th class="num">Tạm ứng</th>
+                        <th class="num">Thực lĩnh</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in L %}
+                        <tr>
+                            <td><b>{{ r.ThangNam }}</b></td>
+                            <td class="num">{{ fmt(r.LuongCung) }}</td>
+                            <td class="num">{{ fmt(r.LuongThuong) }}</td>
+                            <td class="num">{{ fmt(r.PhuCap) }}</td>
+                            <td class="num" style="color:var(--mut)">{{ fmt(r.BaoHiem) }}</td>
+                            <td class="num" style="color:var(--mut)">{{ fmt(r.ThueTNCN) }}</td>
+                            <td class="num" style="color:var(--bad)">{{ fmt(r.LuongUngTruoc) }}</td>
+                            <td class="num">
+                                <b style="color:var(--brand);font-size:15px">{{ fmt(r.ThucLinh) }}</b>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="empty">
+                                Chưa có bảng lương.
                             </td>
                         </tr>
                     {% endfor %}

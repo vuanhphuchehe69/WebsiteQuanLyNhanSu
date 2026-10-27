@@ -130,3 +130,17 @@ def get_initial(name):
         return '?'
     return words[-1][:1].upper()
 
+def log_activity(db_conn, action, detail=''):
+    """Record audit log into NhatKyHoatDong table."""
+    try:
+        user = session.get('name') or session.get('user') or 'Hệ thống'
+        role = session.get('role') or 'Khách'
+        now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        ip = request.remote_addr if request else '127.0.0.1'
+        db_conn.execute(
+            "INSERT INTO NhatKyHoatDong(ThoiGian, NguoiDung, VaiTro, HanhDong, ChiTiet, IP) VALUES(?, ?, ?, ?, ?, ?)",
+            (now_str, str(user), str(role), str(action), str(detail), str(ip))
+        )
+        db_conn.commit()
+    except Exception:
+        pass

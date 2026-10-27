@@ -7,7 +7,7 @@
                 Cập nhật thông tin cá nhân
             </h1>
             <p>
-                Thay đổi số điện thoại, email, địa chỉ liên hệ và ngày sinh của bạn.
+                Thay đổi số điện thoại, email, địa chỉ liên hệ, ngày sinh, trình độ học vấn và chuyên môn của bạn.
             </p>
         </div>
     </div>
@@ -42,6 +42,21 @@
                         <option value="Nam" {{ 'selected' if emp.GioiTinh == 'Nam' }}>Nam</option>
                         <option value="Nữ" {{ 'selected' if emp.GioiTinh == 'Nữ' }}>Nữ</option>
                     </select>
+                </div>
+                <div>
+                    <label for="f_TrinhDo">Trình độ học vấn</label>
+                    <select id="f_TrinhDo" name="TrinhDo">
+                        <option value="">Chọn trình độ...</option>
+                        <option value="Đại học" {{ 'selected' if emp.TrinhDo == 'Đại học' }}>Đại học</option>
+                        <option value="Thạc sĩ" {{ 'selected' if emp.TrinhDo == 'Thạc sĩ' }}>Thạc sĩ</option>
+                        <option value="Tiến sĩ" {{ 'selected' if emp.TrinhDo == 'Tiến sĩ' }}>Tiến sĩ</option>
+                        <option value="Cao đẳng" {{ 'selected' if emp.TrinhDo == 'Cao đẳng' }}>Cao đẳng</option>
+                        <option value="Trung cấp" {{ 'selected' if emp.TrinhDo == 'Trung cấp' }}>Trung cấp</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="f_ChuyenMon">Chuyên môn đào tạo</label>
+                    <input id="f_ChuyenMon" name="ChuyenMon" type="text" value="{{ emp.ChuyenMon or '' }}" placeholder="Ví dụ: Công nghệ thông tin, Quản trị nhân sự...">
                 </div>
                 <div class="full">
                     <label for="f_DiaChi">Địa chỉ cư trú</label>

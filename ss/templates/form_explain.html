@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                {{ icon('activity') }}
+                Gửi giải trình công
+            </h1>
+            <p>
+                Giải trình trong trường hợp quên chấm công, máy chấm công bị lỗi hoặc đi công tác ngoài văn phòng.
+            </p>
+        </div>
+    </div>
+    <div class="card fm">
+        <form method="post">
+            <input type="hidden" name="_csrf" value="{{ csrf }}">
+            <div class="fg">
+                <div>
+                    <label for="f_Ngay">Ngày cần giải trình công <span class="req">*</span></label>
+                    <input id="f_Ngay" name="Ngay" type="date" required>
+                </div>
+                <div>
+                    <label for="f_GioVao">Giờ vào thực tế đề xuất</label>
+                    <input id="f_GioVao" name="GioVaoDeXuat" type="text" value="08:00" placeholder="HH:MM (ví dụ 08:00)">
+                </div>
+                <div>
+                    <label for="f_GioRa">Giờ ra thực tế đề xuất</label>
+                    <input id="f_GioRa" name="GioRaDeXuat" type="text" value="17:30" placeholder="HH:MM (ví dụ 17:30)">
+                </div>
+                <div class="full">
+                    <label for="f_LyDo">Lý do giải trình chi tiết <span class="req">*</span></label>
+                    <textarea id="f_LyDo" name="LyDo" rows="3" required placeholder="Ví dụ: Quên quẹt thẻ do đi tiếp khách hàng buổi sáng, máy chấm công cửa A bị mất kết nối..."></textarea>
+                </div>
+            </div>
+            <p style="margin:26px 0 0;display:flex;gap:12px;align-items:center">
+                <button class="btn">
+                    {{ icon('check') }}
+                    Gửi giải trình công
+                </button>
+                <a class="btn g" href="{{ url_for('main.me') }}">
+                    {{ icon('x') }}
+                    Hủy bỏ
+                </a>
+            </p>
+        </form>
+    </div>
+{% endblock %}

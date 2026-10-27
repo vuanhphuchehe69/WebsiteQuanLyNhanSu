@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                {{ icon('dollar-sign') }}
+                Chốt công & Tính bảng lương tự động
+            </h1>
+            <p>
+                Công cụ tự động hóa quét dữ liệu chấm công, số giờ tăng ca (OT), hợp đồng lao động, tự động tính bảo hiểm xã hội (10.5%), thuế TNCN và khấu trừ tạm ứng.
+            </p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <form method="get" style="display:inline-flex;gap:8px">
+                <input type="month" name="thang" value="{{ current_month }}" style="width:auto">
+                <button class="btn g">Xem tháng</button>
+            </form>
+            <form method="post" action="{{ url_for('main.attendance_close') }}" style="display:inline" onsubmit="return confirm('Chốt bảng công tháng {{ current_month }}? Sau khi chốt dữ liệu công sẽ được khóa.')">
+                <input type="hidden" name="_csrf" value="{{ csrf }}">
+                <input type="hidden" name="thang" value="{{ current_month }}">
+                <button class="btn g" style="border-color:#3b82f6;color:var(--brand)">
+                    {{ icon('lock') }}
+                    Chốt công tháng {{ current_month }}
+                </button>
+            </form>
+            <form method="post" action="{{ url_for('main.payroll_calc_view') }}" style="display:inline" onsubmit="return confirm('Tự động tính và cập nhật bảng lương tháng {{ current_month }} cho toàn bộ nhân viên?')">
+                <input type="hidden" name="_csrf" value="{{ csrf }}">
+                <input type="hidden" name="thang" value="{{ current_month }}">
+                <button class="btn">
+                    {{ icon('zap') }}
+                    Tính bảng lương tự động
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tóm tắt số liệu tháng -->
+    <div class="grid">
+        <div class="stat">
+            <div class="ic">
+                {{ icon('calendar') }}
+            </div>
+            <div>
+                <b>Tháng {{ current_month }}</b>
+                <span>
+                    {% if close_record %}
+                        <span class="tag ok">Đã chốt công ({{ close_record.NgayChot }})</span>
+                    {% else %}
+                        <span class="tag w">Chưa chốt công</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        <div class="stat">
+            <div class="ic">
+                {{ icon('users') }}
+            </div>
+            <div>
+                <b>{{ salaries|length }} nhân viên</b>
+                <span>Đã có bảng lương</span>
+            </div>
+        </div>
+        <div class="stat">
+            <div class="ic">
+                {{ icon('shield') }}
+            </div>
+            <div>
+                <b>{{ fmt(total_insurance) }} đ</b>
+                <span>Tổng BHXH/BHYT/BHTN</span>
+            </div>
+        </div>
+        <div class="stat">
+            <div class="ic">
+                {{ icon('wallet') }}
+            </div>
+            <div>
+                <b style="color:var(--brand)">{{ fmt(total_payout) }} đ</b>
+                <span>Tổng quỹ lương thực lĩnh</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bảng lương chi tiết -->
+    <div class="card flush">
+        <div style="padding:16px 20px 14px">
+            <h3 style="margin:0">
+                {{ icon('wallet') }}
+                Bảng thanh toán tiền lương tháng {{ current_month }}
+            </h3>
+        </div>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã NV</th>
+                        <th>Họ tên</th>
+                        <th>Phòng ban</th>
+                        <th class="num">Lương cứng</th>
+                        <th class="num">Thưởng & OT</th>
+                        <th class="num">Phụ cấp</th>
+                        <th class="num">Bảo hiểm (10.5%)</th>
+                        <th class="num">Thuế TNCN</th>
+                        <th class="num">Tạm ứng</th>
+                        <th class="num">Thực lĩnh</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in salaries %}
+                        <tr>
+                            <td><b>{{ s.MaNV }}</b></td>
+                            <td>
+                                <span class="av">{{ s.HoTen|ini }}</span>
+                                <strong>{{ s.HoTen }}</strong>
+                            </td>
+                            <td>{{ s.TenPB }}</td>
+                            <td class="num">{{ fmt(s.LuongCung) }}</td>
+                            <td class="num">{{ fmt(s.LuongThuong) }}</td>
+                            <td class="num">{{ fmt(s.PhuCap) }}</td>
+                            <td class="num" style="color:var(--mut)">{{ fmt(s.BaoHiem) }}</td>
+                            <td class="num" style="color:var(--mut)">{{ fmt(s.ThueTNCN) }}</td>
+                            <td class="num" style="color:var(--bad)">{{ fmt(s.LuongUngTruoc) }}</td>
+                            <td class="num">
+                                <b style="color:var(--brand);font-size:14px">{{ fmt(s.ThucLinh) }}</b>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="10" class="empty">
+                                Chưa có dữ liệu bảng lương tháng {{ current_month }}. Bấm nút "Tính bảng lương tự động" ở trên để hệ thống tự động tính toán.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

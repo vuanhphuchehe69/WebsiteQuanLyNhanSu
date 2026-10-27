@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                {{ icon('book-open') }}
+                Khóa đào tạo nội bộ
+            </h1>
+            <p>
+                Danh sách các chương trình đào tạo nâng cao chuyên môn, kỹ năng quản lý và văn hóa doanh nghiệp.
+            </p>
+        </div>
+        {% if role in ('QuanLy', 'Admin') %}
+            <a class="btn" href="{{ url_for('modules.mnew', mod='daotao') }}">
+                {{ icon('plus') }}
+                Tạo khóa đào tạo mới
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Danh sách khóa học đang mở -->
+    <div class="action-grid" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); margin-bottom:32px">
+        {% for c in courses %}
+            <div class="card" style="margin:0;display:flex;flex-direction:column;justify-content:space-between;padding:22px">
+                <div>
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:8px">
+                        <span class="tag {{ 'ok' if c.TrangThai == 'Đang diễn ra' else ('w' if c.TrangThai == 'Sắp diễn ra' else 'n') }}">
+                            {{ c.TrangThai }}
+                        </span>
+                        <small style="color:var(--mut);font-weight:600">
+                            {{ icon('users') }} {{ c.SoNguoiDK }}/{{ c.SoLuong }} người
+                        </small>
+                    </div>
+                    <h3 style="margin:0 0 8px;font-size:16px;color:var(--ink);line-height:1.4">
+                        {{ c.TenKhoa }}
+                    </h3>
+                    <p style="margin:0 0 14px;color:var(--mut);font-size:13px;line-height:1.5">
+                        {{ c.MoTa or 'Không có mô tả chi tiết.' }}
+                    </p>
+                    <div style="display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--mut);margin-bottom:18px">
+                        <div>{{ icon('user') }} Giảng viên: <b>{{ c.GiangVien }}</b></div>
+                        <div>{{ icon('calendar') }} Thời gian: <b>{{ c.ThoiGian }}</b></div>
+                        <div>{{ icon('map-pin') }} Địa điểm: <b>{{ c.DiaDiem }}</b></div>
+                    </div>
+                </div>
+                <div>
+                    {% if c.DaDangKy %}
+                        <button class="btn g" style="width:100%;cursor:default;color:var(--ok);border-color:#a7f3d0;background:var(--okbg)" disabled>
+                            {{ icon('check') }} Đã đăng ký tham gia
+                        </button>
+                    {% else %}
+                        <form method="post" action="{{ url_for('main.register_course', kid=c.MaKDT) }}">
+                            <input type="hidden" name="_csrf" value="{{ csrf }}">
+                            <button class="btn" style="width:100%">
+                                {{ icon('plus') }} Đăng ký khóa học này
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="card empty" style="grid-column:1/-1">
+                <div style="width:54px;height:54px;border-radius:50%;background:var(--tint);color:var(--brand);display:grid;place-items:center;margin:0 auto 12px">
+                    {{ icon('book-open') }}
+                </div>
+                <h3>Chưa có khóa đào tạo nào đang mở</h3>
+                <p>Vui lòng quay lại sau khi phòng Nhân sự cập nhật lịch đào tạo mới.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Khóa đào tạo tôi đã đăng ký -->
+    {% if my_courses %}
+        <div class="card flush">
+            <div style="padding:16px 20px 14px">
+                <h3 style="margin:0">
+                    {{ icon('check-square') }}
+                    Khóa đào tạo của tôi
+                </h3>
+            </div>
+            <div class="tw">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tên khóa đào tạo</th>
+                            <th>Giảng viên</th>
+                            <th>Thời gian</th>
+                            <th>Địa điểm</th>
+                            <th>Ngày đăng ký</th>
+                            <th>Trạng thái học viên</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mc in my_courses %}
+                            <tr>
+                                <td><b>{{ mc.TenKhoa }}</b></td>
+                                <td>{{ mc.GiangVien }}</td>
+                                <td>{{ mc.ThoiGian }}</td>
+                                <td>{{ mc.DiaDiem }}</td>
+                                <td>{{ mc.NgayDangKy }}</td>
+                                <td>
+                                    <span class="tag ok">
+                                        {{ mc.TrangThai }}
+                                    </span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

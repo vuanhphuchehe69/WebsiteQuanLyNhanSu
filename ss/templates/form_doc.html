@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                {{ icon('upload') }}
+                Tải lên bằng cấp & Giấy tờ cá nhân
+            </h1>
+            <p>
+                Lưu trữ hồ sơ học vấn, văn bằng chứng chỉ và giấy tờ pháp lý của nhân viên.
+            </p>
+        </div>
+    </div>
+    <div class="card fm">
+        <form method="post">
+            <input type="hidden" name="_csrf" value="{{ csrf }}">
+            <div class="fg">
+                <div class="full">
+                    <label for="f_TenTaiLieu">Tên văn bằng / Chứng chỉ / Giấy tờ <span class="req">*</span></label>
+                    <input id="f_TenTaiLieu" name="TenTaiLieu" required placeholder="Ví dụ: Bằng Cử nhân CNTT, Chứng chỉ IELTS 7.5, CCCD Scan...">
+                </div>
+                <div>
+                    <label for="f_Loai">Phân loại giấy tờ <span class="req">*</span></label>
+                    <select id="f_Loai" name="Loai" required>
+                        <option value="">Chọn loại bằng cấp / giấy tờ...</option>
+                        <option value="Bằng đại học">Bằng đại học</option>
+                        <option value="Bằng thạc sĩ">Bằng thạc sĩ</option>
+                        <option value="Bằng cao đẳng">Bằng cao đẳng</option>
+                        <option value="Chứng chỉ chuyên môn">Chứng chỉ chuyên môn</option>
+                        <option value="Giấy tờ cá nhân">Giấy tờ cá nhân</option>
+                        <option value="Hợp đồng lao động">Hợp đồng lao động</option>
+                        <option value="Giấy khám sức khỏe">Giấy khám sức khỏe</option>
+                        <option value="Giấy tờ khác">Giấy tờ khác</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="f_NgayCap">Ngày cấp</label>
+                    <input id="f_NgayCap" name="NgayCap" type="date">
+                </div>
+                <div class="full">
+                    <label for="f_NoiCap">Nơi cấp / Đơn vị đào tạo</label>
+                    <input id="f_NoiCap" name="NoiCap" placeholder="Ví dụ: Đại học Bách Khoa Hà Nội, British Council, Công an TP. Hà Nội...">
+                </div>
+                <div class="full">
+                    <label for="f_GhiChu">Ghi chú thêm</label>
+                    <textarea id="f_GhiChu" name="GhiChu" rows="3" placeholder="Ghi chú xếp loại tốt nghiệp, điểm số hoặc thông tin bổ sung..."></textarea>
+                </div>
+            </div>
+            <p style="margin:26px 0 0;display:flex;gap:12px;align-items:center">
+                <button class="btn">
+                    {{ icon('check') }}
+                    Lưu bằng cấp / giấy tờ
+                </button>
+                <a class="btn g" href="{{ url_for('main.me') }}">
+                    {{ icon('x') }}
+                    Hủy bỏ
+                </a>
+            </p>
+        </form>
+    </div>
+{% endblock %}

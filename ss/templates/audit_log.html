@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                {{ icon('activity') }}
+                Nhật ký Hoạt động Hệ thống (Audit Log)
+            </h1>
+            <p>
+                Ghi nhận chi tiết tất cả thao tác đăng nhập, check-in, phê duyệt đơn, cập nhật hồ sơ, tính lương và sao lưu dữ liệu.
+            </p>
+        </div>
+    </div>
+
+    <div class="card flush">
+        <div style="padding:16px 20px 14px">
+            <h3 style="margin:0">
+                {{ icon('list') }}
+                200 sự kiện gần nhất
+            </h3>
+        </div>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã</th>
+                        <th>Thời gian</th>
+                        <th>Người thực hiện</th>
+                        <th>Vai trò</th>
+                        <th>Hành động</th>
+                        <th>Nội dung chi tiết</th>
+                        <th>Địa chỉ IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for l in logs %}
+                        <tr>
+                            <td>#{{ l.MaNK }}</td>
+                            <td><small style="color:var(--mut)">{{ l.ThoiGian }}</small></td>
+                            <td>
+                                <strong>{{ l.NguoiDung }}</strong>
+                            </td>
+                            <td>
+                                <span class="tag {{ 'b' if l.VaiTro == 'Admin' else ('ok' if l.VaiTro == 'QuanLy' else 'n') }}">
+                                    {{ l.VaiTro }}
+                                </span>
+                            </td>
+                            <td>
+                                <b>{{ l.HanhDong }}</b>
+                            </td>
+                            <td style="max-width:340px;white-space:normal;font-size:13px">{{ l.ChiTiet or '-' }}</td>
+                            <td><code>{{ l.IP or '127.0.0.1' }}</code></td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="empty">
+                                Chưa có nhật ký hoạt động nào được ghi nhận.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

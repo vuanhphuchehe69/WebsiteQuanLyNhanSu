@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                {{ icon('layers') }}
+                Đề xuất Nhân sự & Phê duyệt Quyết định
+            </h1>
+            <p>
+                Quản lý gửi đề xuất tăng lương, thăng chức, điều động, khen thưởng, kỷ luật hoặc thôi việc; Phòng HR & Ban Giám Đốc xem xét và phê duyệt.
+            </p>
+        </div>
+    </div>
+
+    <!-- Form tạo đề xuất mới (dành cho Quản lý & Admin) -->
+    <div class="card fm" style="margin-bottom:28px">
+        <h3>
+            {{ icon('plus') }}
+            Lập phiếu đề xuất nhân sự mới
+        </h3>
+        <form method="post">
+            <input type="hidden" name="_csrf" value="{{ csrf }}">
+            <div class="fg">
+                <div>
+                    <label for="f_MaNV">Nhân viên được đề xuất <span class="req">*</span></label>
+                    <select id="f_MaNV" name="MaNV" required>
+                        <option value="">Chọn nhân viên...</option>
+                        {% for s in staff %}
+                            <option value="{{ s.MaNV }}">
+                                {{ s.MaNV }} - {{ s.HoTen }} ({{ s.TenCV }} - {{ s.TenPB }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="f_LoaiDeXuat">Loại đề xuất <span class="req">*</span></label>
+                    <select id="f_LoaiDeXuat" name="LoaiDeXuat" required>
+                        <option value="Tăng lương">Tăng lương</option>
+                        <option value="Thăng chức">Thăng chức / Bổ nhiệm</option>
+                        <option value="Khen thưởng">Khen thưởng thành tích</option>
+                        <option value="Kỷ luật">Kỷ luật vi phạm</option>
+                        <option value="Điều động phòng ban">Điều động phòng ban</option>
+                        <option value="Chấm dứt hợp đồng">Chấm dứt hợp đồng lao động</option>
+                    </select>
+                </div>
+                <div class="full">
+                    <label for="f_MucDeXuat">Mức đề xuất cụ thể</label>
+                    <input id="f_MucDeXuat" name="MucDeXuat" placeholder="Ví dụ: Lương mới 20.000.000 VNĐ, Chức vụ: Trưởng nhóm, Thưởng nóng 2.000.000 VNĐ...">
+                </div>
+                <div class="full">
+                    <label for="f_LyDo">Lý do & Căn cứ đề xuất <span class="req">*</span></label>
+                    <textarea id="f_LyDo" name="LyDo" rows="3" required placeholder="Nêu rõ thành tích, năng lực làm việc, hoặc lý do cần điều chuyển/xử lý..."></textarea>
+                </div>
+            </div>
+            <p style="margin:20px 0 0">
+                <button class="btn">
+                    {{ icon('send') }}
+                    Gửi đề xuất tới Ban Giám Đốc / Phòng HR
+                </button>
+            </p>
+        </form>
+    </div>
+
+    <!-- Danh sách đề xuất -->
+    <div class="card flush">
+        <div style="padding:16px 20px 14px">
+            <h3 style="margin:0">
+                {{ icon('list') }}
+                Danh sách đề xuất nhân sự
+            </h3>
+        </div>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã ĐX</th>
+                        <th>Nhân viên đối tượng</th>
+                        <th>Phòng ban</th>
+                        <th>Người đề xuất</th>
+                        <th>Loại đề xuất</th>
+                        <th>Mức đề xuất</th>
+                        <th>Thời gian</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in proposals %}
+                        <tr>
+                            <td><b>#{{ p.MaDXNS }}</b></td>
+                            <td>
+                                <span class="av">{{ p.HoTen|ini }}</span>
+                                <strong>{{ p.HoTen }}</strong> ({{ p.MaNV }})
+                            </td>
+                            <td>{{ p.TenPB }}</td>
+                            <td>{{ p.TenNguoiDeXuat or p.NguoiDeXuat }}</td>
+                            <td>
+                                <span class="tag {{ 'ok' if p.LoaiDeXuat in ('Tăng lương', 'Thăng chức', 'Khen thưởng') else 'w' }}">
+                                    {{ p.LoaiDeXuat }}
+                                </span>
+                            </td>
+                            <td><b>{{ p.MucDeXuat or '-' }}</b></td>
+                            <td>{{ p.NgayDeXuat }}</td>
+                            <td>
+                                <span class="tag {{ 'ok' if p.TrangThai == 'Đã phê duyệt' else ('bad' if p.TrangThai == 'Từ chối' else 'w') }}">
+                                    {{ p.TrangThai }}
+                                </span>
+                            </td>
+                            <td class="act">
+                                {% if role == 'Admin' and p.TrangThai == 'Chờ HR phê duyệt' %}
+                                    <form method="post" action="{{ url_for('main.admin_approve_proposal', pid=p.MaDXNS) }}" style="display:inline">
+                                        <input type="hidden" name="_csrf" value="{{ csrf }}">
+                                        <button class="btn" style="padding:4px 8px;font-size:11px;background:var(--ok);border-color:var(--ok)">
+                                            {{ icon('check') }} Phê duyệt
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{{ url_for('main.admin_reject_proposal', pid=p.MaDXNS) }}" style="display:inline" onsubmit="return confirm('Từ chối đề xuất này?')">
+                                        <input type="hidden" name="_csrf" value="{{ csrf }}">
+                                        <button class="btn g" style="padding:4px 8px;font-size:11px;color:var(--bad)">
+                                            {{ icon('x') }} Từ chối
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span style="font-size:12px;color:var(--mut)">{{ p.NguoiPheDuyet or '-' }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="9" class="empty">
+                                Chưa có đề xuất nhân sự nào.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

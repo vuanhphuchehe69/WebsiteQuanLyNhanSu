@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                {{ icon('check-square') }}
+                Trung tâm Phê duyệt Yêu cầu
+            </h1>
+            <p>
+                Khu vực dành cho cấp Quản lý và HR để phê duyệt đơn nghỉ phép, đăng ký làm thêm giờ (OT), giải trình chấm công và tạm ứng lương.
+            </p>
+        </div>
+    </div>
+
+    <!-- 1. Đơn nghỉ phép chờ duyệt -->
+    <div class="card flush">
+        <div style="padding:16px 20px 14px;display:flex;justify-content:space-between;align-items:center">
+            <h3 style="margin:0">
+                {{ icon('calendar') }}
+                Đơn nghỉ phép chờ duyệt ({{ leaves|length }})
+            </h3>
+            <span class="tag w">Chờ duyệt</span>
+        </div>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã NV</th>
+                        <th>Họ tên</th>
+                        <th>Phòng ban</th>
+                        <th>Từ ngày</th>
+                        <th>Đến ngày</th>
+                        <th class="num">Số ngày</th>
+                        <th>Lý do</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in leaves %}
+                        <tr>
+                            <td><b>{{ r.MaNV }}</b></td>
+                            <td>
+                                <span class="av">{{ r.HoTen|ini }}</span>
+                                <strong>{{ r.HoTen }}</strong>
+                            </td>
+                            <td>{{ r.TenPB }}</td>
+                            <td>{{ r.NgayBD }}</td>
+                            <td>{{ r.NgayKT }}</td>
+                            <td class="num"><b>{{ r.SoNgay }}</b></td>
+                            <td>{{ r.LyDo or '-' }}</td>
+                            <td class="act">
+                                <form method="post" action="{{ url_for('modules.approve_leave', lid=r.MaNP) }}" style="display:inline">
+                                    <input type="hidden" name="_csrf" value="{{ csrf }}">
+                                    <button class="btn" style="padding:4px 9px;font-size:11px;background:var(--ok);border-color:var(--ok)">
+                                        {{ icon('check') }} Duyệt
+                                    </button>
+                                </form>
+                                <form method="post" action="{{ url_for('modules.reject_leave', lid=r.MaNP) }}" style="display:inline" onsubmit="return confirm('Từ chối đơn này?')">
+                                    <input type="hidden" name="_csrf" value="{{ csrf }}">
+                                    <button class="btn g" style="padding:4px 9px;font-size:11px;color:var(--bad);border-color:var(--bad)">
+                                        {{ icon('x') }} Từ chối
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="empty">
+                                Không có đơn nghỉ phép nào đang chờ duyệt.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 2. Đăng ký làm thêm giờ (OT) chờ duyệt -->
+    <div class="card flush">
+        <div style="padding:16px 20px 14px;display:flex;justify-content:space-between;align-items:center">
+            <h3 style="margin:0">
+                {{ icon('clock') }}
+                Đăng ký làm thêm giờ (OT) chờ duyệt ({{ ots|length }})
+            </h3>
+            <span class="tag w">Chờ duyệt</span>
+        </div>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã NV</th>
+                        <th>Họ tên</th>
+                        <th>Phòng ban</th>
+                        <th>Ngày tăng ca</th>
+                        <th class="num">Số giờ</th>
+                        <th>Loại ngày</th>
+                        <th>Lý do làm thêm</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in ots %}
+                        <tr>
+                            <td><b>{{ r.MaNV }}</b></td>
+                            <td>
+                                <span class="av">{{ r.HoTen|ini }}</span>
+                                <strong>{{ r.HoTen }}</strong>
+                            </td>
+                            <td>{{ r.TenPB }}</td>
+                            <td>{{ r.Ngay }}</td>
+                            <td class="num"><b style="color:var(--brand)">{{ r.SoGio }}</b> giờ</td>
+                            <td>
+                                <span class="tag {{ TONE.get(r.Loai, 'n') }}">{{ r.Loai }}</span>
+                            </td>
+                            <td>{{ r.LyDo or '-' }}</td>
+                            <td class="act">
+                                <form method="post" action="{{ url_for('main.approve_ot', otid=r.MaTC) }}" style="display:inline">
+                                    <input type="hidden" name="_csrf" value="{{ csrf }}">
+                                    <button class="btn" style="padding:4px 9px;font-size:11px;background:var(--ok);border-color:var(--ok)">
+                                        {{ icon('check') }} Duyệt
+                                    </button>
+                                </form>
+                                <form method="post" action="{{ url_for('main.reject_ot', otid=r.MaTC) }}" style="display:inline" onsubmit="return confirm('Từ chối yêu cầu tăng ca này?')">
+                                    <input type="hidden" name="_csrf" value="{{ csrf }}">
+                                    <button class="btn g" style="padding:4px 9px;font-size:11px;color:var(--bad);border-color:var(--bad)">
+                                        {{ icon('x') }} Từ chối
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="empty">
+                                Không có đăng ký tăng ca nào đang chờ duyệt.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. Giải trình chấm công chờ duyệt -->
+    <div class="card flush">
+        <div style="padding:16px 20px 14px;display:flex;justify-content:space-between;align-items:center">
+            <h3 style="margin:0">
+                {{ icon('activity') }}
+                Đơn giải trình chấm công chờ duyệt ({{ explains|length }})
+            </h3>
+            <span class="tag w">Chờ duyệt</span>
+        </div>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã NV</th>
+                        <th>Họ tên</th>
+                        <th>Phòng ban</th>
+                        <th>Ngày giải trình</th>
+                        <th>Giờ vào đề xuất</th>
+                        <th>Giờ ra đề xuất</th>
+                        <th>Lý do giải trình</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in explains %}
+                        <tr>
+                            <td><b>{{ r.MaNV }}</b></td>
+                            <td>
+                                <span class="av">{{ r.HoTen|ini }}</span>
+                                <strong>{{ r.HoTen }}</strong>
+                            </td>
+                            <td>{{ r.TenPB }}</td>
+                            <td><b>{{ r.Ngay }}</b></td>
+                            <td>{{ r.GioVaoDeXuat or '-' }}</td>
+                            <td>{{ r.GioRaDeXuat or '-' }}</td>
+                            <td style="max-width:280px;white-space:normal">{{ r.LyDo }}</td>
+                            <td class="act">
+                                <form method="post" action="{{ url_for('main.approve_explain', gtid=r.MaGT) }}" style="display:inline">
+                                    <input type="hidden" name="_csrf" value="{{ csrf }}">
+                                    <button class="btn" style="padding:4px 9px;font-size:11px;background:var(--ok);border-color:var(--ok)">
+                                        {{ icon('check') }} Duyệt & Cập nhật công
+                                    </button>
+                                </form>
+                                <form method="post" action="{{ url_for('main.reject_explain', gtid=r.MaGT) }}" style="display:inline" onsubmit="return confirm('Từ chối giải trình này?')">
+                                    <input type="hidden" name="_csrf" value="{{ csrf }}">
+                                    <button class="btn g" style="padding:4px 9px;font-size:11px;color:var(--bad);border-color:var(--bad)">
+                                        {{ icon('x') }} Từ chối
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="empty">
+                                Không có đơn giải trình công nào đang chờ duyệt.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 4. Yêu cầu tạm ứng tiền lương chờ duyệt -->
+    <div class="card flush">
+        <div style="padding:16px 20px 14px;display:flex;justify-content:space-between;align-items:center">
+            <h3 style="margin:0">
+                {{ icon('dollar-sign') }}
+                Đơn tạm ứng tiền lương chờ duyệt ({{ advances|length }})
+            </h3>
+            <span class="tag w">Chờ duyệt</span>
+        </div>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã NV</th>
+                        <th>Họ tên</th>
+                        <th>Phòng ban</th>
+                        <th>Tháng lương</th>
+                        <th class="num">Số tiền đề nghị</th>
+                        <th>Lý do tạm ứng</th>
+                        <th>Thời gian gửi</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in advances %}
+                        <tr>
+                            <td><b>{{ r.MaNV }}</b></td>
+                            <td>
+                                <span class="av">{{ r.HoTen|ini }}</span>
+                                <strong>{{ r.HoTen }}</strong>
+                            </td>
+                            <td>{{ r.TenPB }}</td>
+                            <td>{{ r.ThangNam }}</td>
+                            <td class="num"><b style="color:var(--bad);font-size:14px">{{ fmt(r.SoTien) }}</b></td>
+                            <td>{{ r.LyDo }}</td>
+                            <td>{{ r.NgayYeuCau }}</td>
+                            <td class="act">
+                                <form method="post" action="{{ url_for('main.approve_advance', tuid=r.MaTU) }}" style="display:inline">
+                                    <input type="hidden" name="_csrf" value="{{ csrf }}">
+                                    <button class="btn" style="padding:4px 9px;font-size:11px;background:var(--ok);border-color:var(--ok)">
+                                        {{ icon('check') }} Phê duyệt
+                                    </button>
+                                </form>
+                                <form method="post" action="{{ url_for('main.reject_advance', tuid=r.MaTU) }}" style="display:inline" onsubmit="return confirm('Từ chối tạm ứng này?')">
+                                    <input type="hidden" name="_csrf" value="{{ csrf }}">
+                                    <button class="btn g" style="padding:4px 9px;font-size:11px;color:var(--bad);border-color:var(--bad)">
+                                        {{ icon('x') }} Từ chối
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="empty">
+                                Không có yêu cầu tạm ứng lương nào đang chờ duyệt.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

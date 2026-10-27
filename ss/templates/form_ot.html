@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                {{ icon('clock') }}
+                Đăng ký làm thêm giờ (OT)
+            </h1>
+            <p>
+                Đăng ký làm thêm giờ ngoài giờ tiêu chuẩn để quản lý phê duyệt và tính lương tăng ca.
+            </p>
+        </div>
+    </div>
+    <div class="card fm">
+        <form method="post">
+            <input type="hidden" name="_csrf" value="{{ csrf }}">
+            <div class="fg">
+                <div>
+                    <label for="f_Ngay">Ngày làm thêm giờ <span class="req">*</span></label>
+                    <input id="f_Ngay" name="Ngay" type="date" required>
+                </div>
+                <div>
+                    <label for="f_SoGio">Số giờ tăng ca (OT) <span class="req">*</span></label>
+                    <input id="f_SoGio" name="SoGio" type="number" step="0.5" min="0.5" max="24" required placeholder="Ví dụ: 2, 3.5...">
+                </div>
+                <div>
+                    <label for="f_Loai">Loại ngày tăng ca <span class="req">*</span></label>
+                    <select id="f_Loai" name="Loai" required>
+                        <option value="Ngày thường">Ngày thường (x1.5)</option>
+                        <option value="Cuối tuần">Cuối tuần (Thứ Bảy / Chủ Nhật) (x2.0)</option>
+                        <option value="Ngày lễ">Ngày lễ / Tết (x3.0)</option>
+                    </select>
+                </div>
+                <div class="full">
+                    <label for="f_LyDo">Lý do & Nội dung công việc làm thêm</label>
+                    <textarea id="f_LyDo" name="LyDo" rows="3" placeholder="Ví dụ: Fix lỗi hệ thống trước giờ golive, hoàn thành kiểm toán sổ sách tháng..."></textarea>
+                </div>
+            </div>
+            <p style="margin:26px 0 0;display:flex;gap:12px;align-items:center">
+                <button class="btn">
+                    {{ icon('check') }}
+                    Gửi đăng ký làm thêm giờ
+                </button>
+                <a class="btn g" href="{{ url_for('main.me') }}">
+                    {{ icon('x') }}
+                    Hủy bỏ
+                </a>
+            </p>
+        </form>
+    </div>
+{% endblock %}

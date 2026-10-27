@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                {{ icon('award') }}
+                Tự đánh giá hiệu suất KPI (Tháng {{ current_month }})
+            </h1>
+            <p>
+                Nhân viên tự chấm điểm và viết nhận xét kết quả công việc trước khi cấp quản lý đánh giá chính thức.
+            </p>
+        </div>
+    </div>
+    <div class="card fm">
+        <form method="post">
+            <input type="hidden" name="_csrf" value="{{ csrf }}">
+            <div class="fg">
+                <div>
+                    <label for="f_DiemTuDanhGia">Điểm tự chấm (Thang điểm 0 - 100) <span class="req">*</span></label>
+                    <input id="f_DiemTuDanhGia" name="DiemTuDanhGia" type="number" step="0.5" min="0" max="100" value="{{ existing.DiemTuDanhGia if existing and existing.DiemTuDanhGia is not none else 85 }}" required>
+                </div>
+                <div class="full">
+                    <label for="f_NhanXetCaNhan">Tự nhận xét & Đánh giá kết quả công việc</label>
+                    <textarea id="f_NhanXetCaNhan" name="NhanXetCaNhan" rows="4" placeholder="Nêu rõ các mục tiêu đã hoàn thành, tiến độ dự án, các sáng kiến đóng góp và những điểm cần cải thiện trong tháng...">{{ existing.NhanXetCaNhan if existing and existing.NhanXetCaNhan else '' }}</textarea>
+                </div>
+            </div>
+            <p style="margin:26px 0 0;display:flex;gap:12px;align-items:center">
+                <button class="btn">
+                    {{ icon('check') }}
+                    Lưu kết quả tự đánh giá
+                </button>
+                <a class="btn g" href="{{ url_for('main.me') }}">
+                    {{ icon('x') }}
+                    Hủy bỏ
+                </a>
+            </p>
+        </form>
+    </div>
+{% endblock %}

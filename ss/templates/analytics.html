@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                {{ icon('bar-chart-2') }}
+                Thống kê Biến động Nhân sự & Chi phí Lương
+            </h1>
+            <p>
+                Báo cáo tổng hợp cơ cấu nhân sự theo phòng ban, phân bổ giới tính, tổng quỹ lương và chi phí bảo hiểm doanh nghiệp.
+            </p>
+        </div>
+        <form style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <input type="month" name="thang" value="{{ current_month }}" style="width:auto">
+            <button class="btn">
+                {{ icon('search') }}
+                Xem báo cáo
+            </button>
+            <a class="btn g" href="{{ url_for('main.analytics_view', thang=current_month, export=1) }}">
+                {{ icon('download') }}
+                Xuất Excel/CSV
+            </a>
+        </form>
+    </div>
+
+    <!-- 1. Cơ cấu nhân sự theo phòng ban -->
+    <div class="card flush" style="margin-bottom:28px">
+        <div style="padding:16px 20px 14px">
+            <h3 style="margin:0">
+                {{ icon('users') }}
+                Cơ cấu nhân sự theo phòng ban
+            </h3>
+        </div>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Phòng ban</th>
+                        <th class="num">Tổng nhân sự</th>
+                        <th class="num">Nam</th>
+                        <th class="num">Nữ</th>
+                        <th>Tỷ trọng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set total_staff = dept_stats|sum(attribute='SoLuong') %}
+                    {% for d in dept_stats %}
+                        <tr>
+                            <td><b>{{ d.TenPB }}</b></td>
+                            <td class="num"><b style="font-size:15px;color:var(--brand)">{{ d.SoLuong }}</b></td>
+                            <td class="num">{{ d.Nam }}</td>
+                            <td class="num">{{ d.Nu }}</td>
+                            <td>
+                                {% set pct = (d.SoLuong / total_staff * 100) if total_staff > 0 else 0 %}
+                                <div style="display:flex;align-items:center;gap:10px">
+                                    <div style="flex:1;height:8px;background:#e2e8f0;border-radius:99px;overflow:hidden">
+                                        <div style="height:100%;width:{{ pct }}%;background:var(--brand);border-radius:99px"></div>
+                                    </div>
+                                    <small style="font-weight:700;color:var(--mut)">{{ "%.1f"|format(pct) }}%</small>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 2. Chi phí lương theo phòng ban -->
+    <div class="card flush">
+        <div style="padding:16px 20px 14px;display:flex;justify-content:space-between;align-items:center">
+            <h3 style="margin:0">
+                {{ icon('wallet') }}
+                Phân bổ chi phí quỹ lương tháng {{ current_month }}
+            </h3>
+            <span class="tag ok" style="font-size:13px">
+                Tổng quỹ lương: <b>{{ fmt(total_payroll) }} VNĐ</b>
+            </span>
+        </div>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Phòng ban</th>
+                        <th class="num">Lương cơ bản</th>
+                        <th class="num">Thưởng & Phụ cấp</th>
+                        <th class="num">Bảo hiểm trích nộp</th>
+                        <th class="num">Tổng thực chi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in payroll_dept %}
+                        <tr>
+                            <td><b>{{ p.TenPB }}</b></td>
+                            <td class="num">{{ fmt(p.TongLuongCung) }}</td>
+                            <td class="num">{{ fmt(p.TongThuongPhuCap) }}</td>
+                            <td class="num" style="color:var(--mut)">{{ fmt(p.TongBaoHiem) }}</td>
+                            <td class="num">
+                                <b style="color:var(--brand);font-size:15px">{{ fmt(p.TongChiPhi) }}</b>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="empty">
+                                Chưa có số liệu bảng lương tháng {{ current_month }}.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

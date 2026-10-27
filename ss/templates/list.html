@@ -129,6 +129,21 @@
                                             </button>
                                         </form>
                                     {% endif %}
+                                {% elif mod == 'tangca' %}
+                                    {% if r.TrangThai == 'Chờ duyệt' %}
+                                        <form method="post" action="{{ url_for('modules.approve_ot', tid=r[m.pk]) }}" style="display:inline">
+                                            <input type="hidden" name="_csrf" value="{{ csrf }}">
+                                            <button class="btn" style="padding:4px 9px;font-size:11px;background:var(--ok);border-color:var(--ok)" title="Duyệt tăng ca">
+                                                {{ icon('check') }} Duyệt
+                                            </button>
+                                        </form>
+                                        <form method="post" action="{{ url_for('modules.reject_ot', tid=r[m.pk]) }}" style="display:inline" onsubmit="return confirm('Từ chối tăng ca này?')">
+                                            <input type="hidden" name="_csrf" value="{{ csrf }}">
+                                            <button class="btn g" style="padding:4px 9px;font-size:11px;color:var(--bad);border-color:var(--bad)" title="Từ chối tăng ca">
+                                                {{ icon('x') }} Từ chối
+                                            </button>
+                                        </form>
+                                    {% endif %}
                                 {% endif %}
                                 <a class="ib" title="Sửa" aria-label="Sửa" href="{{ url_for('medit', mod=mod, rid=r[m.pk]) }}">
                                     {{ icon('edit') }}

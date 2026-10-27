@@ -5,7 +5,7 @@ from datetime import datetime, date
 from flask import Blueprint, request, session, redirect, url_for, flash, render_template, abort, Response
 from database import get_db, IntegrityError
 from config import QL, AD
-from utils import login_required, roles_required, get_module, get_form_options, parse_form_data
+from utils import login_required, roles_required, get_module, get_form_options, parse_form_data, log_activity
 
 modules_bp = Blueprint('modules', __name__)
 
@@ -115,38 +115,36 @@ def mexport(mod):
 
     valid_columns = [col[0] for col in module_config['cols']]
     if sort in valid_columns:
-        sql += f' ORDER BY [{sort}] {"DESC" if desc else "ASC"}'
+        order_by = f'[{sort}] {"DESC" if desc else "ASC"}'
     else:
-        sql += ' ORDER BY ' + module_config['order']
+        order_by = module_config['order']
 
     db_conn = get_db()
-    rows = db_conn.execute(sql, args).fetchall()
+    rows = db_conn.execute(f"{sql} ORDER BY {order_by}", args).fetchall()
 
     output = io.StringIO()
-    # Write UTF-8 BOM so Excel opens with proper Vietnamese diacritics
     output.write('\ufeff')
     writer = csv.writer(output, lineterminator='\r\n')
 
-    # Headers
-    headers = [col[1] for col in module_config['cols']]
+    # Header row
+    headers = [col_label for _, col_label in module_config['cols']]
     writer.writerow(headers)
 
     # Data rows
     for r in rows:
         row_vals = []
-        for k, _ in module_config['cols']:
-            v = r.get(k)
-            if v is None:
+        for col_name, _ in module_config['cols']:
+            val = r.get(col_name)
+            if val is None:
                 row_vals.append('')
-            elif isinstance(v, (int, float)):
-                if isinstance(v, float) and v.is_integer():
-                    v = int(v)
-                row_vals.append(str(v))
+            elif isinstance(val, (int, float)):
+                row_vals.append(val)
             else:
-                row_vals.append(str(v))
+                row_vals.append(str(val))
         writer.writerow(row_vals)
 
     filename = f"{mod}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    log_activity(db_conn, f"Xuất Excel/CSV phân hệ {module_config['title']}", f"File: {filename}")
     return Response(
         output.getvalue(),
         mimetype='text/csv; charset=utf-8',
@@ -162,6 +160,7 @@ def approve_leave(lid):
     db_conn = get_db()
     db_conn.execute("UPDATE NghiPhep SET TrangThai=N'Đã duyệt' WHERE MaNP=?", (lid,))
     db_conn.commit()
+    log_activity(db_conn, 'Duyệt đơn nghỉ phép', f'Mã NP: {lid}')
     flash('Đã duyệt đơn nghỉ phép thành công.', 'ok')
     return redirect(url_for('modules.mlist', mod='nghiphep'))
 
@@ -172,8 +171,33 @@ def reject_leave(lid):
     db_conn = get_db()
     db_conn.execute("UPDATE NghiPhep SET TrangThai=N'Từ chối' WHERE MaNP=?", (lid,))
     db_conn.commit()
+    log_activity(db_conn, 'Từ chối đơn nghỉ phép', f'Mã NP: {lid}')
     flash('Đã từ chối đơn nghỉ phép.', 'ok')
     return redirect(url_for('modules.mlist', mod='nghiphep'))
+
+@modules_bp.route('/m/tangca/<int:tid>/approve', methods=['POST'])
+@roles_required(QL, AD)
+def approve_ot(tid):
+    """Approve employee overtime request."""
+    db_conn = get_db()
+    approver = session.get('name') or session.get('user')
+    db_conn.execute("UPDATE TangCa SET TrangThai=N'Đã duyệt', NguoiDuyet=? WHERE MaTC=?", (approver, tid))
+    db_conn.commit()
+    log_activity(db_conn, 'Duyệt đăng ký tăng ca', f'Mã TC: {tid}')
+    flash('Đã duyệt đăng ký tăng ca thành công.', 'ok')
+    return redirect(url_for('modules.mlist', mod='tangca'))
+
+@modules_bp.route('/m/tangca/<int:tid>/reject', methods=['POST'])
+@roles_required(QL, AD)
+def reject_ot(tid):
+    """Reject employee overtime request."""
+    db_conn = get_db()
+    approver = session.get('name') or session.get('user')
+    db_conn.execute("UPDATE TangCa SET TrangThai=N'Từ chối', NguoiDuyet=? WHERE MaTC=?", (approver, tid))
+    db_conn.commit()
+    log_activity(db_conn, 'Từ chối đăng ký tăng ca', f'Mã TC: {tid}')
+    flash('Đã từ chối đăng ký tăng ca.', 'ok')
+    return redirect(url_for('modules.mlist', mod='tangca'))
 
 @modules_bp.route('/m/<mod>/new', methods=['GET', 'POST'])
 @login_required
@@ -196,6 +220,7 @@ def mnew(mod):
                     list(vals.values())
                 )
                 db_conn.commit()
+                log_activity(db_conn, f"Tạo mới {module_config['title']}", str(vals))
                 flash('Thêm mới thành công.', 'ok')
                 return redirect(url_for('modules.mlist', mod=mod))
             except IntegrityError:
@@ -228,6 +253,7 @@ def medit(mod, rid):
                         list(vals.values()) + [rid]
                     )
                 db_conn.commit()
+                log_activity(db_conn, f"Cập nhật {module_config['title']}", f"ID: {rid}")
                 flash('Cập nhật thành công.', 'ok')
                 return redirect(url_for('modules.mlist', mod=mod))
             except IntegrityError:
@@ -253,6 +279,7 @@ def mdel(mod, rid):
         try:
             db_conn.execute(f"DELETE FROM {module_config['table']} WHERE {module_config['pk']}=?", (rid,))
             db_conn.commit()
+            log_activity(db_conn, f"Xóa bản ghi {module_config['title']}", f"ID: {rid}")
             flash('Đã xóa.', 'ok')
         except IntegrityError:
             flash('Không thể xóa vì dữ liệu đang được sử dụng (ví dụ phòng ban còn chức vụ, chức vụ còn nhân viên).', 'err')

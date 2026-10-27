@@ -35,8 +35,14 @@ def csrf_guard():
     session.setdefault('_csrf', secrets.token_hex(16))
     if request.method == 'POST':
         token = request.form.get('_csrf', '')
+        if not token and request.is_json:
+            json_data = request.get_json(silent=True) or {}
+            token = json_data.get('_csrf', '')
+        if not token:
+            token = request.headers.get('X-CSRF-Token') or request.headers.get('X-CSRFToken') or ''
+
         session_token = session.get('_csrf', ' ')
-        if not secrets.compare_digest(token, session_token):
+        if not secrets.compare_digest(str(token), str(session_token)):
             abort(400)
 
 def get_module(mod_name):

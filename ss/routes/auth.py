@@ -18,7 +18,8 @@ def login():
         db_conn = get_db()
 
         if role == AD:
-            row = db_conn.execute('SELECT * FROM TaiKhoanAdmin WHERE TenDN=?', (user,)).fetchone()
+            row = db_conn.execute("SELECT * FROM TaiKhoan WHERE TenDN=? AND LoaiTK='Admin'", (user,)).fetchone() or \
+                  db_conn.execute('SELECT * FROM TaiKhoanAdmin WHERE TenDN=?', (user,)).fetchone()
         elif role in (NV, QL):
             row = db_conn.execute('SELECT * FROM TaiKhoan WHERE TenDN=? AND LoaiTK=?', (user, role)).fetchone()
         else:

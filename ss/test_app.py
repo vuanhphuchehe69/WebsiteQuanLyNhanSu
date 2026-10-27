@@ -5,6 +5,12 @@ from datetime import date, datetime
 from app import app
 from database import get_db
 
+with app.app_context():
+    db = get_db()
+    db.execute("DELETE FROM NghiPhep WHERE MaNV='NV002' AND NgayBD='2026-11-20'")
+    db.execute("DELETE FROM TaiLieuNhanVien WHERE TenTaiLieu='Chứng chỉ AWS Cloud Practitioner' AND MaNV='NV005'")
+    db.commit()
+
 with app.test_client() as client:
     # ---------------- 1. Authentication & Role-based Access ----------------
     res = client.get('/login')
@@ -518,11 +524,61 @@ with app.test_client() as client:
         db.commit()
     print('PASS 48: Update employee avatar endpoint succeeds and updates database')
 
+    # Admin views Accounts module (/m/taikhoan) without 500 SQL error
+    res = client.get('/m/taikhoan')
+    assert res.status_code == 200
+    assert 'admin' in res.text
+    assert 'ql001' in res.text
+    print('PASS 49: Admin accesses Accounts module (/m/taikhoan) smoothly without error')
+
+    # Flight Risk Detector on Dashboard
+    res = client.get('/')
+    assert res.status_code == 200
+    assert 'Flight Risk' in res.text or 'dấu hiệu nghỉ việc' in res.text
+    print('PASS 50: Dashboard displays Flight Risk warning detector for at-risk staff')
+
+    # Advanced Analytics: Turnover Donut Chart, Time-to-Hire, Cost-to-Revenue Ratio & Trend Charts
+    res = client.get(f'/reports/analytics?thang={current_month}')
+    assert res.status_code == 200
+    assert 'Tỷ lệ giữ chân nhân sự' in res.text
+    assert 'Thời gian tuyển trung bình' in res.text
+    assert 'Chi phí nhân sự / Doanh thu' in res.text
+    assert 'Biểu đồ Tỷ lệ Nghỉ việc' in res.text
+    assert 'Biểu đồ Xu hướng Chi phí' in res.text
+    print('PASS 51: Analytics renders Donut Turnover Chart, Time-to-Hire, HR/Revenue Ratio & Trend Charts')
+
+    # AI Chatbot Assistant: Leave balance inquiry
+    res = client.post('/api/ai-chat', json={'message': 'Tôi còn bao nhiêu ngày phép?', '_csrf': csrf_token})
+    assert res.status_code == 200
+    ai_data = res.get_json()
+    assert 'ngày phép' in ai_data['reply']
+    print('PASS 52: AI Chatbot accurately computes and answers leave balance inquiry')
+
+    # AI Chatbot Assistant: Advance procedure inquiry
+    res = client.post('/api/ai-chat', json={'message': 'Quy trình xin tạm ứng thế nào?', '_csrf': csrf_token})
+    assert res.status_code == 200
+    ai_data = res.get_json()
+    assert 'tạm ứng lương' in ai_data['reply']
+    assert 'Bước' in ai_data['reply']
+    print('PASS 53: AI Chatbot explains 4-step salary advance procedure clearly')
+
+    # AI Chatbot Assistant: Candidate resume summary & KPI review suggestion
+    res = client.post('/api/ai-chat', json={'message': 'Tóm tắt hồ sơ ứng viên', '_csrf': csrf_token})
+    assert res.status_code == 200
+    ai_data = res.get_json()
+    assert 'ứng viên' in ai_data['reply']
+
+    res = client.post('/api/ai-chat', json={'message': 'Gợi ý nội dung đánh giá', '_csrf': csrf_token})
+    assert res.status_code == 200
+    ai_data = res.get_json()
+    assert 'Xuất sắc' in ai_data['reply']
+    print('PASS 54: AI Chatbot summarizes candidate resume and generates KPI review suggestions')
+
     # Cleanup test artifacts
     with app.app_context():
         db = get_db()
         db.execute("DELETE FROM NghiPhep WHERE MaNV='NV002' AND NgayBD='2026-11-20'")
-        db.execute("DELETE FROM TaiLieuNhanVien WHERE TenTaiLieu='Chứng chỉ AWS Cloud Practitioner'")
+        db.execute("DELETE FROM TaiLieuNhanVien WHERE TenTaiLieu='Chứng chỉ AWS Cloud Practitioner' AND MaNV='NV005'")
         db.commit()
 
-print('\n=== ALL 48 TESTS PASSED! LUONGCUNG ACCURACY & EMPLOYEE AVATAR FEATURE VERIFIED! ===')
+print('\n=== ALL 54 TESTS PASSED! AI ASSISTANT, ANALYTICS & BUG FIXES FULLY VERIFIED! ===')

@@ -42,6 +42,73 @@
         {% endfor %}
     </div>
 
+    {% if flight_risks %}
+        <div class="card" style="border-left: 4px solid var(--bad); background: #fff; margin-bottom: 24px; box-shadow: 0 4px 18px rgba(239, 68, 68, 0.08);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px">
+                <div style="display:flex; align-items:center; gap:12px">
+                    <span style="display:grid; place-items:center; width:36px; height:36px; border-radius:8px; background:var(--badbg); color:var(--bad)">
+                        {{ icon('activity') }}
+                    </span>
+                    <div>
+                        <h3 style="margin:0; font-size:16px; color:var(--ink)">
+                            Cảnh báo nhân viên có dấu hiệu nghỉ việc (Flight Risk Detector)
+                        </h3>
+                        <p style="margin:2px 0 0; font-size:12.5px; color:var(--mut)">
+                            Phát hiện thông minh: tần suất đi muộn tăng, điểm KPI sụt giảm, thời gian dài chưa điều chỉnh lương.
+                        </p>
+                    </div>
+                </div>
+                <span class="tag bad" style="font-size:12.5px; padding:4px 10px">
+                    ● Phát hiện {{ flight_risks|length }} nhân sự cần lưu ý
+                </span>
+            </div>
+
+            <div class="tw">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã NV</th>
+                            <th>Họ và tên</th>
+                            <th>Chức vụ / Phòng ban</th>
+                            <th>Mức độ rủi ro</th>
+                            <th>Dấu hiệu nhận biết</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in flight_risks %}
+                            <tr>
+                                <td><b>{{ r.MaNV }}</b></td>
+                                <td><b>{{ r.HoTen }}</b></td>
+                                <td>{{ r.TenCV }} - {{ r.TenPB }}</td>
+                                <td>
+                                    <span class="tag {{ r.Tone }}">
+                                        ● Nguy cơ {{ r.Level }} ({{ r.RiskScore }}/100)
+                                    </span>
+                                </td>
+                                <td>
+                                    <ul style="margin:0; padding-left:16px; font-size:12px; color:var(--ink); line-height:1.5">
+                                        {% for s in r.Signals %}
+                                            <li>{{ s }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                                <td class="act">
+                                    <a class="btn g" style="padding:4px 9px; font-size:11px" href="{{ url_for('mlist', mod='nhanvien', q=r.MaNV) }}">
+                                        Hồ sơ
+                                    </a>
+                                    <a class="btn" style="padding:4px 9px; font-size:11px; background:var(--brand); border-color:var(--brand)" href="{{ url_for('main.announcements') }}">
+                                        Trao đổi
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
     <div class="card">
         <h3>
             {{ icon('zap') }}

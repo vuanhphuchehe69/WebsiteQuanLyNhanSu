@@ -234,8 +234,8 @@ CREATE TABLE TaiKhoan(
     MaTK INT IDENTITY(1,1) PRIMARY KEY,
     TenDN NVARCHAR(100) UNIQUE NOT NULL,
     MatKhau NVARCHAR(255) NOT NULL,
-    MaNV NVARCHAR(50) NOT NULL UNIQUE REFERENCES NhanVien(MaNV) ON DELETE CASCADE ON UPDATE CASCADE,
-    LoaiTK NVARCHAR(50) NOT NULL CHECK(LoaiTK IN ('NhanVien', 'QuanLy'))
+    MaNV NVARCHAR(50) NULL REFERENCES NhanVien(MaNV) ON DELETE CASCADE ON UPDATE CASCADE,
+    LoaiTK NVARCHAR(50) NOT NULL CHECK(LoaiTK IN ('Admin', 'QuanLy', 'NhanVien'))
 );
 
 IF OBJECT_ID(N'TaiKhoanAdmin', N'U') IS NULL
@@ -508,6 +508,41 @@ def init_db():
             WHERE l.LuongCung < 10000000
         """)
         db.commit()
+
+        # Ensure TaiKhoan allows Admin role and NULL MaNV
+        try:
+            db.execute("""
+                DECLARE @chk_name NVARCHAR(256);
+                SELECT @chk_name = name FROM sys.check_constraints WHERE parent_object_id = OBJECT_ID('TaiKhoan') AND definition LIKE '%LoaiTK%';
+                IF @chk_name IS NOT NULL
+                    EXEC('ALTER TABLE TaiKhoan DROP CONSTRAINT ' + @chk_name);
+                ALTER TABLE TaiKhoan ALTER COLUMN MaNV NVARCHAR(50) NULL;
+                ALTER TABLE TaiKhoan ADD CONSTRAINT CK_TaiKhoan_LoaiTK CHECK(LoaiTK IN ('Admin', 'QuanLy', 'NhanVien'));
+            """)
+            db.commit()
+        except Exception:
+            pass
+
+        # Seed or sync admin in TaiKhoan
+        try:
+            admin_tk = db.execute("SELECT 1 FROM TaiKhoan WHERE TenDN='admin'").fetchone()
+            if not admin_tk:
+                db.execute("INSERT INTO TaiKhoan(TenDN, MatKhau, MaNV, LoaiTK) VALUES('admin', 'admin123', NULL, 'Admin')")
+                db.commit()
+        except Exception:
+            pass
+
+        # Clean duplicate records across transaction tables
+        try:
+            db.execute("""
+                DELETE FROM TangCa WHERE MaTC NOT IN (SELECT MIN(MaTC) FROM TangCa GROUP BY MaNV, Ngay, SoGio, LyDo);
+                DELETE FROM TamUng WHERE MaTU NOT IN (SELECT MIN(MaTU) FROM TamUng GROUP BY MaNV, ThangNam, SoTien);
+                DELETE FROM GiaiTrinhCong WHERE MaGT NOT IN (SELECT MIN(MaGT) FROM GiaiTrinhCong GROUP BY MaNV, Ngay, LyDo);
+                DELETE FROM TaiLieuNhanVien WHERE MaTL NOT IN (SELECT MIN(MaTL) FROM TaiLieuNhanVien GROUP BY MaNV, TenTaiLieu);
+            """)
+            db.commit()
+        except Exception:
+            pass
 
         # Step 3: Seed initial data if TaiKhoanAdmin is empty
         admin_row = db.execute("SELECT 1 FROM TaiKhoanAdmin").fetchone()

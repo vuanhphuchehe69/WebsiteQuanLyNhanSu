@@ -229,7 +229,7 @@ MODS = {
         'auto': True,
         'roles': (AD,),
         'pw': 'MatKhau',
-        'sel': "SELECT t.*, n.HoTen, c.TenCV, p.TenPB FROM TaiKhoan t" + EMP_JOIN,
+        'sel': "SELECT x.*, n.HoTen, c.TenCV, p.TenPB FROM TaiKhoan x LEFT JOIN NhanVien n ON n.MaNV=x.MaNV LEFT JOIN ChucVu c ON n.MaCV=c.MaCV LEFT JOIN PhongBan p ON c.MaPB=p.MaPB",
         'cols': [
             ('MaTK', 'Mã TK'),
             ('TenDN', 'Tên đăng nhập'),
@@ -238,12 +238,12 @@ MODS = {
             ('TenPB', 'Phòng ban'),
             ('LoaiTK', 'Loại tài khoản'),
         ],
-        'search': ['t.TenDN', 't.MaNV', 'n.HoTen', 't.LoaiTK'],
+        'search': ['x.TenDN', 'x.MaNV', 'n.HoTen', 'x.LoaiTK'],
         'order': 'MaTK',
         'fields': [
             ('TenDN', 'Tên đăng nhập', 'text', 1, None),
             ('MatKhau', 'Mật khẩu', 'password', 1, None),
-            ('MaNV', 'Nhân viên', 'select', 1, 'nv'),
+            ('MaNV', 'Nhân viên (để trống nếu là Admin)', 'select', 0, 'nv'),
             ('LoaiTK', 'Loại tài khoản', 'select', 1, 'loai_tk'),
         ]
     },
@@ -712,7 +712,7 @@ MODS = {
 
 STATIC_OPT = {
     'gt': [('Nam', 'Nam'), ('Nữ', 'Nữ')],
-    'loai_tk': [(NV, 'Nhân viên'), (QL, 'Quản lý')],
+    'loai_tk': [(AD, 'Admin (Quản trị viên)'), (QL, 'Quản lý'), (NV, 'Nhân viên')],
     'loai_nv': [('Chính thức', 'Chính thức'), ('Thử việc', 'Thử việc'), ('Thực tập sinh', 'Thực tập sinh'), ('Thời vụ', 'Thời vụ')],
     'trinh_do': [('Đại học', 'Đại học'), ('Thạc sĩ', 'Thạc sĩ'), ('Tiến sĩ', 'Tiến sĩ'), ('Cao đẳng', 'Cao đẳng'), ('Trung cấp', 'Trung cấp')],
     'loai_tc': [('Ngày thường', 'Ngày thường'), ('Cuối tuần', 'Cuối tuần'), ('Ngày lễ', 'Ngày lễ')],

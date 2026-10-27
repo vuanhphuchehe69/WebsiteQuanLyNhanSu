@@ -176,6 +176,7 @@ CREATE TABLE NhanVien(
     LoaiNhanVien NVARCHAR(50) DEFAULT N'Chính thức',
     SoBHXH NVARCHAR(50),
     MaSoThue NVARCHAR(50),
+    HinhAnh NVARCHAR(500),
     MaCV NVARCHAR(50) NOT NULL REFERENCES ChucVu(MaCV) ON DELETE NO ACTION ON UPDATE CASCADE
 );
 
@@ -480,6 +481,7 @@ def init_db():
             "IF COL_LENGTH('NhanVien', 'LoaiNhanVien') IS NULL ALTER TABLE NhanVien ADD LoaiNhanVien NVARCHAR(50) DEFAULT N'Chính thức' WITH VALUES",
             "IF COL_LENGTH('NhanVien', 'SoBHXH') IS NULL ALTER TABLE NhanVien ADD SoBHXH NVARCHAR(50)",
             "IF COL_LENGTH('NhanVien', 'MaSoThue') IS NULL ALTER TABLE NhanVien ADD MaSoThue NVARCHAR(50)",
+            "IF COL_LENGTH('NhanVien', 'HinhAnh') IS NULL ALTER TABLE NhanVien ADD HinhAnh NVARCHAR(500)",
             "IF COL_LENGTH('TangCa', 'TrangThai') IS NULL ALTER TABLE TangCa ADD TrangThai NVARCHAR(50) DEFAULT N'Đã duyệt' WITH VALUES",
             "IF COL_LENGTH('TangCa', 'LyDo') IS NULL ALTER TABLE TangCa ADD LyDo NVARCHAR(255)",
             "IF COL_LENGTH('TangCa', 'NguoiDuyet') IS NULL ALTER TABLE TangCa ADD NguoiDuyet NVARCHAR(100)",
@@ -491,6 +493,20 @@ def init_db():
         ]
         for mig in migrations:
             db.execute(mig)
+        db.commit()
+
+        # Update avatars for default staff if currently empty
+        db.execute("UPDATE NhanVien SET HinhAnh=N'/static/uploads/avatars/avatar_' + MaNV + '.svg' WHERE HinhAnh IS NULL AND MaNV IN ('NV001','NV002','NV003','NV004','NV005')")
+
+        # Correct any corrupted LuongCung (restore to exact contract LuongCoBan)
+        db.execute("""
+            UPDATE l
+            SET l.LuongCung = h.LuongCoBan,
+                l.BaoHiem = ROUND(h.LuongCoBan * 0.105, 0)
+            FROM Luong l
+            JOIN HopDong h ON l.MaNV = h.MaNV AND h.TrangThai = N'Hiệu lực'
+            WHERE l.LuongCung < 10000000
+        """)
         db.commit()
 
         # Step 3: Seed initial data if TaiKhoanAdmin is empty

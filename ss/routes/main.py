@@ -3,8 +3,10 @@ import io
 import csv
 import json
 import re
+import os
+import time
 from datetime import date, datetime
-from flask import Blueprint, session, redirect, url_for, render_template, request, flash, abort, Response
+from flask import Blueprint, session, redirect, url_for, render_template, request, flash, abort, Response, current_app
 from config import NV, QL, AD, NV_SEL, EMP_JOIN, MSSQL_DATABASE, TONE, ROLE_NAME
 from database import get_db
 from utils import login_required, roles_required, log_activity
@@ -812,12 +814,17 @@ def payroll_calc_view():
 
     if request.method == 'POST':
         target_month = request.form.get('thang') or current_month
-        employees = db_conn.execute("SELECT n.MaNV, n.HoTen, h.LuongCoBan FROM NhanVien n LEFT JOIN HopDong h ON n.MaNV=h.MaNV AND h.TrangThai=N'Hiệu lực'").fetchall()
+        employees = db_conn.execute("""
+            SELECT n.MaNV, n.HoTen,
+                   COALESCE((SELECT TOP 1 LuongCoBan FROM HopDong WHERE MaNV=n.MaNV ORDER BY CASE WHEN TrangThai=N'Hiệu lực' THEN 0 ELSE 1 END, NgayBD DESC), 12000000) AS LuongCoBan
+            FROM NhanVien n
+        """).fetchall()
 
         computed_count = 0
         for e in employees:
             mnv = e['MaNV']
-            base_sal = float(e['LuongCoBan'] or 12000000)
+            # Mức lương cứng chuẩn xác theo Hợp đồng lao động, không bị chia nhỏ làm sai số
+            luong_cung = float(e['LuongCoBan'] or 12000000)
 
             # Count actual working days in month
             work_days = db_conn.execute(
@@ -837,14 +844,13 @@ def payroll_calc_view():
                 (mnv, target_month)
             ).fetchone()[0]
 
-            # Prorated basic pay (assuming 22 standard working days)
-            days = min(work_days, 22)
-            prorated_salary = round(base_sal * (days / 22.0) if days > 0 else base_sal, 0)
-            ot_pay = round(ot_hours * (base_sal / (22 * 8)) * 1.5, 0)
+            # Lương OT tính trên mức lương cứng: (LuongCung / (22 ngày * 8h)) * 1.5
+            ot_pay = round(ot_hours * (luong_cung / 176.0) * 1.5, 0)
             bonus = 1000000
             allowance = 500000
-            insurance = round(base_sal * 0.105, 0)  # 8% BHXH + 1.5% BHYT + 1% BHTN
-            taxable = max(0, prorated_salary + bonus + allowance + ot_pay - insurance - 11000000)
+            # Trích nộp BHXH/BHYT/BHTN bắt buộc: 10.5% mức lương cứng
+            insurance = round(luong_cung * 0.105, 0)
+            taxable = max(0, luong_cung + bonus + allowance + ot_pay - insurance - 11000000)
             tax = round(taxable * 0.05, 0)
 
             # Check if payroll record already exists
@@ -854,12 +860,12 @@ def payroll_calc_view():
                     UPDATE Luong
                     SET LuongCung=?, LuongThuong=?, PhuCap=?, LuongUngTruoc=?, BaoHiem=?, ThueTNCN=?, KhauTruKhac=?
                     WHERE MaLuong=?
-                """, (prorated_salary, bonus + ot_pay, allowance, advances, insurance, tax, 0, existing_sal['MaLuong']))
+                """, (luong_cung, bonus + ot_pay, allowance, advances, insurance, tax, 0, existing_sal['MaLuong']))
             else:
                 db_conn.execute("""
                     INSERT INTO Luong(MaNV, ThangNam, LuongCung, LuongThuong, PhuCap, LuongUngTruoc, BaoHiem, ThueTNCN, KhauTruKhac)
                     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (mnv, target_month, prorated_salary, bonus + ot_pay, allowance, advances, insurance, tax, 0))
+                """, (mnv, target_month, luong_cung, bonus + ot_pay, allowance, advances, insurance, tax, 0))
 
             computed_count += 1
 
@@ -988,8 +994,22 @@ def edit_profile():
         gioi_tinh = request.form.get('GioiTinh', '').strip()
         trinh_do = request.form.get('TrinhDo', '').strip()
         chuyen_mon = request.form.get('ChuyenMon', '').strip()
+        hinh_anh = request.form.get('HinhAnh', '').strip() or emp['HinhAnh']
 
         errs = []
+        # Handle avatar file upload
+        file = request.files.get('HinhAnh_file')
+        if file and file.filename:
+            ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+            if ext in ('jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'):
+                filename = f"avatar_{mnv}_{int(time.time())}.{ext}"
+                upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'avatars')
+                os.makedirs(upload_dir, exist_ok=True)
+                file.save(os.path.join(upload_dir, filename))
+                hinh_anh = f"/static/uploads/avatars/{filename}"
+            else:
+                errs.append('Định dạng ảnh không hợp lệ (hỗ trợ JPG, PNG, WEBP, GIF, SVG).')
+
         if sdt and not re.fullmatch(r'0\d{8,10}', sdt):
             errs.append('Số điện thoại không hợp lệ (cần bắt đầu bằng số 0, từ 9-11 số).')
         if email and not re.fullmatch(r'[^@\s]+@[^@\s]+\.[^@\s]+', email):
@@ -1006,15 +1026,56 @@ def edit_profile():
         else:
             db_conn.execute("""
                 UPDATE NhanVien
-                SET SDT=?, Email=?, DiaChi=?, NgaySinh=?, GioiTinh=?, TrinhDo=?, ChuyenMon=?
+                SET SDT=?, Email=?, DiaChi=?, NgaySinh=?, GioiTinh=?, TrinhDo=?, ChuyenMon=?, HinhAnh=?
                 WHERE MaNV=?
-            """, (sdt or None, email or None, dia_chi or None, ngay_sinh or None, gioi_tinh or None, trinh_do or None, chuyen_mon or None, mnv))
+            """, (sdt or None, email or None, dia_chi or None, ngay_sinh or None, gioi_tinh or None, trinh_do or None, chuyen_mon or None, hinh_anh or None, mnv))
             db_conn.commit()
             log_activity(db_conn, 'Cập nhật hồ sơ cá nhân', f'Nhân viên: {mnv}')
             flash('Cập nhật thông tin cá nhân thành công.', 'ok')
             return redirect(url_for('main.me'))
 
     return render_template('profile_edit.html', emp=emp)
+
+@main_bp.route('/nhanvien/<mnv>/avatar', methods=['POST'])
+@login_required
+def update_employee_avatar(mnv):
+    """Update employee avatar via file upload or image URL (from Employee List modal)."""
+    db_conn = get_db()
+    current_role = session.get('role')
+    user_mnv = session.get('mnv')
+
+    # Authorization: Admin, Manager, or Employee updating their own avatar
+    if current_role not in (AD, QL) and user_mnv != mnv:
+        abort(403)
+
+    emp = db_conn.execute("SELECT * FROM NhanVien WHERE MaNV=?", (mnv,)).fetchone()
+    if not emp:
+        abort(404)
+
+    avatar_url = request.form.get('avatar_url', '').strip()
+    file = request.files.get('avatar_file')
+
+    if file and file.filename:
+        ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+        if ext in ('jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'):
+            filename = f"avatar_{mnv}_{int(time.time())}.{ext}"
+            upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'avatars')
+            os.makedirs(upload_dir, exist_ok=True)
+            file.save(os.path.join(upload_dir, filename))
+            avatar_url = f"/static/uploads/avatars/{filename}"
+        else:
+            flash('Định dạng ảnh không hợp lệ (hỗ trợ JPG, PNG, WEBP, GIF, SVG).', 'err')
+            return redirect(request.referrer or url_for('modules.mlist', mod='nhanvien'))
+
+    if avatar_url:
+        db_conn.execute("UPDATE NhanVien SET HinhAnh=? WHERE MaNV=?", (avatar_url, mnv))
+        db_conn.commit()
+        log_activity(db_conn, 'Cập nhật ảnh đại diện nhân viên', f'Mã NV: {mnv}')
+        flash(f"Đã cập nhật ảnh đại diện cho nhân viên {emp['HoTen']} ({mnv}) thành công!", 'ok')
+    else:
+        flash('Vui lòng chọn tệp ảnh hoặc nhập đường dẫn ảnh hợp lệ.', 'warn')
+
+    return redirect(request.referrer or url_for('modules.mlist', mod='nhanvien'))
 
 @main_bp.route('/announcements')
 @login_required

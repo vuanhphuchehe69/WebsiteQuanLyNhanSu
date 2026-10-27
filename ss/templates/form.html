@@ -13,7 +13,7 @@
         </div>
     </div>
     <div class="card fm">
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="_csrf" value="{{ csrf }}">
             <div class="fg">
                 {% for n,l,t,req,src in m.fields %}
@@ -36,6 +36,14 @@
                             </select>
                         {% elif t == 'password' %}
                             <input id="f_{{ n }}" type="password" name="{{ n }}" {{ 'required' if req and not editing }} placeholder="{{ 'Để trống nếu không đổi' if editing }}" autocomplete="new-password">
+                        {% elif t == 'image' %}
+                            <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+                                {% if v %}
+                                    <img src="{{ v if v.startswith(('http://','https://','/static/')) else url_for('static', filename='uploads/avatars/' ~ v) }}" alt="Preview" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #cbd5e1">
+                                {% endif %}
+                                <input id="f_{{ n }}_file" type="file" name="{{ n }}_file" accept="image/*" style="font-size:12px">
+                            </div>
+                            <input id="f_{{ n }}" name="{{ n }}" type="text" value="{{ '' if v is none else v }}" placeholder="Hoặc dán URL ảnh trực tuyến (https://...)" style="font-size:12px">
                         {% elif t == 'textarea' %}
                             <textarea id="f_{{ n }}" name="{{ n }}" rows="3" {{ 'required' if req }}>{{ '' if v is none else v }}</textarea>
                         {% else %}

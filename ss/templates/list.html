@@ -81,10 +81,23 @@
                             {% for k,l in m.cols %}
                                 {% set v = r[k] %}
                                 <td class="{{ 'num' if (v is float or k == 'LuongCoBan') }}">
-                                    {%- if k == 'HoTen' %}
-                                        <span class="av">
-                                            {{ v|ini }}
-                                        </span>
+                                    {%- if k == 'HinhAnh' %}
+                                        <div style="display:flex;align-items:center;gap:6px">
+                                            {% if v %}
+                                                <img src="{{ v if v.startswith(('http://','https://','/static/')) else url_for('static', filename='uploads/avatars/' ~ v) }}" alt="{{ r.HoTen }}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid #cbd5e1" title="Bấm để đổi ảnh" onclick="openAvatarModal('{{ r.MaNV }}', '{{ r.HoTen }}', '{{ v }}')">
+                                            {% else %}
+                                                <span class="av" style="width:34px;height:34px;font-size:12.5px;margin:0;cursor:pointer" title="Chưa có ảnh - Bấm để thêm" onclick="openAvatarModal('{{ r.MaNV }}', '{{ r.HoTen }}', '')">{{ r.HoTen|ini }}</span>
+                                                <button type="button" class="btn" style="padding:2px 6px;font-size:11px;background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;white-space:nowrap;border-radius:4px" title="Thêm ảnh nhân viên" onclick="openAvatarModal('{{ r.MaNV }}', '{{ r.HoTen }}', '')">
+                                                    + Ảnh
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    {%- elif k == 'HoTen' %}
+                                        {% if mod != 'nhanvien' %}
+                                            <span class="av">
+                                                {{ v|ini }}
+                                            </span>
+                                        {% endif %}
                                         <strong>{{ v }}</strong>
                                     {% elif k in ('LoaiTK','Loai','LoaiHD','TrangThai') %}
                                         <span class="tag {{ TONE.get(v, 'n') }}">
@@ -144,6 +157,11 @@
                                             </button>
                                         </form>
                                     {% endif %}
+                                {% endif %}
+                                {% if mod == 'nhanvien' %}
+                                    <button type="button" class="ib" title="Thêm / Đổi ảnh đại diện" aria-label="Đổi ảnh" onclick="openAvatarModal('{{ r.MaNV }}', '{{ r.HoTen }}', '{{ r.HinhAnh or '' }}')" style="color:var(--brand)">
+                                        {{ icon('camera') }}
+                                    </button>
                                 {% endif %}
                                 <a class="ib" title="Sửa" aria-label="Sửa" href="{{ url_for('medit', mod=mod, rid=r[m.pk]) }}">
                                     {{ icon('edit') }}
@@ -213,4 +231,125 @@
             </div>
         {% endif %}
     </div>
+
+    {% if mod == 'nhanvien' %}
+    <!-- Modal Thêm/Đổi ảnh nhân viên -->
+    <div id="avatarModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:9999;backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px">
+        <div style="background:#fff;border-radius:14px;max-width:460px;width:100%;box-shadow:0 20px 45px rgba(0,0,0,0.25);overflow:hidden;border:1px solid #e2e8f0;animation:fadeIn 0.2s ease">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f1f5f9;background:#f8fafc">
+                <div style="display:flex;align-items:center;gap:10px">
+                    <div style="width:36px;height:36px;border-radius:50%;background:#e0e7ff;color:#4338ca;display:grid;place-items:center">
+                        {{ icon('camera') }}
+                    </div>
+                    <div>
+                        <h3 style="margin:0;font-size:16px;color:#0f172a">Thêm / Đổi ảnh nhân viên</h3>
+                        <p id="modalEmpSub" style="margin:2px 0 0;font-size:12.5px;color:#64748b">Cập nhật ảnh hồ sơ nhân sự</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeAvatarModal()" style="border:none;background:none;font-size:22px;color:#94a3b8;cursor:pointer;line-height:1">&times;</button>
+            </div>
+            
+            <form id="avatarForm" method="post" enctype="multipart/form-data" style="padding:20px">
+                <input type="hidden" name="_csrf" value="{{ csrf }}">
+                
+                <!-- Preview -->
+                <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:20px;padding:16px;background:#f8fafc;border-radius:12px;border:1px dashed #cbd5e1">
+                    <img id="avatarPreviewImg" src="" alt="Avatar Preview" style="width:84px;height:84px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:none">
+                    <div id="avatarPreviewInit" style="width:84px;height:84px;border-radius:50%;background:#e2e8f0;color:#475569;display:grid;place-items:center;font-size:30px;font-weight:700">?</div>
+                    <span id="modalEmpName" style="font-weight:600;font-size:14px;color:#1e293b"></span>
+                </div>
+
+                <div style="margin-bottom:16px">
+                    <label style="display:block;font-size:13px;font-weight:600;color:#334155;margin-bottom:6px">
+                        Cách 1: Tải ảnh từ máy tính (JPG, PNG, WEBP, GIF, SVG)
+                    </label>
+                    <input id="avatarFileInput" type="file" name="avatar_file" accept="image/*" onchange="previewSelectedFile(this)" style="font-size:12.5px;width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px">
+                </div>
+
+                <div style="margin-bottom:22px">
+                    <label style="display:block;font-size:13px;font-weight:600;color:#334155;margin-bottom:6px">
+                        Cách 2: Hoặc nhập đường dẫn ảnh (URL)
+                    </label>
+                    <input id="avatarUrlInput" type="text" name="avatar_url" placeholder="https://example.com/photo.jpg" oninput="previewTypedUrl(this.value)" style="font-size:13px;width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px">
+                </div>
+
+                <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:12px;border-top:1px solid #f1f5f9">
+                    <button type="button" class="btn g" onclick="closeAvatarModal()">
+                        Hủy
+                    </button>
+                    <button type="submit" class="btn" style="background:#2563eb;border-color:#2563eb;color:#fff">
+                        {{ icon('check') }} Lưu ảnh nhân viên
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openAvatarModal(mnv, hoten, currentAvatar) {
+            var modal = document.getElementById('avatarModal');
+            var form = document.getElementById('avatarForm');
+            var nameEl = document.getElementById('modalEmpName');
+            var subEl = document.getElementById('modalEmpSub');
+            var imgEl = document.getElementById('avatarPreviewImg');
+            var initEl = document.getElementById('avatarPreviewInit');
+            var urlInput = document.getElementById('avatarUrlInput');
+            var fileInput = document.getElementById('avatarFileInput');
+
+            form.action = '/nhanvien/' + encodeURIComponent(mnv) + '/avatar';
+            nameEl.textContent = hoten + ' (' + mnv + ')';
+            subEl.textContent = 'Mã nhân viên: ' + mnv;
+            fileInput.value = '';
+            urlInput.value = currentAvatar || '';
+
+            if (currentAvatar) {
+                imgEl.src = currentAvatar;
+                imgEl.style.display = 'block';
+                initEl.style.display = 'none';
+            } else {
+                imgEl.style.display = 'none';
+                initEl.style.display = 'grid';
+                initEl.textContent = hoten ? hoten.trim().split(' ').pop().charAt(0).toUpperCase() : '?';
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function closeAvatarModal() {
+            document.getElementById('avatarModal').style.display = 'none';
+        }
+
+        function previewSelectedFile(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var imgEl = document.getElementById('avatarPreviewImg');
+                    var initEl = document.getElementById('avatarPreviewInit');
+                    imgEl.src = e.target.result;
+                    imgEl.style.display = 'block';
+                    initEl.style.display = 'none';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function previewTypedUrl(url) {
+            var imgEl = document.getElementById('avatarPreviewImg');
+            var initEl = document.getElementById('avatarPreviewInit');
+            if (url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/'))) {
+                imgEl.src = url;
+                imgEl.style.display = 'block';
+                initEl.style.display = 'none';
+            }
+        }
+
+        // Close on ESC key or backdrop click
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeAvatarModal();
+        });
+        document.getElementById('avatarModal').addEventListener('click', function(e) {
+            if (e.target === this) closeAvatarModal();
+        });
+    </script>
+    {% endif %}
 {% endblock %}

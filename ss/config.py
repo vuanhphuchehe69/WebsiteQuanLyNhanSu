@@ -49,6 +49,7 @@ MODS = {
         'roles': (QL, AD),
         'sel': NV_SEL,
         'cols': [
+            ('HinhAnh', 'Ảnh'),
             ('MaNV', 'Mã NV'),
             ('HoTen', 'Họ tên'),
             ('GioiTinh', 'Giới tính'),
@@ -64,6 +65,7 @@ MODS = {
         'fields': [
             ('MaNV', 'Mã nhân viên', 'text', 1, None),
             ('HoTen', 'Họ tên', 'text', 1, None),
+            ('HinhAnh', 'Ảnh đại diện', 'image', 0, None),
             ('GioiTinh', 'Giới tính', 'select', 1, 'gt'),
             ('NgaySinh', 'Ngày sinh', 'date', 1, None),
             ('DiaChi', 'Địa chỉ', 'text', 0, None),
@@ -1052,4 +1054,6 @@ ICONS = {
     'clipboard': '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>',
     'layers': '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
     'user-plus': '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>',
+    'camera': '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+    'image': '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',
 }

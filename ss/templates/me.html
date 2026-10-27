@@ -2,9 +2,13 @@
 {% block body %}
     <!-- Hero Profile -->
     <div class="prof">
-        <span class="av lg">
-            {{ emp.HoTen|ini }}
-        </span>
+        {% if emp.HinhAnh %}
+            <img src="{{ emp.HinhAnh if emp.HinhAnh.startswith(('http://','https://','/static/')) else url_for('static', filename='uploads/avatars/' ~ emp.HinhAnh) }}" alt="{{ emp.HoTen }}" class="av lg" style="object-fit:cover;border:3px solid rgba(255,255,255,0.4);box-shadow:0 6px 16px rgba(0,0,0,0.2)">
+        {% else %}
+            <span class="av lg">
+                {{ emp.HoTen|ini }}
+            </span>
+        {% endif %}
         <div style="flex:1">
             <h2>
                 {{ emp.HoTen }}

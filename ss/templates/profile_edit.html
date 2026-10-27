@@ -12,8 +12,24 @@
         </div>
     </div>
     <div class="card fm">
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="_csrf" value="{{ csrf }}">
+            
+            <div style="display:flex;align-items:center;gap:18px;margin-bottom:24px;padding:16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0">
+                {% if emp.HinhAnh %}
+                    <img src="{{ emp.HinhAnh if emp.HinhAnh.startswith(('http://','https://','/static/')) else url_for('static', filename='uploads/avatars/' ~ emp.HinhAnh) }}" alt="Avatar" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid #cbd5e1">
+                {% else %}
+                    <span class="av lg" style="width:64px;height:64px;font-size:24px;margin:0">{{ emp.HoTen|ini }}</span>
+                {% endif %}
+                <div style="flex:1">
+                    <label style="font-weight:600;font-size:13.5px;color:#334155;margin-bottom:4px;display:block">Ảnh đại diện</label>
+                    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+                        <input type="file" name="HinhAnh_file" accept="image/*" style="font-size:12px">
+                        <input type="text" name="HinhAnh" value="{{ emp.HinhAnh or '' }}" placeholder="Hoặc dán URL ảnh trực tuyến" style="font-size:12px;max-width:280px">
+                    </div>
+                </div>
+            </div>
+
             <div class="fg">
                 <div>
                     <label for="f_HoTen">Họ và tên</label>

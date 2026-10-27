@@ -1,9 +1,11 @@
 """Utility functions, authentication decorators, CSRF protection, and form validation."""
 import re
 import secrets
+import os
+import time
 from datetime import datetime
 from functools import wraps
-from flask import session, request, redirect, url_for, abort
+from flask import session, request, redirect, url_for, abort, current_app
 from werkzeug.security import generate_password_hash
 from config import MODS, STATIC_OPT, DB_OPT
 
@@ -68,6 +70,22 @@ def parse_form_data(module_config, form, editing=False):
             continue
         if editing and field_type == 'password' and not val:
             continue
+        if field_type == 'image':
+            file = request.files.get(f'{name}_file') if request else None
+            if file and file.filename:
+                ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+                if ext in ('jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'):
+                    fn = f"avatar_{int(time.time()*1000)}.{ext}"
+                    upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'avatars')
+                    os.makedirs(upload_dir, exist_ok=True)
+                    file.save(os.path.join(upload_dir, fn))
+                    val = f"/static/uploads/avatars/{fn}"
+                else:
+                    errs.append(f'{label} có định dạng tệp không hợp lệ.')
+                    continue
+            elif editing and not val:
+                # Do not overwrite existing avatar if left blank when editing
+                continue
         if required and not val:
             errs.append(f'{label} không được để trống.')
             continue

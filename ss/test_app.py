@@ -470,12 +470,19 @@ with app.test_client() as client:
     assert 'Đã hoàn thành tính bảng lương' in res.text
     print('PASS 43: Admin executes automatic batch payroll calculator')
 
+    # Verify LuongCung accuracy in database (No fractional or prorating error!)
+    with app.app_context():
+        db = get_db()
+        nv1_sal = db.execute("SELECT LuongCung FROM Luong WHERE MaNV='NV001' AND ThangNam=?", (current_month,)).fetchone()
+        assert nv1_sal and nv1_sal['LuongCung'] == 14000000.0, f"Expected 14000000.0 but got {nv1_sal['LuongCung'] if nv1_sal else None}"
+    print('PASS 44: Verified LuongCung (Luong cung) is 100% accurate without fractional error')
+
     # Admin checks Audit Log
     res = client.get('/audit-log')
     assert res.status_code == 200
     assert 'Nhật ký Hoạt động Hệ thống' in res.text
     assert 'Check-in' in res.text or 'Đăng nhập' in res.text
-    print('PASS 44: Admin views Audit Log with tracked user events')
+    print('PASS 45: Admin views Audit Log with tracked user events')
 
     # Admin views & exports Advanced HR & Salary Analytics
     res = client.get(f'/reports/analytics?thang={current_month}&export=1')
@@ -484,7 +491,32 @@ with app.test_client() as client:
     csv_analytics = res.data.decode('utf-8')
     assert 'BÁO CÁO PHÂN TÍCH NHÂN SỰ' in csv_analytics
     assert 'TỔNG CỘNG' in csv_analytics
-    print('PASS 45: Admin views and exports Advanced HR & Salary Cost Analytics to CSV')
+    print('PASS 46: Admin views and exports Advanced HR & Salary Cost Analytics to CSV')
+
+    # Verify Employee List Avatar features (Column, Modal, and Quick Upload)
+    res = client.get('/m/nhanvien')
+    assert res.status_code == 200
+    assert 'avatarModal' in res.text
+    assert 'Thêm / Đổi ảnh nhân viên' in res.text
+    assert 'uploads/avatars/avatar_NV001.svg' in res.text
+    print('PASS 47: Employee List renders avatars and quick upload modal')
+
+    # Update Employee Avatar via POST endpoint
+    with client.session_transaction() as sess:
+        csrf_token = sess.get('_csrf')
+    new_avatar_url = 'https://images.unsplash.com/photo-sample.jpg'
+    res = client.post('/nhanvien/NV001/avatar', data={'avatar_url': new_avatar_url, '_csrf': csrf_token}, follow_redirects=True)
+    assert res.status_code == 200
+    with app.app_context():
+        db = get_db()
+        updated_emp = db.execute("SELECT HinhAnh FROM NhanVien WHERE MaNV='NV001'").fetchone()
+        assert updated_emp['HinhAnh'] == new_avatar_url
+    # Reset back to SVG avatar for testing consistency
+    with app.app_context():
+        db = get_db()
+        db.execute("UPDATE NhanVien SET HinhAnh='/static/uploads/avatars/avatar_NV001.svg' WHERE MaNV='NV001'")
+        db.commit()
+    print('PASS 48: Update employee avatar endpoint succeeds and updates database')
 
     # Cleanup test artifacts
     with app.app_context():
@@ -493,4 +525,4 @@ with app.test_client() as client:
         db.execute("DELETE FROM TaiLieuNhanVien WHERE TenTaiLieu='Chứng chỉ AWS Cloud Practitioner'")
         db.commit()
 
-print('\n=== ALL 45 TESTS PASSED! COMPREHENSIVE ACTOR FEATURE SET VERIFIED! ===')
+print('\n=== ALL 48 TESTS PASSED! LUONGCUNG ACCURACY & EMPLOYEE AVATAR FEATURE VERIFIED! ===')

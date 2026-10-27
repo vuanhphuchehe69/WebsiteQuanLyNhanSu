@@ -3,45 +3,50 @@
     <div class="ph">
         <div>
             <h1>
+                {{ icon('bell') }}
                 Thông báo nội bộ
             </h1>
             <p>
-                Thông tin, chỉ đạo và thông báo từ Ban Giám Đốc, Quản lý và Phòng Nhân sự.
+                Thông tin, chỉ đạo và thông báo quan trọng từ Ban Giám Đốc, Quản lý và Phòng Nhân sự.
             </p>
         </div>
         {% if role in ('QuanLy', 'Admin') %}
-            <a class="btn" href="{{url_for('modules.mnew', mod='thongbao')}}">
-                {{icon('plus')}}
+            <a class="btn" href="{{ url_for('modules.mnew', mod='thongbao') }}">
+                {{ icon('send') }}
                 Đăng thông báo mới
             </a>
         {% endif %}
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;flex-direction:column;gap:18px">
         {% for r in rows %}
-            <div class="card" style="margin:0;padding:20px;border-left:4px solid var(--brand)">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+            <div class="card" style="margin:0;padding:22px;border-left:4px solid var(--brand);box-shadow:var(--shadow-sm)">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:12px">
                     <div>
-                        <h3 style="margin:0 0 4px;font-size:17px;color:var(--brand-d)">
-                            {{r.TieuDe}}
+                        <h3 style="margin:0 0 6px;font-size:17px;color:var(--brand);font-weight:700">
+                            {{ icon('bell') }}
+                            {{ r.TieuDe }}
                         </h3>
-                        <div style="display:flex;align-items:center;gap:12px;color:var(--mut);font-size:12px">
-                            <span>Người gửi: <b>{{r.NguoiGui}}</b></span>
+                        <div style="display:flex;align-items:center;gap:12px;color:var(--mut);font-size:12.5px;flex-wrap:wrap">
+                            <span>{{ icon('user') }} Người gửi: <b>{{ r.NguoiGui }}</b></span>
                             <span>•</span>
-                            <span>Thời gian: {{r.NgayGui}}</span>
+                            <span>{{ icon('clock') }} Thời gian: {{ r.NgayGui }}</span>
                             <span>•</span>
-                            <span class="tag {{TONE.get(r.PhamVi, 'b')}}">
-                                {{r.PhamVi}} {% if r.TenPB %}({{r.TenPB}}){% endif %}
+                            <span class="tag {{ TONE.get(r.PhamVi, 'b') }}">
+                                {{ r.PhamVi }} {% if r.TenPB %}({{ r.TenPB }}){% endif %}
                             </span>
                         </div>
                     </div>
                 </div>
-                <div style="color:var(--ink);font-size:14px;line-height:1.6;white-space:pre-wrap;background:#f8fafd;padding:14px;border-radius:8px;border:1px solid var(--line)">{{r.NoiDung}}</div>
+                <div style="color:var(--ink);font-size:14px;line-height:1.65;white-space:pre-wrap;background:#f8fafc;padding:16px 18px;border-radius:var(--r-sm);border:1px solid var(--line)">{{ r.NoiDung }}</div>
             </div>
         {% else %}
-            <div class="card empty">
-                {{icon('bell')}}
-                <p style="margin-top:8px">Hiện tại chưa có thông báo nào dành cho bạn.</p>
+            <div class="card empty" style="padding:56px 20px">
+                <div style="width:56px;height:56px;border-radius:50%;background:var(--tint);color:var(--brand);display:grid;place-items:center;margin:0 auto 14px">
+                    {{ icon('bell') }}
+                </div>
+                <h3 style="margin:0 0 6px;color:var(--ink);justify-content:center">Không có thông báo nào</h3>
+                <p style="margin:0;color:var(--mut)">Hiện tại chưa có thông báo mới nào dành cho bạn.</p>
             </div>
         {% endfor %}
     </div>

@@ -42,6 +42,7 @@ EMP_JOIN = (
 MODS = {
     'nhanvien': {
         'title': 'Nhân viên',
+        'icon': 'users',
         'table': 'NhanVien',
         'pk': 'MaNV',
         'auto': False,
@@ -74,6 +75,7 @@ MODS = {
     },
     'luong': {
         'title': 'Lương',
+        'icon': 'wallet',
         'table': 'Luong',
         'pk': 'MaLuong',
         'auto': True,
@@ -105,6 +107,7 @@ MODS = {
     },
     'nghiphep': {
         'title': 'Nghỉ phép',
+        'icon': 'calendar',
         'table': 'NghiPhep',
         'pk': 'MaNP',
         'auto': True,
@@ -135,6 +138,7 @@ MODS = {
     },
     'tangca': {
         'title': 'Tăng ca',
+        'icon': 'clock',
         'table': 'TangCa',
         'pk': 'MaTC',
         'auto': True,
@@ -161,6 +165,7 @@ MODS = {
     },
     'phongban': {
         'title': 'Phòng ban',
+        'icon': 'building',
         'table': 'PhongBan',
         'pk': 'MaPB',
         'auto': False,
@@ -180,6 +185,7 @@ MODS = {
     },
     'chucvu': {
         'title': 'Chức vụ',
+        'icon': 'briefcase',
         'table': 'ChucVu',
         'pk': 'MaCV',
         'auto': False,
@@ -201,6 +207,7 @@ MODS = {
     },
     'taikhoan': {
         'title': 'Tài khoản',
+        'icon': 'key',
         'table': 'TaiKhoan',
         'pk': 'MaTK',
         'auto': True,
@@ -226,6 +233,7 @@ MODS = {
     },
     'hopdong': {
         'title': 'Hợp đồng',
+        'icon': 'file-text',
         'table': 'HopDong',
         'pk': 'MaHD',
         'auto': False,
@@ -257,6 +265,7 @@ MODS = {
     },
     'chamcong': {
         'title': 'Chấm công',
+        'icon': 'check-square',
         'table': 'ChamCong',
         'pk': 'MaCC',
         'auto': True,
@@ -287,6 +296,7 @@ MODS = {
     },
     'danhgia': {
         'title': 'Đánh giá KPI',
+        'icon': 'award',
         'table': 'DanhGia',
         'pk': 'MaDG',
         'auto': True,
@@ -317,6 +327,7 @@ MODS = {
     },
     'thongbao': {
         'title': 'Quản lý thông báo',
+        'icon': 'send',
         'table': 'ThongBao',
         'pk': 'MaTB',
         'auto': True,
@@ -511,5 +522,18 @@ ICONS = {
     'pie-chart': '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
     'send': '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
     'database': '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>',
+    'info': '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
+    'shield': '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+    'mail': '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',
+    'phone': '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
+    'map-pin': '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
+    'trending-up': '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+    'sparkles': '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/>',
+    'zap': '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+    'external-link': '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>',
+    'bar-chart-2': '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+    'log-in': '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>',
+    'hard-drive': '<line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/>',
+    'server': '<rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>',
 }
 

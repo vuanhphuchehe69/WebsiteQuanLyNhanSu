@@ -3,54 +3,55 @@
     <div class="ph">
         <div>
             <h1>
-                {{'Sửa' if editing else 'Thêm'}}
-                {{m.title|lower}}
+                {{ icon(m.icon) }}
+                {{ 'Cập nhật' if editing else 'Thêm mới' }}
+                {{ m.title|lower }}
             </h1>
             <p>
-                Các trường có dấu * là bắt buộc.
+                Điền đầy đủ các thông tin bên dưới. Các trường có dấu <span class="req">*</span> là bắt buộc.
             </p>
         </div>
     </div>
     <div class="card fm">
         <form method="post">
-            <input type="hidden" name="_csrf" value="{{csrf}}">
+            <input type="hidden" name="_csrf" value="{{ csrf }}">
             <div class="fg">
                 {% for n,l,t,req,src in m.fields %}
-                    <div class="{{'full' if n in ('DiaChi',)}}">
-                        <label for="f_{{n}}">
-                            {{l}}
+                    <div class="{{ 'full' if n in ('DiaChi','LyDo','NoiDung') }}">
+                        <label for="f_{{ n }}">
+                            {{ l }}
                             {% if req %}
-                                <span class="req">
-                                    *
-                                </span>
+                                <span class="req">*</span>
                             {% endif %}
                         </label>
                         {% set v = (row[n] if row and n in row.keys() else '') %}
-                        {% if t=='select' %}
-                            <select id="f_{{n}}" name="{{n}}" {{'required' if req}}>
-                                <option value="">
-                                    Chọn...
-                                </option>
+                        {% if t == 'select' %}
+                            <select id="f_{{ n }}" name="{{ n }}" {{ 'required' if req }}>
+                                <option value="">Chọn...</option>
                                 {% for a,b in opts[src] %}
-                                    <option value="{{a}}" {{'selected' if a==v}}>
-                                        {{b}}
+                                    <option value="{{ a }}" {{ 'selected' if a == v }}>
+                                        {{ b }}
                                     </option>
                                 {% endfor %}
                             </select>
-                        {% elif t=='password' %}
-                            <input id="f_{{n}}" type="password" name="{{n}}" {{'required' if req and not editing}} placeholder="{{'Để trống nếu không đổi' if editing}}" autocomplete="new-password">
+                        {% elif t == 'password' %}
+                            <input id="f_{{ n }}" type="password" name="{{ n }}" {{ 'required' if req and not editing }} placeholder="{{ 'Để trống nếu không đổi' if editing }}" autocomplete="new-password">
+                        {% elif t == 'textarea' %}
+                            <textarea id="f_{{ n }}" name="{{ n }}" rows="3" {{ 'required' if req }}>{{ '' if v is none else v }}</textarea>
                         {% else %}
-                            <input id="f_{{n}}" name="{{n}}" type="{{'text' if t in ('cccd','tel','email') else t}}" value="{{'' if v is none else v}}" {{'required' if req}} {{'readonly' if editing and n==m.pk}} {{'step=any min=0' if t=='number'}}>
+                            <input id="f_{{ n }}" name="{{ n }}" type="{{ 'text' if t in ('cccd','tel','email') else t }}" value="{{ '' if v is none else v }}" {{ 'required' if req }} {{ 'readonly' if editing and n == m.pk }} {{ 'step=any min=0' if t == 'number' }}>
                         {% endif %}
                     </div>
                 {% endfor %}
             </div>
-            <p style="margin:22px 0 0;display:flex;gap:10px">
+            <p style="margin:26px 0 0;display:flex;gap:12px;align-items:center">
                 <button class="btn">
-                    Lưu thay đổi
+                    {{ icon('check') }}
+                    Lưu dữ liệu
                 </button>
-                <a class="btn g" href="{{url_for('mlist',mod=mod)}}">
-                    Hủy
+                <a class="btn g" href="{{ url_for('mlist', mod=mod) }}">
+                    {{ icon('x') }}
+                    Hủy bỏ
                 </a>
             </p>
         </form>

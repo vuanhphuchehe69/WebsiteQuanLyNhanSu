@@ -3,154 +3,65 @@
     <div class="ph">
         <div>
             <h1>
-                Chi tiết nghỉ phép
+                {{ icon('calendar') }}
+                Chi tiết nghỉ phép theo tháng
             </h1>
             <p>
-                Tổng hợp theo tháng bắt đầu nghỉ (chỉ tính các đơn đã duyệt).
+                Tổng hợp theo tháng bắt đầu nghỉ (chỉ tính các đơn đã duyệt thành công).
             </p>
         </div>
-        <form style="display:flex;gap:8px;flex-wrap:wrap">
-            <input type="month" name="thang" value="{{thang}}" style="width:auto" aria-label="Tháng">
+        <form style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <input type="month" name="thang" value="{{ thang }}" style="width:auto" aria-label="Tháng">
             <button class="btn">
+                {{ icon('search') }}
                 Xem
             </button>
-            <a class="btn g" href="{{url_for('main.report_leave', thang=thang, export=1)}}" title="Tải xuống báo cáo dưới dạng CSV/Excel">
-                {{icon('download')}}
+            <a class="btn g" href="{{ url_for('main.report_leave', thang=thang, export=1) }}" title="Tải xuống báo cáo dưới dạng CSV/Excel">
+                {{ icon('download') }}
                 Xuất Excel/CSV
             </a>
         </form>
     </div>
     <div class="card flush">
-        <h3>
-            Tổng hợp theo nhân viên
-        </h3>
+        <div style="padding:16px 20px 14px">
+            <h3 style="margin:0">
+                {{ icon('users') }}
+                Tổng hợp ngày nghỉ phép theo nhân viên
+            </h3>
+        </div>
         <div class="tw">
             <table>
                 <thead>
                     <tr>
-                        <th>
-                            Mã NV
-                        </th>
-                        <th>
-                            Họ tên
-                        </th>
-                        <th>
-                            Chức vụ
-                        </th>
-                        <th>
-                            Phòng ban
-                        </th>
-                        <th class="num">
-                            Số lần
-                        </th>
-                        <th class="num">
-                            Tổng ngày
-                        </th>
+                        <th>Mã NV</th>
+                        <th>Họ tên</th>
+                        <th>Chức vụ</th>
+                        <th>Phòng ban</th>
+                        <th class="num">Số lần</th>
+                        <th class="num">Tổng ngày</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for r in rows %}
                         <tr>
-                            <td>
-                                {{r.MaNV}}
-                            </td>
+                            <td><b>{{ r.MaNV }}</b></td>
                             <td>
                                 <span class="av">
-                                    {{r.HoTen|ini}}
+                                    {{ r.HoTen|ini }}
                                 </span>
-                                {{r.HoTen}}
+                                <strong>{{ r.HoTen }}</strong>
                             </td>
-                            <td>
-                                {{r.TenCV}}
-                            </td>
-                            <td>
-                                {{r.TenPB}}
-                            </td>
+                            <td>{{ r.TenCV }}</td>
+                            <td>{{ r.TenPB }}</td>
+                            <td class="num">{{ r.SoLan }}</td>
                             <td class="num">
-                                {{r.Lan}}
-                            </td>
-                            <td class="num">
-                                <b>
-                                    {{r.Ngay}}
-                                </b>
+                                <b style="color:var(--brand)">{{ r.TongNgay }}</b>
                             </td>
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan=6 class="empty">
-                                Không có nghỉ phép đã duyệt trong tháng này.
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    <div class="card flush">
-        <h3>
-            Từng lần nghỉ
-        </h3>
-        <div class="tw">
-            <table>
-                <thead>
-                    <tr>
-                        <th>
-                            Họ tên
-                        </th>
-                        <th>
-                            Chức vụ
-                        </th>
-                        <th>
-                            Phòng ban
-                        </th>
-                        <th>
-                            Từ ngày
-                        </th>
-                        <th>
-                            Đến ngày
-                        </th>
-                        <th>
-                            Lý do
-                        </th>
-                        <th>
-                            Trạng thái
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for r in det %}
-                        <tr>
-                            <td>
-                                <span class="av">
-                                    {{r.HoTen|ini}}
-                                </span>
-                                {{r.HoTen}}
-                            </td>
-                            <td>
-                                {{r.TenCV}}
-                            </td>
-                            <td>
-                                {{r.TenPB}}
-                            </td>
-                            <td>
-                                {{r.NgayBD}}
-                            </td>
-                            <td>
-                                {{r.NgayKT}}
-                            </td>
-                            <td>
-                                {{r.LyDo or '-'}}
-                            </td>
-                            <td>
-                                <span class="tag {{TONE.get(r.TrangThai,'n')}}">
-                                    {{r.TrangThai}}
-                                </span>
-                            </td>
-                        </tr>
-                    {% else %}
-                        <tr>
-                            <td colspan=7 class="empty">
-                                Không có dữ liệu.
+                            <td colspan="6" class="empty">
+                                Không có ai nghỉ phép trong tháng này.
                             </td>
                         </tr>
                     {% endfor %}

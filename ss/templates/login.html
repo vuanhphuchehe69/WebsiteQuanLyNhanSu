@@ -3,55 +3,94 @@
     <div class="login">
         <section class="hero">
             <div class="brand" style="padding:0;color:#fff">
-                <b style="background:#fff;color:var(--brand)">
+                <b style="background:var(--brand-gradient);color:#fff;box-shadow:0 0 16px rgba(255,255,255,0.3)">
                     NS
                 </b>
-                Quản lý nhân sự
+                <div>
+                    <span style="font-size:17px;font-weight:800;letter-spacing:-0.02em">Quản lý nhân sự</span>
+                    <small style="color:#94a3b8;display:block;font-size:11px">Hệ thống quản trị doanh nghiệp</small>
+                </div>
             </div>
-            <div>
+            
+            <div style="margin: 40px 0;">
                 <h1>
-                    Hồ sơ, lương, nghỉ phép và tăng ca trong một nơi.
+                    Nền tảng quản trị nhân sự toàn diện & hiện đại.
                 </h1>
                 <p>
-                    Đăng nhập để xem thông tin của bạn hoặc quản lý nhân sự của công ty.
+                    Tối ưu hóa quản lý hồ sơ nhân sự, chấm công thời gian thực, bảng lương tự động, đánh giá KPI và phê duyệt nghỉ phép trực tuyến.
                 </p>
+
+                <div class="login-features">
+                    <div class="login-feature-item">
+                        <div class="login-feature-icon">
+                            {{ icon('check-square') }}
+                        </div>
+                        <span>Theo dõi chấm công, ngày công và tình hình đi làm</span>
+                    </div>
+                    <div class="login-feature-item">
+                        <div class="login-feature-icon">
+                            {{ icon('wallet') }}
+                        </div>
+                        <span>Quản lý bảng lương minh bạch, hợp đồng và tăng ca</span>
+                    </div>
+                    <div class="login-feature-item">
+                        <div class="login-feature-icon">
+                            {{ icon('award') }}
+                        </div>
+                        <span>Đánh giá hiệu suất KPI và quy trình phê duyệt nghỉ phép</span>
+                    </div>
+                    <div class="login-feature-item">
+                        <div class="login-feature-icon">
+                            {{ icon('send') }}
+                        </div>
+                        <span>Gửi và nhận thông báo nội bộ tức thì theo phân quyền</span>
+                    </div>
+                </div>
             </div>
-            <small style="color:#a9c4f2">
-                Bài tập lớn, nhóm 9
+
+            <small style="color:#94a3b8;font-size:12px">
+                © Nhóm 9 - Hệ thống Quản trị Nhân sự Doanh nghiệp
             </small>
         </section>
+
         <section class="lf">
             <form method="post">
-                <input type="hidden" name="_csrf" value="{{csrf}}">
+                <input type="hidden" name="_csrf" value="{{ csrf }}">
                 <h2>
-                    Đăng nhập
+                    Đăng nhập hệ thống
                 </h2>
                 <p>
-                    Chọn loại tài khoản rồi nhập thông tin.
+                    Vui lòng chọn vai trò truy cập và nhập thông tin đăng nhập của bạn.
                 </p>
+
                 <div class="seg">
-                    {% for k,v in [('NhanVien','Nhân viên'),('QuanLy','Quản lý'),('Admin','Admin')] %}
+                    {% for k, v, ic in [('NhanVien','Nhân viên','user'), ('QuanLy','Quản lý','briefcase'), ('Admin','Admin','shield')] %}
                         <label>
-                            <input type="radio" name="role" value="{{k}}" {{'checked' if k==sel}}>
+                            <input type="radio" name="role" value="{{ k }}" {{ 'checked' if k == sel }}>
                             <span>
-                                {{v}}
+                                {{ icon(ic) }}
+                                {{ v }}
                             </span>
                         </label>
                     {% endfor %}
                 </div>
-                <label for="u">
-                    Tên đăng nhập
-                </label>
-                <input id="u" name="user" required autofocus autocomplete="username">
-                <div style="height:14px">
+
+                <div style="margin-bottom:16px">
+                    <label for="u">
+                        Tên đăng nhập
+                    </label>
+                    <input id="u" name="user" required autofocus autocomplete="username" placeholder="Nhập mã nhân viên hoặc username...">
                 </div>
-                <label for="p">
-                    Mật khẩu
-                </label>
-                <input id="p" type="password" name="pw" required autocomplete="current-password">
-                <div style="height:20px">
+
+                <div style="margin-bottom:24px">
+                    <label for="p">
+                        Mật khẩu
+                    </label>
+                    <input id="p" type="password" name="pw" required autocomplete="current-password" placeholder="Nhập mật khẩu...">
                 </div>
-                <button class="btn" style="width:100%;justify-content:center;padding:11px">
+
+                <button class="btn" style="width:100%;justify-content:center;padding:12px;font-size:14px">
+                    {{ icon('log-in') }}
                     Đăng nhập
                 </button>
             </form>

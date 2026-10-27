@@ -3,16 +3,17 @@
     <div class="ph">
         <div>
             <h1>
+                {{ icon('calendar') }}
                 Xin nghỉ phép
             </h1>
             <p>
-                Gửi đơn xin nghỉ phép đến quản lý để phê duyệt.
+                Gửi đơn xin nghỉ phép đến cấp quản lý trực tiếp để được xem xét và phê duyệt.
             </p>
         </div>
     </div>
     <div class="card fm">
         <form method="post">
-            <input type="hidden" name="_csrf" value="{{csrf}}">
+            <input type="hidden" name="_csrf" value="{{ csrf }}">
             <div class="fg">
                 <div>
                     <label for="f_NgayBD">Từ ngày <span class="req">*</span></label>
@@ -24,19 +25,19 @@
                 </div>
                 <div class="full">
                     <label for="f_LyDo">Lý do nghỉ phép</label>
-                    <input id="f_LyDo" name="LyDo" type="text" placeholder="Ví dụ: Việc gia đình, việc cá nhân, nghỉ ốm...">
+                    <input id="f_LyDo" name="LyDo" type="text" placeholder="Ví dụ: Việc cá nhân, lý do sức khỏe, việc gia đình...">
                 </div>
             </div>
-            <p style="margin:22px 0 0;display:flex;gap:10px">
+            <p style="margin:26px 0 0;display:flex;gap:12px;align-items:center">
                 <button class="btn">
-                    {{icon('check')}}
+                    {{ icon('check') }}
                     Gửi đơn xin nghỉ
                 </button>
-                <a class="btn g" href="{{url_for('main.me')}}">
-                    Hủy
+                <a class="btn g" href="{{ url_for('main.me') }}">
+                    {{ icon('x') }}
+                    Hủy bỏ
                 </a>
             </p>
         </form>
     </div>
 {% endblock %}
-

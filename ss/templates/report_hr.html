@@ -3,29 +3,31 @@
     <div class="ph">
         <div>
             <h1>
-                Báo cáo nhân sự
+                {{ icon('pie-chart') }}
+                Báo cáo nhân sự & Cơ cấu tổ chức
             </h1>
             <p>
-                Thống kê số lượng, chấm công, tăng ca, nghỉ phép và hiệu suất KPI theo phòng ban.
+                Thống kê số lượng nhân sự, chấm công, tăng ca, nghỉ phép và chỉ số hiệu suất KPI theo phòng ban.
             </p>
         </div>
-        <form style="display:flex;gap:8px;flex-wrap:wrap">
+        <form style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
             {% if role == 'Admin' %}
                 <select name="dept" style="width:auto" aria-label="Chọn phòng ban">
                     <option value="">-- Toàn công ty --</option>
                     {% for d in departments %}
-                        <option value="{{d.MaPB}}" {{'selected' if d.MaPB==selected_dept}}>
-                            {{d.TenPB}}
+                        <option value="{{ d.MaPB }}" {{ 'selected' if d.MaPB == selected_dept }}>
+                            {{ d.TenPB }}
                         </option>
                     {% endfor %}
                 </select>
             {% endif %}
-            <input type="month" name="thang" value="{{current_month}}" style="width:auto" aria-label="Tháng">
+            <input type="month" name="thang" value="{{ current_month }}" style="width:auto" aria-label="Tháng">
             <button class="btn">
+                {{ icon('search') }}
                 Xem báo cáo
             </button>
-            <a class="btn g" href="{{url_for('main.report_hr', dept=selected_dept, thang=current_month, export=1)}}" title="Tải xuống báo cáo dưới dạng Excel/CSV">
-                {{icon('download')}}
+            <a class="btn g" href="{{ url_for('main.report_hr', dept=selected_dept, thang=current_month, export=1) }}" title="Tải xuống báo cáo dưới dạng Excel/CSV">
+                {{ icon('download') }}
                 Xuất Excel/CSV
             </a>
         </form>
@@ -34,64 +36,67 @@
     <div class="grid">
         <div class="stat">
             <div class="ic">
-                {{icon('users')}}
+                {{ icon('users') }}
             </div>
             <div>
-                <b>{{total_staff}}</b>
+                <b>{{ total_staff }}</b>
                 <span>Tổng nhân sự</span>
             </div>
         </div>
         <div class="stat">
             <div class="ic">
-                {{icon('user')}}
+                {{ icon('user') }}
             </div>
             <div>
-                <b>{{male_count}} Nam / {{female_count}} Nữ</b>
+                <b>{{ male_count }} Nam / {{ female_count }} Nữ</b>
                 <span>Cơ cấu giới tính</span>
             </div>
         </div>
         <div class="stat">
             <div class="ic">
-                {{icon('check-square')}}
+                {{ icon('check-square') }}
             </div>
             <div>
-                <b>{{total_working_days}}</b>
+                <b>{{ total_working_days }}</b>
                 <span>Tổng ngày công tháng</span>
             </div>
         </div>
         <div class="stat">
             <div class="ic">
-                {{icon('clock')}}
+                {{ icon('clock') }}
             </div>
             <div>
-                <b>{{fmt(total_ot)}} giờ</b>
+                <b>{{ fmt(total_ot) }} giờ</b>
                 <span>Tổng giờ tăng ca</span>
             </div>
         </div>
         <div class="stat">
             <div class="ic">
-                {{icon('calendar')}}
+                {{ icon('calendar') }}
             </div>
             <div>
-                <b>{{total_leave_days}} ngày</b>
+                <b>{{ total_leave_days }} ngày</b>
                 <span>Nghỉ phép đã duyệt</span>
             </div>
         </div>
         <div class="stat">
             <div class="ic">
-                {{icon('award')}}
+                {{ icon('award') }}
             </div>
             <div>
-                <b>{{ "%.1f"|format(avg_kpi) }}</b>
+                <b style="color:var(--brand)">{{ "%.1f"|format(avg_kpi) }}</b>
                 <span>Điểm KPI trung bình</span>
             </div>
         </div>
     </div>
 
     <div class="card flush">
-        <h3>
-            Danh sách nhân sự thuộc phạm vi báo cáo
-        </h3>
+        <div style="padding:16px 20px 14px">
+            <h3 style="margin:0">
+                {{ icon('users') }}
+                Danh sách nhân sự thuộc phạm vi báo cáo
+            </h3>
+        </div>
         <div class="tw">
             <table>
                 <thead>
@@ -109,19 +114,19 @@
                 <tbody>
                     {% for s in staff %}
                         <tr>
-                            <td>{{s.MaNV}}</td>
+                            <td><b>{{ s.MaNV }}</b></td>
                             <td>
                                 <span class="av">
-                                    {{s.HoTen|ini}}
+                                    {{ s.HoTen|ini }}
                                 </span>
-                                {{s.HoTen}}
+                                <strong>{{ s.HoTen }}</strong>
                             </td>
-                            <td>{{s.GioiTinh or '-'}}</td>
-                            <td>{{s.TenCV or '-'}}</td>
-                            <td>{{s.TenPB or '-'}}</td>
-                            <td>{{s.SDT or '-'}}</td>
-                            <td>{{s.Email or '-'}}</td>
-                            <td>{{s.NgayVaoCT or '-'}}</td>
+                            <td>{{ s.GioiTinh or '-' }}</td>
+                            <td>{{ s.TenCV or '-' }}</td>
+                            <td>{{ s.TenPB or '-' }}</td>
+                            <td>{{ s.SDT or '-' }}</td>
+                            <td>{{ s.Email or '-' }}</td>
+                            <td>{{ s.NgayVaoCT or '-' }}</td>
                         </tr>
                     {% else %}
                         <tr>

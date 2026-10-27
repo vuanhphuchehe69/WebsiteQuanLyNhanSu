@@ -68,7 +68,7 @@ def create_app():
         return get_initial(name)
 
     app.jinja_env.globals['icon'] = lambda icon_name: Markup(
-        f'<svg class="i" viewBox="0 0 24 24" aria-hidden="true">{ICONS[icon_name]}</svg>'
+        f'<svg class="i" viewBox="0 0 24 24" aria-hidden="true">{ICONS.get(icon_name, "")}</svg>'
     )
     app.jinja_env.globals.update(TONE=TONE, ROLE_NAME=ROLE_NAME)
 
@@ -107,5 +107,3 @@ if __name__ == '__main__':
     except UnicodeEncodeError:
         print("He thong Quan ly nhan su khoi dong tai: http://127.0.0.1:5000")
     app.run(debug=True, port=5000)
-
-

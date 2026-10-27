@@ -3,6 +3,7 @@
     <div class="ph">
         <div>
             <h1>
+                {{ icon('user') }}
                 Cập nhật thông tin cá nhân
             </h1>
             <p>
@@ -12,48 +13,49 @@
     </div>
     <div class="card fm">
         <form method="post">
-            <input type="hidden" name="_csrf" value="{{csrf}}">
+            <input type="hidden" name="_csrf" value="{{ csrf }}">
             <div class="fg">
                 <div>
                     <label for="f_HoTen">Họ và tên</label>
-                    <input id="f_HoTen" value="{{emp.HoTen}}" readonly>
+                    <input id="f_HoTen" value="{{ emp.HoTen }}" readonly style="background:#f1f5f9;cursor:not-allowed">
                 </div>
                 <div>
                     <label for="f_MaNV">Mã nhân viên</label>
-                    <input id="f_MaNV" value="{{emp.MaNV}}" readonly>
+                    <input id="f_MaNV" value="{{ emp.MaNV }}" readonly style="background:#f1f5f9;cursor:not-allowed">
                 </div>
                 <div>
                     <label for="f_SDT">Số điện thoại</label>
-                    <input id="f_SDT" name="SDT" type="tel" value="{{emp.SDT or ''}}" placeholder="0901234567">
+                    <input id="f_SDT" name="SDT" type="tel" value="{{ emp.SDT or '' }}" placeholder="0901234567">
                 </div>
                 <div>
                     <label for="f_Email">Địa chỉ Email</label>
-                    <input id="f_Email" name="Email" type="email" value="{{emp.Email or ''}}" placeholder="nhanvien@congty.com">
+                    <input id="f_Email" name="Email" type="email" value="{{ emp.Email or '' }}" placeholder="nhanvien@congty.com">
                 </div>
                 <div>
                     <label for="f_NgaySinh">Ngày sinh</label>
-                    <input id="f_NgaySinh" name="NgaySinh" type="date" value="{{emp.NgaySinh or ''}}">
+                    <input id="f_NgaySinh" name="NgaySinh" type="date" value="{{ emp.NgaySinh or '' }}">
                 </div>
                 <div>
                     <label for="f_GioiTinh">Giới tính</label>
                     <select id="f_GioiTinh" name="GioiTinh">
                         <option value="">Chọn giới tính...</option>
-                        <option value="Nam" {{'selected' if emp.GioiTinh=='Nam'}}>Nam</option>
-                        <option value="Nữ" {{'selected' if emp.GioiTinh=='Nữ'}}>Nữ</option>
+                        <option value="Nam" {{ 'selected' if emp.GioiTinh == 'Nam' }}>Nam</option>
+                        <option value="Nữ" {{ 'selected' if emp.GioiTinh == 'Nữ' }}>Nữ</option>
                     </select>
                 </div>
                 <div class="full">
                     <label for="f_DiaChi">Địa chỉ cư trú</label>
-                    <input id="f_DiaChi" name="DiaChi" type="text" value="{{emp.DiaChi or ''}}" placeholder="Số nhà, tên đường, phường/xã, quận/huyện...">
+                    <input id="f_DiaChi" name="DiaChi" type="text" value="{{ emp.DiaChi or '' }}" placeholder="Số nhà, tên đường, phường/xã, quận/huyện...">
                 </div>
             </div>
-            <p style="margin:22px 0 0;display:flex;gap:10px">
+            <p style="margin:26px 0 0;display:flex;gap:12px;align-items:center">
                 <button class="btn">
-                    {{icon('check')}}
+                    {{ icon('check') }}
                     Lưu thông tin
                 </button>
-                <a class="btn g" href="{{url_for('main.me')}}">
-                    Hủy
+                <a class="btn g" href="{{ url_for('main.me') }}">
+                    {{ icon('x') }}
+                    Hủy bỏ
                 </a>
             </p>
         </form>

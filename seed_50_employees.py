@@ -273,6 +273,13 @@ def seed_database():
         clean_all_duplicates(db)
         db.commit()
 
+        # 10. Automatically run comprehensive functional record seeding for all 50 employees
+        try:
+            from seed_all_employee_records import run_seed as seed_all_functions
+            seed_all_functions()
+        except Exception as e:
+            print(f"Lưu ý: Không thể chạy seed_all_employee_records: {e}")
+
         # Stats summary
         nv_cnt = db.execute("SELECT COUNT(*) FROM NhanVien").fetchone()[0]
         pb_cnt = db.execute("SELECT COUNT(*) FROM PhongBan").fetchone()[0]

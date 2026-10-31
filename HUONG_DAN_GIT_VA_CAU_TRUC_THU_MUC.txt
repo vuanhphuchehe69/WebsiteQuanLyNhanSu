@@ -1,0 +1,265 @@
+========================================================================================
+    HƯỚNG DẪN ĐẨY GIT, CẤU TRÚC THƯ MỤC & VẬN HÀNH HỆ THỐNG QUẢN LÝ NHÂN SỰ
+========================================================================================
+Đơn vị phát triển : Nhóm 9 - Dự án Website Quản Lý Nhân Sự (HRM System)
+Phiên bản         : 2.5 SaaS Enterprise
+Nền tảng          : Python 3.13, Flask 3.1, Microsoft SQL Server (MSSQL), SQLite
+Ngày hoàn thiện   : 31/10/2026
+Trạng thái Test   : 54/54 Kịch bản Kiểm thử Tự động PASS 100%
+========================================================================================
+
+MỤC LỤC TÀI LIỆU:
+1. HƯỚNG DẪN ĐẨY MÃ NGUỒN LÊN GITHUB / GITLAB CHI TIẾT TỪ A ĐẾN Z
+2. BẢN ĐỒ CẤU TRÚC THƯ MỤC DỰ ÁN & VAI TRÒ TỪNG TỆP TIN
+3. HƯỚNG DẪN CÀI ĐẶT MÔI TRƯỜNG & KHỞI CHẠY ỨNG DỤNG
+4. DANH SÁCH TÀI KHOẢN ĐĂNG NHẬP MẪU THEO PHÂN QUYỀN (50 NHÂN VIÊN & 8 PHÒNG BAN)
+5. TỔNG HỢP CÁC TÍNH NĂNG MỚI ĐÃ ĐƯỢC NÂNG CẤP ĐẶC SẮC
+6. HƯỚNG DẪN CHẠY KIỂM THỬ TỰ ĐỘNG (TEST SUITE)
+
+========================================================================================
+1. HƯỚNG DẪN ĐẨY MÃ NGUỒN LÊN GITHUB / GITLAB CHI TIẾT TỪ A ĐẾN Z
+========================================================================================
+
+Hiện tại, toàn bộ mã nguồn và lịch sử các commit đều đã được lưu trữ an toàn trong kho Git
+cục bộ (Local Git) trên máy của bạn. Để đưa mã nguồn lên tài khoản GitHub hoặc GitLab,
+bạn thực hiện tuần tự theo các bước dưới đây:
+
+BƯỚC 1: TẠO REPOSITORY TRÊN GITHUB / GITLAB
+1. Đăng nhập vào tài khoản GitHub (https://github.com) hoặc GitLab (https://gitlab.com).
+2. Bấm vào nút "New" (hoặc dấu "+") để tạo một Repository mới.
+3. Đặt tên Repository, ví dụ: "WebsiteQuanLyNhanSu" hoặc "HRM_Nhom9".
+4. Chọn chế độ Public hoặc Private tùy nhu cầu.
+5. LƯU Ý QUAN TRỌNG: KHÔNG tích chọn "Add a README file", "Add .gitignore" hay "Choose a license"
+   (vì dự án trên máy bạn đã có sẵn mã nguồn đầy đủ, nếu tích chọn sẽ gây xung đột lịch sử commit).
+6. Bấm "Create repository".
+7. Sao chép đường dẫn URL của Repository vừa tạo, có dạng:
+   - HTTPS: https://github.com/<tai-khoan-cua-ban>/WebsiteQuanLyNhanSu.git
+   - Hoặc SSH: git@github.com:<tai-khoan-cua-ban>/WebsiteQuanLyNhanSu.git
+
+BƯỚC 2: MỞ POWERSHELL / TERMINAL TẠI THƯ MỤC DỰ ÁN
+1. Mở PowerShell hoặc Command Prompt.
+2. Di chuyển vào thư mục dự án:
+   cd d:\Ghost\WebsiteQuanLyNhanSu
+
+BƯỚC 3: KẾT NỐI VÀ ĐẨY MÃ NGUỒN LÊN GITHUB
+Chạy lần lượt 3 lệnh sau (thay đường link URL bằng link GitHub bạn vừa copy ở Bước 1):
+
+   git remote add origin https://github.com/<tai-khoan-cua-ban>/WebsiteQuanLyNhanSu.git
+   git branch -M master
+   git push -u origin master
+
+(Nếu trình duyệt hoặc terminal yêu cầu đăng nhập, bạn chọn "Sign in with browser" hoặc nhập
+Personal Access Token (PAT) của GitHub).
+
+BƯỚC 4: QUY TRÌNH ĐẨY THAY ĐỔI TRONG NHỮNG LẦN TIẾP THEO
+Mỗi khi bạn sửa code và muốn lưu lại rồi đẩy lên GitHub, chỉ cần chạy 3 lệnh đơn giản:
+   git add -A
+   git commit -m "noi dung thay doi cua ban"
+   git push
+
+BƯỚC 5: XỬ LÝ SỰ CỐ THƯỜNG GẶP
+- Trường hợp báo lỗi "remote origin already exists":
+  Chạy lệnh: git remote set-url origin <URL_MOI_CUA_BAN>
+- Trường hợp báo lỗi "failed to push some refs (fetch first)":
+  Chạy lệnh: git pull origin master --rebase
+  Sau đó chạy: git push -u origin master
+- Xem lại lịch sử commit trên máy:
+  Chạy lệnh: git log --oneline -n 10
+
+========================================================================================
+2. BẢN ĐỒ CẤU TRÚC THƯ MỤC DỰ ÁN & VAI TRÒ TỪNG TỆP TIN
+========================================================================================
+
+WebsiteQuanLyNhanSu/
+│
+├── ss/                                  # Thư mục gốc chứa toàn bộ mã nguồn ứng dụng Flask
+│   │
+│   ├── app.py                           # [Cốt lõi] Application Factory, khởi tạo Flask,
+│   │                                    # cấu hình AliasedLoader chống lỗi TemplateNotFound,
+│   │                                    # Middleware bảo vệ CSRF, Context Processor (Menu & Chấm đỏ)
+│   │
+│   ├── config.py                        # [Cấu hình] Tham số hệ thống, kết nối DB, định nghĩa
+│   │                                    # danh mục bảng dữ liệu (MODS), cấu trúc menu (NAV),
+│   │                                    # nhóm điều hướng, icon Lucide và màu sắc trạng thái (TONE)
+│   │
+│   ├── database.py                      # [Cơ sở dữ liệu] Kết nối Microsoft SQL Server qua pyodbc,
+│   │                                    # tự động fallback sang SQLite, cơ chế schema migration,
+│   │                                    # hàm tự động dọn dẹp triệt tiêu lặp bản ghi (clean_all_duplicates)
+│   │
+│   ├── utils.py                         # [Tiện ích] Kiểm tra đăng nhập (@login_required),
+│   │                                    # kiểm tra phân quyền (@roles_required), validate biểu mẫu,
+│   │                                    # chống tấn công CSRF, phân trang dữ liệu, ghi nhật ký hoạt động
+│   │
+│   ├── test_app.py                      # [Kiểm thử tự động] Bộ test suite gồm 54 kịch bản
+│   │                                    # kiểm tra toàn diện nghiệp vụ 3 Actor, AI Chatbot, lương, CSDL
+│   │
+│   ├── routes/                          # [Tầng định tuyến - Flask Blueprints]
+│   │   ├── __init__.py                  # Đăng ký Blueprints vào Flask Application
+│   │   ├── auth.py                      # Xác thực: Đăng nhập theo vai trò, Đăng xuất, Đổi mật khẩu
+│   │   ├── main.py                      # Nghiệp vụ Dashboard, Cổng cá nhân (/me), Chấm công,
+│   │   │                                # Báo cáo nhân sự, Đào tạo, Trợ lý ảo AI Chatbot API
+│   │   └── modules.py                   # Quản lý dữ liệu động các bảng (/m/<mod>): hiển thị bảng,
+│   │                                    # tìm kiếm tức thì, sắp xếp, phân trang, thêm, sửa, xóa, xuất CSV
+│   │
+│   ├── templates/                       # [Giao diện - Jinja2 HTML Templates]
+│   │   ├── base.html                    # Layout dùng chung: Sidebar có animation, Header Dark/Light,
+│   │   │                                # Hộp tìm kiếm nhanh (Ctrl+K), Chuông chấm đỏ, Widget Trợ lý AI
+│   │   ├── login.html                   # Giao diện Đăng nhập chia đôi màn hình (Split screen) chuẩn SaaS
+│   │   ├── dash.html                    # Dashboard tổng quan: Thẻ thống kê số đếm chạy, 2 Biểu đồ Donut SVG,
+│   │   │                                # Cảnh báo nhân viên có nguy cơ nghỉ việc (Flight Risk Detector)
+│   │   ├── me.html                      # Cổng thông tin cá nhân nhân viên: Hồ sơ 360°, điểm danh, bảng lương,
+│   │   │                                # xin nghỉ phép, giải trình công, đăng ký OT, tạm ứng, đào tạo
+│   │   ├── list.html                    # Danh sách dữ liệu thông minh: Ảnh thẻ 3x4, tìm kiếm, xuất CSV
+│   │   ├── form.html                    # Biểu mẫu thêm/sửa dữ liệu dùng chung hỗ trợ tải file ảnh
+│   │   ├── form_doc.html                # Biểu mẫu nộp bằng cấp, chứng chỉ, scan hợp đồng cho nhân viên
+│   │   ├── form_advance.html            # Biểu mẫu xin tạm ứng tiền lương
+│   │   ├── analytics.html               # Báo cáo phân tích nâng cao, biểu đồ biến động nghỉ việc, thời gian tuyển
+│   │   ├── report_hr.html               # Báo cáo cơ cấu nhân sự theo từng phòng ban và xuất Excel
+│   │   ├── report_leave.html            # Báo cáo thống kê ngày nghỉ phép năm của nhân sự
+│   │   ├── backup.html                  # Trung tâm sao lưu CSDL: tải về JSON Snapshot hoặc SQL Script
+│   │   ├── audit_log.html               # Nhật ký hoạt động người dùng và lịch sử truy vết hệ thống
+│   │   ├── announcements.html           # Bảng tin thông báo nội bộ toàn công ty và theo phòng ban
+│   │   ├── training.html                # Danh sách khóa đào tạo nội bộ và cổng đăng ký học
+│   │   ├── feedback.html                # Hộp thư đề xuất cải tiến và khiếu nại nội bộ
+│   │   └── msg.html                     # Trang hiển thị thông báo lỗi thân thiện (403, 400, 404, 500)
+│   │
+│   └── static/                          # [Tài nguyên tĩnh]
+│       ├── css/style.css                # Bộ stylesheet CSS3 cao cấp: Hỗ trợ Dark Mode, Glassmorphism,
+│       │                                # Ảnh thẻ tỷ lệ 3x4, Hiệu ứng chuyển động 60fps mượt mà
+│       └── uploads/                     # Thư mục lưu trữ tệp tin người dùng tải lên
+│           ├── avatars/                 # Ảnh thẻ chân dung 3x4 của 50 nhân viên (avatar_NV001.svg...)
+│           └── documents/               # File scan bằng cấp, chứng chỉ, hợp đồng đính kèm
+│
+├── seed_50_employees.py                 # [Kịch bản khởi tạo] Script tự động tạo 50 nhân viên, 8 phòng ban,
+│                                        # 16 chức vụ, 50 hợp đồng, 100 bảng lương, chấm công và khen thưởng
+│
+├── generate_handover_doc.py             # Script tạo file Word bàn giao chính thức (.docx)
+├── TAI_LIEU_BAN_GIAO_HE_THONG_QUAN_LY_NHAN_SU.docx # Tài liệu Bàn giao Kỹ thuật Word hoàn chỉnh (~48KB)
+├── HUONG_DAN_GIT_VA_CAU_TRUC_THU_MUC.txt # Tệp hướng dẫn này
+└── .gitignore                           # Cấu hình bỏ qua file rác, bytecode, cache
+
+========================================================================================
+3. HƯỚNG DẪN CÀI ĐẶT MÔI TRƯỜNG & KHỞI CHẠY ỨNG DỤNG
+========================================================================================
+
+YÊU CẦU:
+- Python 3.10 trở lên (khuyên dùng Python 3.12 hoặc 3.13)
+- Microsoft SQL Server (2019/2022 hoặc Express) có cài "ODBC Driver 18 for SQL Server"
+  (Nếu máy chưa có SQL Server, hệ thống sẽ tự động dùng SQLite nhansu.db mà không báo lỗi)
+
+CÁC BƯỚC KHỞI CHẠY:
+1. Mở PowerShell tại thư mục dự án:
+   cd d:\Ghost\WebsiteQuanLyNhanSu
+
+2. Cài đặt thư viện:
+   pip install flask pyodbc python-docx
+
+3. Khởi tạo dữ liệu mẫu 50 nhân viên (nếu cần chạy lại):
+   python seed_50_employees.py
+
+4. Khởi động máy chủ Web:
+   python ss/app.py
+
+5. Mở trình duyệt web truy cập:
+   http://127.0.0.1:5000
+
+========================================================================================
+4. DANH SÁCH TÀI KHOẢN ĐĂNG NHẬP MẪU (50 NHÂN VIÊN & 8 PHÒNG BAN)
+========================================================================================
+
+Hệ thống đã nạp sẵn 51 tài khoản hoàn chỉnh cho 8 phòng ban.
+Tất cả mật khẩu mặc định là: 123456 (riêng tài khoản admin là: admin123).
+
+A. TÀI KHOẢN QUẢN TRỊ VIÊN (ADMIN - TOÀN QUYỀN HỆ THỐNG):
+   - Vai trò chọn trên form: Admin
+   - Tên đăng nhập          : admin
+   - Mật khẩu               : admin123
+
+B. TÀI KHOẢN TRƯỞNG PHÒNG / QUẢN LÝ (QUANLY - CÓ QUYỀN DUYỆT ĐƠN & BÁO CÁO PHÒNG):
+   - ql001 : Trưởng phòng Nhân sự (NV001 - Nguyễn Văn An)
+   - ql006 : Kế toán trưởng (NV006 - Vũ Thị Phương Thảo)
+   - ql007 : Trưởng phòng Kinh doanh (NV007 - Đặng Tuấn Anh)
+   - ql008 : Trưởng phòng Công nghệ CNTT (NV008 - Bùi Đức Trọng)
+   - ql009 : Trưởng phòng Kỹ thuật (NV009 - Ngô Quang Huy)
+   - ql010 : Trưởng nhóm Chăm sóc Khách hàng (NV010 - Dương Thúy Hằng)
+   - ql011 : Trưởng phòng Hành chính (NV011 - Lý Gia Bảo)
+   - ql012 : Giám đốc Điều hành CEO (NV012 - Phan Văn Hùng)
+   (Mật khẩu chung: 123456)
+
+C. TÀI KHOẢN NHÂN VIÊN (NHANVIEN - ĐIỂM DANH, XEM LƯƠNG, NỘP ĐƠN TỪ):
+   - nv002 : Trần Thị Bình (Chuyên viên Nhân sự)
+   - nv003 : Lê Minh Cường (Kế toán viên)
+   - nv004 : Phạm Thu Dung (Chuyên viên Kinh doanh)
+   - nv005 : Hoàng Quốc Em (Kỹ sư Phần mềm Fullstack)
+   - nv014 : Đỗ Thành Long (Kỹ sư AI & Dữ liệu)
+   - nv015 : Tạ Minh Khang (Chuyên viên An ninh mạng)
+   - nv016 đến nv050 : Các nhân viên thuộc các bộ phận khác nhau.
+   (Mật khẩu chung: 123456)
+
+========================================================================================
+5. TỔNG HỢP CÁC TÍNH NĂNG MỚI ĐÃ ĐƯỢC NÂNG CẤP ĐẶC SẮC
+========================================================================================
+
+1. QUY MÔ DỮ LIỆU CHUẨN DOANH NGHIỆP:
+   - 50 nhân viên chính thức, thử việc và thực tập sinh.
+   - 8 phòng ban chuyên trách và 16 chức vụ rõ ràng.
+   - 50 hợp đồng lao động có lương cơ bản từ 12 triệu đến 50 triệu VNĐ.
+   - 100 bảng lương chi tiết tính sẵn BHXH (10.5%), thuế TNCN và các khoản thưởng.
+   - 62 bản ghi chấm công thực tế phân bổ đúng giờ, đi muộn, về sớm.
+   - 23 quyết định khen thưởng xuất sắc và kỷ luật công bằng.
+
+2. GIAO DIỆN PREMIUM SAAS (LINEAR / NOTION / STRIPE STYLE):
+   - Trang đăng nhập chia đôi màn hình (Split screen) với gradient mesh hiện đại.
+   - Bo góc lớn (rounded-2xl 16-20px), đổ bóng mềm đa tầng, không dùng khung viền thô ráp.
+   - Hỗ trợ chuyển đổi Dark Mode (Giao diện Tối) và Light Mode (Giao diện Sáng) mượt mà,
+     tự động lưu trạng thái vào localStorage.
+
+3. PHÍM TẮT TÌM KIẾM NHANH (CTRL + K):
+   - Bấm phím "Ctrl + K" tại bất kỳ trang nào để mở Command Palette điều hướng tức thì
+     đến mọi chức năng, nhân viên, báo cáo mà không cần bấm chuột.
+
+4. HỆ THỐNG THÔNG BÁO CHẤM ĐỎ & HUY HIỆU XUNG NHỊP:
+   - Menu Sidebar và biểu tượng Chuông tự động hiển thị chấm đỏ pulsing hoặc badge đếm số lượng
+     khi có đơn nghỉ phép, ca tăng ca, tạm ứng hoặc đề xuất đang "Chờ duyệt".
+
+5. BIỂU ĐỒ HÌNH TRÒN DONUT SVG TƯƠNG TÁC TRÊN TRANG CHỦ:
+   - Trang chủ Admin: Biểu đồ cơ cấu nhân sự theo Phòng ban & Biểu đồ phân loại nhân sự.
+   - Trang chủ Quản lý: Biểu đồ cơ cấu chức danh phòng & Biểu đồ tỷ lệ chấm công hôm nay.
+   - Tích hợp chú giải màu sắc trực quan, số lượng cụ thể và tỷ lệ phần trăm (%).
+
+6. CHUẨN HÓA ẢNH THẺ NHÂN VIÊN TỶ LỆ 3X4:
+   - Khung ảnh nhân viên hiển thị theo đúng tỷ lệ chân dung 3:4 chuẩn công vụ, kèm khung viền
+     chỉ báo "3x4" và hiệu ứng phóng to nhẹ khi rê chuột.
+
+7. TẢI FILE SCAN HỢP ĐỒNG VÀ BẰNG CẤP CHỨNG CHỈ:
+   - Form Hợp đồng và form Bằng cấp cho phép tải ảnh chụp, scan PDF hoặc nhập link trực tuyến,
+     lưu trữ an toàn vào thư mục uploads/.
+
+8. CƠ CHẾ TRIỆT TIÊU LỖI LẶP BẢN GHI (CLEAN_ALL_DUPLICATES):
+   - Tự động rà soát và xóa sạch các bản ghi trùng lặp (trùng tài khoản, trùng chấm công,
+     trùng nhật ký) mỗi khi đăng nhập hoặc khởi động hệ thống.
+
+9. HIỆU ỨNG SỐ ĐẾM CHẠY (COUNT-UP ANIMATION):
+   - Các con số thống kê trên Dashboard tự động nhảy tăng dần theo gia tốc tự nhiên khi tải trang.
+
+10. TRỢ LÝ AI NHÂN SỰ NỘI BỘ (AI ASSISTANT CHATBOT):
+    - Cửa sổ chat AI nổi ở góc phải màn hình sẵn sàng trả lời tự động số ngày phép còn lại,
+      hướng dẫn 4 bước xin tạm ứng lương, tóm tắt hồ sơ ứng viên và gợi ý nhận xét KPI.
+
+========================================================================================
+6. HƯỚNG DẪN CHẠY KIỂM THỬ TỰ ĐỘNG (TEST SUITE)
+========================================================================================
+
+Hệ thống được trang bị bộ kiểm thử tự động toàn diện tại tệp "ss/test_app.py" bao gồm 54
+kịch bản kiểm tra logic từ Đăng nhập, CRUD hợp đồng, Chấm công, Phân ca, Bảng lương,
+Kiểm toán hệ thống, Cảnh báo nghỉ việc, Biểu đồ thống kê đến Trợ lý AI.
+
+Để chạy kiểm thử tự động, mở terminal và gõ:
+   python ss/test_app.py
+
+Kết quả mong đợi:
+   === ALL 54 TESTS PASSED! AI ASSISTANT, ANALYTICS & BUG FIXES FULLY VERIFIED! ===
+
+========================================================================================
+                       CHÚC BẠN VẬN HÀNH DỰ ÁN THÀNH CÔNG!
+========================================================================================

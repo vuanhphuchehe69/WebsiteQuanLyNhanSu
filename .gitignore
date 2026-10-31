@@ -9,4 +9,6 @@ venv/
 nhansu.db
 .vscode/
 ss.rar
+~$*
+.cache
 

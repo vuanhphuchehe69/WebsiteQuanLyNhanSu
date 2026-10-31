@@ -12,7 +12,7 @@
         </div>
     </div>
     <div class="card fm">
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="_csrf" value="{{ csrf }}">
             <div class="fg">
                 <div class="full">
@@ -40,6 +40,13 @@
                 <div class="full">
                     <label for="f_NoiCap">Nơi cấp / Đơn vị đào tạo</label>
                     <input id="f_NoiCap" name="NoiCap" placeholder="Ví dụ: Đại học Bách Khoa Hà Nội, British Council, Công an TP. Hà Nội...">
+                </div>
+                <div class="full">
+                    <label for="f_HinhAnh">Ảnh chụp / Bản scan bằng cấp (JPG, PNG, PDF)</label>
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+                        <input id="f_HinhAnh_file" type="file" name="HinhAnh_file" accept="image/*,.pdf" style="font-size:12.5px">
+                    </div>
+                    <input id="f_HinhAnh" name="HinhAnh" type="text" placeholder="Hoặc nhập đường dẫn ảnh trực tuyến (https://...)" style="font-size:12.5px">
                 </div>
                 <div class="full">
                     <label for="f_GhiChu">Ghi chú thêm</label>

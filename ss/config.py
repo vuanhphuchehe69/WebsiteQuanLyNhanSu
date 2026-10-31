@@ -271,6 +271,7 @@ MODS = {
         'fields': [
             ('MaHD', 'Mã hợp đồng', 'text', 1, None),
             ('MaNV', 'Nhân viên', 'select', 1, 'nv'),
+            ('HinhAnh', 'Ảnh / Bản scan hợp đồng', 'image', 0, None),
             ('LoaiHD', 'Loại hợp đồng', 'select', 1, 'loai_hd'),
             ('NgayBD', 'Ngày bắt đầu', 'date', 1, None),
             ('NgayKT', 'Ngày kết thúc', 'date', 0, None),
@@ -668,6 +669,7 @@ MODS = {
             ('MaNV', 'Nhân viên sở hữu', 'select', 1, 'nv'),
             ('TenTaiLieu', 'Tên văn bằng / Chứng chỉ / Giấy tờ', 'text', 1, None),
             ('Loai', 'Phân loại giấy tờ', 'select', 1, 'loai_tl'),
+            ('HinhAnh', 'Ảnh / Bản scan văn bằng', 'image', 0, None),
             ('NgayCap', 'Ngày cấp văn bằng', 'date', 0, None),
             ('NoiCap', 'Cơ quan / Đơn vị cấp', 'text', 0, None),
             ('TepDinhKem', 'Tên tệp lưu trữ', 'text', 0, None),
@@ -840,8 +842,12 @@ NAV = [
     ('Khóa đào tạo', 'training_view', None, (NV, QL, AD)),
     ('Đề xuất & Khiếu nại', 'feedback_view', None, (NV, QL, AD)),
 
+    # Nhóm Báo cáo & Thống kê (Đẩy lên trước phần Nghiệp vụ theo yêu cầu)
+    ('Báo cáo nhân sự', 'report_hr', None, (QL, AD)),
+    ('Báo cáo nghỉ phép', 'report_leave', None, (QL, AD)),
+    ('Thống kê biến động & Chi phí', 'analytics_view', None, (AD,)),
+
     # Nhóm Nghiệp vụ quản lý nhân sự
-    ('Trung tâm phê duyệt', 'manager_approvals', None, (QL, AD)),
     ('Nhân viên', 'mlist', 'nhanvien', (QL, AD)),
     ('Hợp đồng', 'mlist', 'hopdong', (QL, AD)),
     ('Chấm công', 'mlist', 'chamcong', (QL, AD)),
@@ -856,17 +862,10 @@ NAV = [
     ('Khen thưởng & Kỷ luật', 'mlist', 'khenthuong', (QL, AD)),
     ('Quản lý đào tạo', 'mlist', 'daotao', (QL, AD)),
     ('Quản lý đề xuất & khiếu nại', 'mlist', 'dexuat', (QL, AD)),
-    ('Đề xuất nhân sự', 'mlist', 'dexuat_ns', (QL, AD)),
 
-    # Nhóm Tuyển dụng & Quy trình
+    # Nhóm Tuyển dụng
     ('Yêu cầu tuyển dụng', 'mlist', 'tuyendung', (QL, AD)),
     ('Ứng viên phỏng vấn', 'mlist', 'ungvien', (QL, AD)),
-    ('Onboarding / Offboarding', 'mlist', 'quytrinh', (QL, AD)),
-
-    # Nhóm Báo cáo & Thống kê
-    ('Báo cáo nhân sự', 'report_hr', None, (QL, AD)),
-    ('Báo cáo nghỉ phép', 'report_leave', None, (QL, AD)),
-    ('Thống kê biến động & Chi phí', 'analytics_view', None, (AD,)),
 
     # Nhóm Hệ thống & Cấu hình
     ('Chốt công & Tính bảng lương', 'payroll_calc_view', None, (AD,)),
@@ -875,7 +874,6 @@ NAV = [
     ('Chức vụ', 'mlist', 'chucvu', (AD,)),
     ('Tài khoản', 'mlist', 'taikhoan', (AD,)),
     ('Nhật ký hoạt động', 'audit_log_view', None, (AD,)),
-    ('Quản lý thông báo', 'mlist', 'thongbao', (QL, AD)),
     ('Sao lưu dữ liệu', 'backup_view', None, (AD,)),
     ('Đổi mật khẩu', 'change_pw', None, (NV, QL, AD)),
 ]
@@ -886,7 +884,6 @@ NAV_ICON = {
     'Thông báo': 'bell',
     'Khóa đào tạo': 'book-open',
     'Đề xuất & Khiếu nại': 'message-square',
-    'Trung tâm phê duyệt': 'check-square',
     'Nhân viên': 'users',
     'Chấm công': 'check-square',
     'Hợp đồng': 'file-text',
@@ -902,17 +899,14 @@ NAV_ICON = {
     'Khen thưởng & Kỷ luật': 'award',
     'Quản lý đào tạo': 'book-open',
     'Quản lý đề xuất & khiếu nại': 'message-square',
-    'Đề xuất nhân sự': 'layers',
     'Yêu cầu tuyển dụng': 'user-plus',
     'Ứng viên phỏng vấn': 'user-check',
-    'Onboarding / Offboarding': 'clipboard',
     'Chốt công & Tính bảng lương': 'dollar-sign',
     'Bằng cấp & Giấy tờ': 'file',
     'Phòng ban': 'building',
     'Chức vụ': 'briefcase',
     'Tài khoản': 'key',
     'Nhật ký hoạt động': 'activity',
-    'Quản lý thông báo': 'send',
     'Sao lưu dữ liệu': 'database',
     'Đổi mật khẩu': 'lock',
 }
@@ -924,7 +918,10 @@ NAV_GROUP = {
     'Khóa đào tạo': None,
     'Đề xuất & Khiếu nại': None,
 
-    'Trung tâm phê duyệt': 'Nghiệp vụ',
+    'Báo cáo nhân sự': 'Báo cáo & Thống kê',
+    'Báo cáo nghỉ phép': 'Báo cáo & Thống kê',
+    'Thống kê biến động & Chi phí': 'Báo cáo & Thống kê',
+
     'Nhân viên': 'Nghiệp vụ',
     'Hợp đồng': 'Nghiệp vụ',
     'Chấm công': 'Nghiệp vụ',
@@ -938,15 +935,9 @@ NAV_GROUP = {
     'Khen thưởng & Kỷ luật': 'Hiệu suất & Phát triển',
     'Quản lý đào tạo': 'Hiệu suất & Phát triển',
     'Quản lý đề xuất & khiếu nại': 'Hiệu suất & Phát triển',
-    'Đề xuất nhân sự': 'Hiệu suất & Phát triển',
 
-    'Yêu cầu tuyển dụng': 'Tuyển dụng & Quy trình',
-    'Ứng viên phỏng vấn': 'Tuyển dụng & Quy trình',
-    'Onboarding / Offboarding': 'Tuyển dụng & Quy trình',
-
-    'Báo cáo nhân sự': 'Báo cáo & Thống kê',
-    'Báo cáo nghỉ phép': 'Báo cáo & Thống kê',
-    'Thống kê biến động & Chi phí': 'Báo cáo & Thống kê',
+    'Yêu cầu tuyển dụng': 'Tuyển dụng',
+    'Ứng viên phỏng vấn': 'Tuyển dụng',
 
     'Chốt công & Tính bảng lương': 'Hệ thống & Cấu hình',
     'Bằng cấp & Giấy tờ': 'Hệ thống & Cấu hình',
@@ -954,7 +945,6 @@ NAV_GROUP = {
     'Chức vụ': 'Hệ thống & Cấu hình',
     'Tài khoản': 'Hệ thống & Cấu hình',
     'Nhật ký hoạt động': 'Hệ thống & Cấu hình',
-    'Quản lý thông báo': 'Hệ thống & Cấu hình',
     'Sao lưu dữ liệu': 'Hệ thống & Cấu hình',
     'Đổi mật khẩu': 'Hệ thống & Cấu hình',
 }

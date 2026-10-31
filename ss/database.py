@@ -453,6 +453,48 @@ CREATE TABLE ChotCong(
 );
 """
 
+def clean_all_duplicates(db):
+    """Purge duplicate records across all core and transaction tables."""
+    try:
+        # Deduplicate TaiKhoan by TenDN
+        db.execute("DELETE FROM TaiKhoan WHERE MaTK NOT IN (SELECT MIN(MaTK) FROM TaiKhoan GROUP BY TenDN);")
+    except Exception:
+        pass
+    try:
+        # Deduplicate ChamCong by MaNV, Ngay
+        db.execute("DELETE FROM ChamCong WHERE MaCC NOT IN (SELECT MIN(MaCC) FROM ChamCong GROUP BY MaNV, Ngay);")
+    except Exception:
+        pass
+    try:
+        # Deduplicate Luong by MaNV, ThangNam
+        db.execute("DELETE FROM Luong WHERE MaLuong NOT IN (SELECT MIN(MaLuong) FROM Luong GROUP BY MaNV, ThangNam);")
+    except Exception:
+        pass
+    try:
+        # Deduplicate HopDong by MaHD
+        db.execute("DELETE FROM HopDong WHERE MaHD NOT IN (SELECT MIN(MaHD) FROM HopDong GROUP BY MaHD);")
+    except Exception:
+        pass
+    try:
+        # Deduplicate transactions
+        db.execute("""
+            DELETE FROM TangCa WHERE MaTC NOT IN (SELECT MIN(MaTC) FROM TangCa GROUP BY MaNV, Ngay, SoGio, LyDo);
+            DELETE FROM TamUng WHERE MaTU NOT IN (SELECT MIN(MaTU) FROM TamUng GROUP BY MaNV, ThangNam, SoTien);
+            DELETE FROM GiaiTrinhCong WHERE MaGT NOT IN (SELECT MIN(MaGT) FROM GiaiTrinhCong GROUP BY MaNV, Ngay, LyDo);
+            DELETE FROM TaiLieuNhanVien WHERE MaTL NOT IN (SELECT MIN(MaTL) FROM TaiLieuNhanVien GROUP BY MaNV, TenTaiLieu);
+        """)
+    except Exception:
+        pass
+    try:
+        # Deduplicate NhatKyHoatDong
+        db.execute("DELETE FROM NhatKyHoatDong WHERE MaNK NOT IN (SELECT MIN(MaNK) FROM NhatKyHoatDong GROUP BY ThoiGian, NguoiDung, HanhDong);")
+    except Exception:
+        pass
+    try:
+        db.commit()
+    except Exception:
+        pass
+
 def init_db():
     """Initialize the database (create database, schema, and sample data if needed)."""
     if DB_TYPE == 'mssql' and PYODBC_AVAILABLE:
@@ -490,6 +532,8 @@ def init_db():
             "IF COL_LENGTH('Luong', 'BaoHiem') IS NULL ALTER TABLE Luong ADD BaoHiem FLOAT DEFAULT 0 WITH VALUES",
             "IF COL_LENGTH('Luong', 'ThueTNCN') IS NULL ALTER TABLE Luong ADD ThueTNCN FLOAT DEFAULT 0 WITH VALUES",
             "IF COL_LENGTH('Luong', 'KhauTruKhac') IS NULL ALTER TABLE Luong ADD KhauTruKhac FLOAT DEFAULT 0 WITH VALUES",
+            "IF COL_LENGTH('HopDong', 'HinhAnh') IS NULL ALTER TABLE HopDong ADD HinhAnh NVARCHAR(500)",
+            "IF COL_LENGTH('TaiLieuNhanVien', 'HinhAnh') IS NULL ALTER TABLE TaiLieuNhanVien ADD HinhAnh NVARCHAR(500)",
         ]
         for mig in migrations:
             db.execute(mig)
@@ -532,17 +576,8 @@ def init_db():
         except Exception:
             pass
 
-        # Clean duplicate records across transaction tables
-        try:
-            db.execute("""
-                DELETE FROM TangCa WHERE MaTC NOT IN (SELECT MIN(MaTC) FROM TangCa GROUP BY MaNV, Ngay, SoGio, LyDo);
-                DELETE FROM TamUng WHERE MaTU NOT IN (SELECT MIN(MaTU) FROM TamUng GROUP BY MaNV, ThangNam, SoTien);
-                DELETE FROM GiaiTrinhCong WHERE MaGT NOT IN (SELECT MIN(MaGT) FROM GiaiTrinhCong GROUP BY MaNV, Ngay, LyDo);
-                DELETE FROM TaiLieuNhanVien WHERE MaTL NOT IN (SELECT MIN(MaTL) FROM TaiLieuNhanVien GROUP BY MaNV, TenTaiLieu);
-            """)
-            db.commit()
-        except Exception:
-            pass
+        # Clean duplicate records across all core & transaction tables
+        clean_all_duplicates(db)
 
         # Step 3: Seed initial data if TaiKhoanAdmin is empty
         admin_row = db.execute("SELECT 1 FROM TaiKhoanAdmin").fetchone()

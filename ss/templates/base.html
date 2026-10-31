@@ -27,44 +27,76 @@
                     </div>
                 </div>
                 <nav class="nav">
-                    {% for g,t,u,ic in nav %}
+                    {% for g,t,u,ic,badge in nav %}
                         {% if g %}
                             <h6>
                                 {{g}}
                             </h6>
                         {% endif %}
                         <a href="{{u}}" class="{{'on' if (u=='/' and request.path=='/') or (u!='/' and request.path.startswith(u)) else ''}}">
-                            {{icon(ic)}}
-                            {{t}}
+                            <span class="nav-ic">{{icon(ic)}}</span>
+                            <span class="nav-txt">{{t}}</span>
+                            {% if badge and badge > 0 %}
+                                <span class="nav-badge">{{badge}}</span>
+                            {% elif badge == -1 %}
+                                <span class="nav-dot"></span>
+                            {% endif %}
                         </a>
                     {% endfor %}
                 </nav>
             </aside>
             <div class="main">
                 <header class="top">
-                    <div class="who">
+                    <div style="display:flex;align-items:center;gap:14px">
                         <label for="mt" class="ib menu" aria-label="Mở menu">
                             {{icon('menu')}}
                         </label>
-                        <span class="av" style="margin:0">
-                            {{uname|ini}}
-                        </span>
-                        <div>
-                            <b>
-                                {{uname}}
-                            </b>
-                            <small>
-                                {{role_name}}
-                            </small>
-                        </div>
-                    </div>
-                    <form method="post" action="{{url_for('auth.logout')}}">
-                        <input type="hidden" name="_csrf" value="{{csrf}}">
-                        <button class="btn g">
-                            {{icon('logout')}}
-                            Đăng xuất
+                        <!-- Command Palette Shortcut Button -->
+                        <button type="button" class="cmd-trigger-btn" onclick="openCmdPalette()" title="Tìm kiếm nhanh toàn hệ thống (Ctrl + K)">
+                            <svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            <span>Tìm kiếm chức năng...</span>
+                            <kbd>Ctrl K</kbd>
                         </button>
-                    </form>
+                    </div>
+
+                    <div style="display:flex;align-items:center;gap:12px">
+                        <!-- Chuyển Dark / Light Mode -->
+                        <button type="button" id="themeToggleBtn" class="ib theme-btn" onclick="toggleTheme()" title="Chuyển chế độ Giao diện Sáng / Tối">
+                            <span id="themeIcon">🌙</span>
+                        </button>
+
+                        <!-- Chuông Thông báo có chấm đỏ -->
+                        <a href="{{ url_for('main.announcements') }}" class="ib notif-bell" title="Thông báo hệ thống">
+                            {{ icon('bell') }}
+                            {% if total_badge_count and total_badge_count > 0 %}
+                                <span class="bell-dot-pulse"></span>
+                            {% endif %}
+                        </a>
+
+                        <!-- Khối người dùng -->
+                        <div class="who">
+                            <span class="av" style="margin:0">
+                                {{uname|ini}}
+                            </span>
+                            <div>
+                                <b>
+                                    {{uname}}
+                                </b>
+                                <small>
+                                    {{role_name}}
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Đăng xuất -->
+                        <form method="post" action="{{url_for('auth.logout')}}" style="margin:0">
+                            <input type="hidden" name="_csrf" value="{{csrf}}">
+                            <button class="btn g" style="padding:7px 12px;font-size:12.5px" title="Đăng xuất">
+                                {{icon('logout')}}
+                                <span class="hide-mobile">Đăng xuất</span>
+                            </button>
+                        </form>
+                    </div>
                 </header>
                 <div class="content">
                 {% endif %}
@@ -291,6 +323,160 @@
                 html = html.replace(/\n/g, '<br>');
                 return html;
             }
+
+            // ================= DARK / LIGHT THEME CONTROLLER =================
+            (function initTheme() {
+                var savedTheme = localStorage.getItem('hrm_theme');
+                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var theme = savedTheme || (prefersDark ? 'dark' : 'light');
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                    var icon = document.getElementById('themeIcon');
+                    if (icon) icon.textContent = '☀️';
+                }
+            })();
+
+            function toggleTheme() {
+                var isDark = document.documentElement.classList.toggle('dark');
+                var newTheme = isDark ? 'dark' : 'light';
+                localStorage.setItem('hrm_theme', newTheme);
+                var icon = document.getElementById('themeIcon');
+                if (icon) icon.textContent = isDark ? '☀️' : '🌙';
+            }
+
+            // ================= DASHBOARD COUNT-UP ANIMATION =================
+            (function initCountUp() {
+                document.querySelectorAll('.count-up').forEach(function(el) {
+                    var target = parseFloat(el.getAttribute('data-val'));
+                    if (isNaN(target) || target <= 0) return;
+                    var duration = 900;
+                    var start = 0;
+                    var startTime = null;
+                    function step(timestamp) {
+                        if (!startTime) startTime = timestamp;
+                        var progress = Math.min((timestamp - startTime) / duration, 1);
+                        var ease = 1 - Math.pow(1 - progress, 3);
+                        var current = Math.floor(start + (target - start) * ease);
+                        el.textContent = current.toLocaleString('vi-VN');
+                        if (progress < 1) {
+                            window.requestAnimationFrame(step);
+                        } else {
+                            el.textContent = target.toLocaleString('vi-VN');
+                        }
+                    }
+                    window.requestAnimationFrame(step);
+                });
+            })();
+
+            // ================= COMMAND PALETTE (CTRL + K) =================
+            function openCmdPalette() {
+                var modal = document.getElementById('cmdPaletteModal');
+                if (!modal) return;
+                modal.style.display = 'flex';
+                var inp = document.getElementById('cmdInput');
+                if (inp) {
+                    inp.value = '';
+                    inp.focus();
+                    filterCmdResults('');
+                }
+            }
+
+            function closeCmdPalette() {
+                var modal = document.getElementById('cmdPaletteModal');
+                if (modal) modal.style.display = 'none';
+            }
+
+            function filterCmdResults(q) {
+                var term = q.toLowerCase().trim();
+                var items = document.querySelectorAll('.cmd-item');
+                items.forEach(function(item) {
+                    var txt = (item.getAttribute('data-cmd') || '') + ' ' + (item.textContent || '');
+                    if (!term || txt.toLowerCase().indexOf(term) !== -1) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            }
+
+            window.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                    e.preventDefault();
+                    var modal = document.getElementById('cmdPaletteModal');
+                    if (modal && modal.style.display === 'flex') {
+                        closeCmdPalette();
+                    } else {
+                        openCmdPalette();
+                    }
+                } else if (e.key === 'Escape') {
+                    closeCmdPalette();
+                }
+            });
+        </script>
+
+        <!-- Command Palette Modal -->
+        {% if role %}
+        <div id="cmdPaletteModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);z-index:99999;backdrop-filter:blur(4px);align-items:flex-start;justify-content:center;padding-top:12vh" onclick="if(event.target===this)closeCmdPalette()">
+            <div style="background:var(--card);width:100%;max-width:580px;border-radius:16px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.35);border:1px solid var(--line);overflow:hidden;animation:fadeIn 0.15s ease">
+                <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line)">
+                    <span style="font-size:18px">🔍</span>
+                    <input id="cmdInput" type="text" placeholder="Tìm kiếm nhanh chức năng, nhân viên, báo cáo... (Esc để đóng)" oninput="filterCmdResults(this.value)" autocomplete="off" style="flex:1;border:none;background:transparent;outline:none;font-size:15px;color:var(--ink)">
+                    <kbd style="padding:3px 7px;font-size:11px;background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--mut)">ESC</kbd>
+                </div>
+                <div id="cmdResults" style="max-height:360px;overflow-y:auto;padding:8px">
+                    <div style="font-size:11px;font-weight:700;color:var(--mut);padding:8px 12px;text-transform:uppercase;letter-spacing:0.5px">Điều hướng nhanh</div>
+                    <a href="{{ url_for('main.dash') if role != 'NhanVien' else url_for('main.me') }}" class="cmd-item" data-cmd="trang chu tong quan">
+                        <span>🏠</span> <span>Trang chủ / Tổng quan</span>
+                    </a>
+                    <a href="{{ url_for('main.report_hr') }}" class="cmd-item" data-cmd="bao cao nhan su phong ban">
+                        <span>📊</span> <span>Báo cáo nhân sự</span>
+                    </a>
+                    <a href="{{ url_for('main.report_leave') }}" class="cmd-item" data-cmd="bao cao nghi phep ngay phep">
+                        <span>🏖️</span> <span>Báo cáo nghỉ phép</span>
+                    </a>
+                    <a href="{{ url_for('mlist', mod='nhanvien') }}" class="cmd-item" data-cmd="nhan vien danh sach ho so anh the 3x4">
+                        <span>👥</span> <span>Danh sách nhân viên (Ảnh thẻ 3x4)</span>
+                    </a>
+                    <a href="{{ url_for('mlist', mod='chamcong') }}" class="cmd-item" data-cmd="cham cong diem danh gio vao ra">
+                        <span>⏱️</span> <span>Chấm công & Điểm danh</span>
+                    </a>
+                    <a href="{{ url_for('mlist', mod='hopdong') }}" class="cmd-item" data-cmd="hop dong lao dong scan anh">
+                        <span>📄</span> <span>Hợp đồng lao động</span>
+                    </a>
+                    <a href="{{ url_for('mlist', mod='luong') }}" class="cmd-item" data-cmd="bang luong thuc linh thuong">
+                        <span>💵</span> <span>Bảng lương</span>
+                    </a>
+                    <a href="{{ url_for('main.announcements') }}" class="cmd-item" data-cmd="thong bao noi bo">
+                        <span>📢</span> <span>Thông báo nội bộ</span>
+                    </a>
+                    <a href="{{ url_for('main.training_view') }}" class="cmd-item" data-cmd="khoa dao tao hoc tap">
+                        <span>🎓</span> <span>Khóa đào tạo</span>
+                    </a>
+                    <a href="{{ url_for('auth.change_pw') }}" class="cmd-item" data-cmd="doi mat khau bao mat">
+                        <span>🔒</span> <span>Đổi mật khẩu</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <style>
+            .cmd-item {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 10px 14px;
+                border-radius: 10px;
+                color: var(--ink);
+                font-size: 13.5px;
+                font-weight: 500;
+                text-decoration: none;
+                transition: background 0.15s ease;
+            }
+            .cmd-item:hover {
+                background: var(--brand-light);
+                color: var(--brand);
+            }
+        </style>
+        {% endif %}
         </script>
     </body>
 </html>

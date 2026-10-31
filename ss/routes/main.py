@@ -131,7 +131,7 @@ def dash():
             ('Đăng ký OT chờ duyệt', query_scalar("SELECT COUNT(*) FROM TangCa x JOIN NhanVien n ON x.MaNV=n.MaNV JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=? AND x.TrangThai=N'Chờ duyệt'", (mapb,)), 'clock'),
             ('Giải trình công chờ duyệt', query_scalar("SELECT COUNT(*) FROM GiaiTrinhCong x JOIN NhanVien n ON x.MaNV=n.MaNV JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=? AND x.TrangThai=N'Chờ duyệt'", (mapb,)), 'activity'),
             ('Tạm ứng chờ duyệt', query_scalar("SELECT COUNT(*) FROM TamUng x JOIN NhanVien n ON x.MaNV=n.MaNV JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=? AND x.TrangThai=N'Chờ duyệt'", (mapb,)), 'dollar-sign'),
-            ('Đề xuất nhân sự của tôi', query_scalar("SELECT COUNT(*) FROM DeXuatNhanSu WHERE NguoiDeXuat=?", (mnv,)), 'layers'),
+            ('Đánh giá KPI phòng', query_scalar("SELECT COUNT(*) FROM DanhGia x JOIN NhanVien n ON x.MaNV=n.MaNV JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=?", (mapb,)), 'award'),
             ('Khóa đào tạo đang mở', query_scalar("SELECT COUNT(*) FROM KhoaDaoTao WHERE TrangThai!=N'Hoàn thành'"), 'book-open'),
         ]
     else:
@@ -142,14 +142,114 @@ def dash():
             ('Chức vụ', query_scalar('SELECT COUNT(*) FROM ChucVu'), 'briefcase'),
             ('Chấm công hôm nay', query_scalar("SELECT COUNT(*) FROM ChamCong WHERE Ngay=?", (today_str,)), 'check-square'),
             ('Đơn chờ duyệt (Toàn bộ)', query_scalar("SELECT (SELECT COUNT(*) FROM NghiPhep WHERE TrangThai=N'Chờ duyệt') + (SELECT COUNT(*) FROM TangCa WHERE TrangThai=N'Chờ duyệt') + (SELECT COUNT(*) FROM GiaiTrinhCong WHERE TrangThai=N'Chờ duyệt') + (SELECT COUNT(*) FROM TamUng WHERE TrangThai=N'Chờ duyệt')"), 'bell'),
-            ('Đề xuất nhân sự chờ duyệt', query_scalar("SELECT COUNT(*) FROM DeXuatNhanSu WHERE TrangThai=N'Chờ HR phê duyệt'"), 'layers'),
+            ('Đánh giá KPI', query_scalar('SELECT COUNT(*) FROM DanhGia'), 'award'),
             ('Khóa đào tạo', query_scalar('SELECT COUNT(*) FROM KhoaDaoTao'), 'book-open'),
             ('Yêu cầu tuyển dụng', query_scalar("SELECT COUNT(*) FROM YeuCauTuyenDung WHERE TrangThai=N'Đang tuyển'"), 'user-plus'),
             ('Tài khoản hệ thống', query_scalar('SELECT COUNT(*) FROM TaiKhoan'), 'key'),
         ]
 
+    pie_colors = ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#64748b', '#3b82f6']
+    pie_charts = {}
+
+    if role == QL and mapb:
+        # Chart 1: Cơ cấu chức vụ trong phòng ban
+        pos_rows = db_conn.execute("""
+            SELECT c.TenCV, COUNT(n.MaNV) AS SoLuong
+            FROM ChucVu c
+            LEFT JOIN NhanVien n ON c.MaCV=n.MaCV
+            WHERE c.MaPB=?
+            GROUP BY c.TenCV
+        """, (mapb,)).fetchall()
+        pos_total = sum(r['SoLuong'] for r in pos_rows) or 1
+        pie_charts['chart1'] = {
+            'title': 'Cơ cấu chức vụ phòng ban',
+            'desc': 'Tỷ lệ phân bổ nhân sự theo từng chức danh trong bộ phận',
+            'total': sum(r['SoLuong'] for r in pos_rows),
+            'segments': [
+                {
+                    'label': r['TenCV'],
+                    'value': r['SoLuong'],
+                    'percent': round(r['SoLuong'] * 100.0 / pos_total, 1),
+                    'color': pie_colors[i % len(pie_colors)]
+                }
+                for i, r in enumerate(pos_rows) if r['SoLuong'] > 0
+            ]
+        }
+
+        # Chart 2: Tình hình chấm công phòng ban hôm nay
+        att_rows = db_conn.execute("""
+            SELECT COALESCE(x.TrangThai, N'Chưa chấm') AS TT, COUNT(n.MaNV) AS SoLuong
+            FROM NhanVien n
+            JOIN ChucVu c ON n.MaCV=c.MaCV
+            LEFT JOIN ChamCong x ON x.MaNV=n.MaNV AND x.Ngay=?
+            WHERE c.MaPB=?
+            GROUP BY COALESCE(x.TrangThai, N'Chưa chấm')
+        """, (today_str, mapb)).fetchall()
+        att_total = sum(r['SoLuong'] for r in att_rows) or 1
+        att_colors = {'Đúng giờ': '#10b981', 'Đi muộn': '#f59e0b', 'Về sớm': '#f97316', 'Nghỉ': '#ef4444', 'Chưa chấm': '#94a3b8'}
+        pie_charts['chart2'] = {
+            'title': 'Tình hình chấm công hôm nay',
+            'desc': 'Trạng thái điểm danh và đi làm của nhân sự trong ngày',
+            'total': sum(r['SoLuong'] for r in att_rows),
+            'segments': [
+                {
+                    'label': r['TT'],
+                    'value': r['SoLuong'],
+                    'percent': round(r['SoLuong'] * 100.0 / att_total, 1),
+                    'color': att_colors.get(r['TT'], pie_colors[i % len(pie_colors)])
+                }
+                for i, r in enumerate(att_rows)
+            ]
+        }
+    else:
+        # Admin Chart 1: Cơ cấu nhân sự theo Phòng ban
+        pb_rows = db_conn.execute("""
+            SELECT p.TenPB, COUNT(n.MaNV) AS SoLuong
+            FROM PhongBan p
+            LEFT JOIN ChucVu c ON p.MaPB=c.MaPB
+            LEFT JOIN NhanVien n ON c.MaCV=n.MaCV
+            GROUP BY p.TenPB
+        """).fetchall()
+        pb_total = sum(r['SoLuong'] for r in pb_rows) or 1
+        pie_charts['chart1'] = {
+            'title': 'Cơ cấu nhân sự theo Phòng ban',
+            'desc': 'Tỷ trọng quy mô nhân sự phân bổ tại các khối phòng ban',
+            'total': sum(r['SoLuong'] for r in pb_rows),
+            'segments': [
+                {
+                    'label': r['TenPB'],
+                    'value': r['SoLuong'],
+                    'percent': round(r['SoLuong'] * 100.0 / pb_total, 1),
+                    'color': pie_colors[i % len(pie_colors)]
+                }
+                for i, r in enumerate(pb_rows) if r['SoLuong'] > 0
+            ]
+        }
+
+        # Admin Chart 2: Cơ cấu theo Loại nhân sự
+        loai_rows = db_conn.execute("""
+            SELECT COALESCE(LoaiNhanVien, N'Chính thức') AS Loai, COUNT(*) AS SoLuong
+            FROM NhanVien
+            GROUP BY LoaiNhanVien
+        """).fetchall()
+        loai_total = sum(r['SoLuong'] for r in loai_rows) or 1
+        pie_charts['chart2'] = {
+            'title': 'Cơ cấu phân loại nhân sự',
+            'desc': 'Phân bố nhân viên chính thức, thử việc, thực tập & thời vụ',
+            'total': sum(r['SoLuong'] for r in loai_rows),
+            'segments': [
+                {
+                    'label': r['Loai'],
+                    'value': r['SoLuong'],
+                    'percent': round(r['SoLuong'] * 100.0 / loai_total, 1),
+                    'color': pie_colors[(i + 3) % len(pie_colors)]
+                }
+                for i, r in enumerate(loai_rows)
+            ]
+        }
+
     flight_risks = get_flight_risk_employees(db_conn, mapb if role == QL else None)
-    return render_template('dash.html', stats=stats, flight_risks=flight_risks)
+    return render_template('dash.html', stats=stats, flight_risks=flight_risks, pie_charts=pie_charts)
 
 @main_bp.route('/me')
 @roles_required(NV, QL)
@@ -328,19 +428,32 @@ def upload_document():
         if not ten_tl or not loai:
             flash('Tên tài liệu và loại bằng cấp không được để trống.', 'err')
         else:
+            # Handle photo / document scan file upload
+            img_val = request.form.get('HinhAnh', '').strip()
+            file = request.files.get('HinhAnh_file')
+            if file and file.filename:
+                ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+                if ext in ('jpg', 'jpeg', 'png', 'webp', 'gif', 'svg', 'pdf'):
+                    import time
+                    fn = f"doc_{int(time.time()*1000)}.{ext}"
+                    upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'documents')
+                    os.makedirs(upload_dir, exist_ok=True)
+                    file.save(os.path.join(upload_dir, fn))
+                    img_val = f"/static/uploads/documents/{fn}"
+
             existing_doc = db_conn.execute("SELECT MaTL FROM TaiLieuNhanVien WHERE MaNV=? AND TenTaiLieu=?", (mnv, ten_tl)).fetchone()
             if existing_doc:
                 db_conn.execute("""
                     UPDATE TaiLieuNhanVien
-                    SET Loai=?, NgayCap=?, NoiCap=?, NgayTai=?, GhiChu=?
+                    SET Loai=?, NgayCap=?, NoiCap=?, TepDinhKem=?, HinhAnh=?, NgayTai=?, GhiChu=?
                     WHERE MaTL=?
-                """, (loai, ngay_cap or None, noi_cap or None, now_str, ghi_chu or None, existing_doc['MaTL']))
+                """, (loai, ngay_cap or None, noi_cap or None, img_val or None, img_val or None, now_str, ghi_chu or None, existing_doc['MaTL']))
                 flash(f"Đã cập nhật thông tin bằng cấp/giấy tờ '{ten_tl}'.", 'ok')
             else:
                 db_conn.execute("""
-                    INSERT INTO TaiLieuNhanVien(MaNV, TenTaiLieu, Loai, NgayCap, NoiCap, TepDinhKem, NgayTai, GhiChu)
-                    VALUES(?, ?, ?, ?, ?, ?, ?, ?)
-                """, (mnv, ten_tl, loai, ngay_cap or None, noi_cap or None, None, now_str, ghi_chu or None))
+                    INSERT INTO TaiLieuNhanVien(MaNV, TenTaiLieu, Loai, NgayCap, NoiCap, TepDinhKem, HinhAnh, NgayTai, GhiChu)
+                    VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (mnv, ten_tl, loai, ngay_cap or None, noi_cap or None, img_val or None, img_val or None, now_str, ghi_chu or None))
                 flash(f"Đã thêm bằng cấp/giấy tờ '{ten_tl}' thành công.", 'ok')
             db_conn.commit()
             log_activity(db_conn, 'Tải lên bằng cấp / giấy tờ', f'{ten_tl} ({loai})')

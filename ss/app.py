@@ -92,12 +92,54 @@ def create_app():
     def inject():
         session.setdefault('_csrf', secrets.token_hex(16))
         role = session.get('role')
+        badges = {}
+        total_badge_count = 0
+
+        if role:
+            from database import get_db
+            try:
+                db_conn = get_db()
+                # 1. Thông báo nội bộ
+                tb_count = db_conn.execute("SELECT COUNT(*) FROM ThongBao").fetchone()[0]
+                if tb_count > 0:
+                    badges['Thông báo'] = tb_count
+                    total_badge_count += 1
+
+                # 2. Đơn từ chờ duyệt cho Quản lý & Admin
+                if role in ('QuanLy', 'Admin'):
+                    np_pend = db_conn.execute("SELECT COUNT(*) FROM NghiPhep WHERE TrangThai=N'Chờ duyệt'").fetchone()[0]
+                    if np_pend > 0:
+                        badges['Nghỉ phép'] = np_pend
+                        total_badge_count += np_pend
+
+                    ot_pend = db_conn.execute("SELECT COUNT(*) FROM TangCa WHERE TrangThai=N'Chờ duyệt'").fetchone()[0]
+                    if ot_pend > 0:
+                        badges['Tăng ca'] = ot_pend
+                        total_badge_count += ot_pend
+
+                    tu_pend = db_conn.execute("SELECT COUNT(*) FROM TamUng WHERE TrangThai=N'Chờ duyệt'").fetchone()[0]
+                    if tu_pend > 0:
+                        badges['Tạm ứng lương'] = tu_pend
+                        total_badge_count += tu_pend
+
+                    dx_pend = db_conn.execute("SELECT COUNT(*) FROM DeXuatKhieuNai WHERE TrangThai=N'Chờ xử lý'").fetchone()[0]
+                    if dx_pend > 0:
+                        badges['Quản lý đề xuất & khiếu nại'] = dx_pend
+                        total_badge_count += dx_pend
+                elif role == 'NhanVien':
+                    kdt_open = db_conn.execute("SELECT COUNT(*) FROM KhoaDaoTao WHERE TrangThai=N'Sắp diễn ra'").fetchone()[0]
+                    if kdt_open > 0:
+                        badges['Khóa đào tạo'] = kdt_open
+            except Exception:
+                pass
+
         nav, prev = [], None
         for title, endpoint, mod, roles in NAV:
             if role in roles:
-                group = NAV_GROUP[title]
+                group = NAV_GROUP.get(title)
                 url = url_for(endpoint, mod=mod) if mod else url_for(endpoint)
-                nav.append((group if group != prev and group else None, title, url, NAV_ICON[title]))
+                badge_num = badges.get(title, 0)
+                nav.append((group if group != prev and group else None, title, url, NAV_ICON.get(title, 'circle'), badge_num))
                 prev = group
 
         return dict(
@@ -106,7 +148,9 @@ def create_app():
             fmt=format_number,
             role=role,
             role_name=ROLE_NAME.get(role),
-            uname=session.get('name')
+            uname=session.get('name'),
+            badges=badges,
+            total_badge_count=total_badge_count
         )
 
     # Template filters & globals

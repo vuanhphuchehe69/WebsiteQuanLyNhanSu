@@ -155,12 +155,28 @@ def get_initial(name):
     return words[-1][:1].upper()
 
 def log_activity(db_conn, action, detail=''):
-    """Record audit log into NhatKyHoatDong table."""
+    """Record audit log into NhatKyHoatDong table (deduplicated within 3s)."""
     try:
         user = session.get('name') or session.get('user') or 'Hệ thống'
         role = session.get('role') or 'Khách'
-        now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        now_dt = datetime.now()
+        now_str = now_dt.strftime('%Y-%m-%d %H:%M:%S')
         ip = request.remote_addr if request else '127.0.0.1'
+
+        # Check last log to prevent duplicate entries from re-submissions
+        recent = db_conn.execute(
+            "SELECT TOP 1 ThoiGian, HanhDong, ChiTiet FROM NhatKyHoatDong WHERE NguoiDung=? ORDER BY MaNK DESC",
+            (str(user),)
+        ).fetchone()
+        if recent and recent['HanhDong'] == str(action) and recent['ChiTiet'] == str(detail):
+            # If logged within the last 3 seconds, skip duplicate
+            try:
+                last_dt = datetime.strptime(recent['ThoiGian'], '%Y-%m-%d %H:%M:%S')
+                if abs((now_dt - last_dt).total_seconds()) < 3:
+                    return
+            except Exception:
+                pass
+
         db_conn.execute(
             "INSERT INTO NhatKyHoatDong(ThoiGian, NguoiDung, VaiTro, HanhDong, ChiTiet, IP) VALUES(?, ?, ?, ?, ?, ?)",
             (now_str, str(user), str(role), str(action), str(detail), str(ip))

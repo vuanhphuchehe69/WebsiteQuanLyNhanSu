@@ -3,7 +3,7 @@ import secrets
 from flask import Blueprint, request, session, redirect, url_for, flash, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 from config import NV, QL, AD
-from database import get_db
+from database import get_db, clean_all_duplicates
 from utils import login_required, log_activity
 
 auth_bp = Blueprint('auth', __name__)
@@ -55,6 +55,7 @@ def login():
                 emp = db_conn.execute('SELECT HoTen FROM NhanVien WHERE MaNV=?', (row['MaNV'],)).fetchone()
                 session['name'] = emp['HoTen'] if emp else user
 
+            clean_all_duplicates(db_conn)
             log_activity(db_conn, 'Đăng nhập hệ thống', f'Tài khoản: {user} ({role})')
             return redirect(url_for('main.me') if role == NV else url_for('main.dash'))
 

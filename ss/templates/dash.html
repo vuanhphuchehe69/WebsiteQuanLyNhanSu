@@ -11,9 +11,13 @@
             </p>
         </div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <a class="btn" href="{{ url_for('main.manager_approvals') }}">
-                {{ icon('check-square') }}
-                Trung tâm phê duyệt
+            <a class="btn" href="{{ url_for('main.report_hr') }}">
+                {{ icon('pie-chart') }}
+                Báo cáo nhân sự
+            </a>
+            <a class="btn g" href="{{ url_for('main.report_leave') }}">
+                {{ icon('calendar') }}
+                Báo cáo nghỉ phép
             </a>
             {% if role == 'Admin' %}
                 <a class="btn g" href="{{ url_for('main.payroll_calc_view') }}">
@@ -31,7 +35,7 @@
                     {{ icon(ic) }}
                 </div>
                 <div>
-                    <b>
+                    <b class="count-up" data-val="{{ v }}">
                         {{ fmt(v) }}
                     </b>
                     <span>
@@ -41,6 +45,68 @@
             </div>
         {% endfor %}
     </div>
+
+    <!-- Biểu đồ thống kê hình tròn (Donut / Pie Charts) cho Quản lý & Admin -->
+    {% if pie_charts %}
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:20px; margin-bottom:24px">
+            {% for cid, chart in pie_charts.items() %}
+                <div class="card" style="margin:0; padding:22px; display:flex; flex-direction:column; justify-content:space-between">
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px">
+                            <h3 style="margin:0; font-size:16px; font-weight:700; color:var(--ink); display:flex; align-items:center; gap:8px">
+                                {{ icon('pie-chart') }}
+                                {{ chart.title }}
+                            </h3>
+                            <span class="tag" style="background:var(--brand-light); color:var(--brand); font-weight:700; font-size:12px">
+                                Tổng: {{ chart.total }}
+                            </span>
+                        </div>
+                        <p style="margin:0 0 18px; font-size:12.5px; color:var(--mut)">
+                            {{ chart.desc }}
+                        </p>
+                    </div>
+
+                    <div style="display:flex; align-items:center; gap:24px; flex-wrap:wrap; justify-content:center">
+                        <!-- SVG Donut Chart -->
+                        <div style="position:relative; width:160px; height:160px; flex-shrink:0">
+                            <svg viewBox="0 0 42 42" style="width:100%; height:100%; transform:rotate(-90deg); border-radius:50%">
+                                {% set ns = namespace(offset=0) %}
+                                {% for it in chart.segments %}
+                                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent"
+                                            stroke="{{ it.color }}" stroke-width="5.5"
+                                            stroke-dasharray="{{ it.percent }} {{ 100 - it.percent }}"
+                                            stroke-dashoffset="{{ -ns.offset }}"
+                                            style="transition:all 0.8s cubic-bezier(0.16,1,0.3,1)">
+                                        <title>{{ it.label }}: {{ it.value }} ({{ it.percent }}%)</title>
+                                    </circle>
+                                    {% set ns.offset = ns.offset + it.percent %}
+                                {% endfor %}
+                            </svg>
+                            <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; pointer-events:none">
+                                <span style="font-size:22px; font-weight:800; color:var(--ink); line-height:1">{{ chart.total }}</span>
+                                <span style="font-size:11px; color:var(--mut); font-weight:600; text-transform:uppercase; margin-top:2px">Nhân sự</span>
+                            </div>
+                        </div>
+
+                        <!-- Legend list -->
+                        <div style="flex:1; min-width:160px; display:flex; flex-direction:column; gap:8px">
+                            {% for it in chart.segments %}
+                                <div style="display:flex; align-items:center; justify-content:space-between; font-size:13px; padding:4px 0; border-bottom:1px dashed var(--line)">
+                                    <span style="display:flex; align-items:center; gap:8px; color:var(--ink)">
+                                        <span style="width:10px; height:10px; border-radius:3px; background:{{ it.color }}; flex-shrink:0"></span>
+                                        <span style="font-weight:500">{{ it.label }}</span>
+                                    </span>
+                                    <span style="font-weight:700; color:var(--ink); margin-left:8px">
+                                        {{ it.value }} <small style="color:var(--mut); font-weight:500">({{ it.percent }}%)</small>
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
 
     {% if flight_risks %}
         <div class="card" style="border-left: 4px solid var(--bad); background: #fff; margin-bottom: 24px; box-shadow: 0 4px 18px rgba(239, 68, 68, 0.08);">
@@ -119,29 +185,29 @@
         </p>
 
         <div class="action-grid">
-            <a class="action-card" href="{{ url_for('main.manager_approvals') }}">
-                <div class="ac-icon theme-emerald">
-                    {{ icon('check-square') }}
+            <a class="action-card" href="{{ url_for('main.report_hr') }}">
+                <div class="ac-icon theme-indigo">
+                    {{ icon('pie-chart') }}
                 </div>
                 <div class="ac-body">
                     <div class="ac-title">
-                        <span>Trung tâm phê duyệt</span>
+                        <span>Báo cáo nhân sự</span>
                         <span class="ac-arrow">→</span>
                     </div>
-                    <div class="ac-desc">Duyệt nghỉ phép, OT, giải trình công & tạm ứng</div>
+                    <div class="ac-desc">Xem và xuất báo cáo nhân sự, thống kê số lượng</div>
                 </div>
             </a>
 
-            <a class="action-card" href="{{ url_for('main.manager_proposals') }}">
-                <div class="ac-icon theme-purple">
-                    {{ icon('layers') }}
+            <a class="action-card" href="{{ url_for('main.report_leave') }}">
+                <div class="ac-icon theme-emerald">
+                    {{ icon('calendar') }}
                 </div>
                 <div class="ac-body">
                     <div class="ac-title">
-                        <span>Đề xuất nhân sự</span>
+                        <span>Báo cáo nghỉ phép</span>
                         <span class="ac-arrow">→</span>
                     </div>
-                    <div class="ac-desc">Tăng lương, thăng chức, điều động, khen thưởng</div>
+                    <div class="ac-desc">Theo dõi ngày nghỉ, thống kê phép năm nhân viên</div>
                 </div>
             </a>
 

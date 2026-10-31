@@ -1,99 +1,160 @@
 {% extends 'base.html' %}
 {% block body %}
-    <div class="login">
-        <section class="hero">
-            <div class="brand" style="padding:0;color:#fff">
-                <b style="background:var(--brand-gradient);color:#fff;box-shadow:0 0 16px rgba(255,255,255,0.3)">
-                    NS
-                </b>
-                <div>
-                    <span style="font-size:17px;font-weight:800;letter-spacing:-0.02em">Quản lý nhân sự</span>
-                    <small style="color:#94a3b8;display:block;font-size:11px">Hệ thống quản trị doanh nghiệp</small>
+    <div class="login-wrapper">
+        <!-- Cột trái: Hero Brand & Visual Showcase -->
+        <section class="login-hero">
+            <div class="hero-mesh"></div>
+            
+            <div class="hero-top">
+                <div class="hero-brand">
+                    <span class="hero-logo-box">
+                        <svg class="i" viewBox="0 0 24 24" style="width:24px;height:24px;stroke:#fff"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    </span>
+                    <div>
+                        <span class="hero-brand-title">HR Cloud Core</span>
+                        <span class="hero-brand-sub">Hệ thống Quản lý Nhân sự Doanh nghiệp</span>
+                    </div>
+                </div>
+                <div class="hero-tag">
+                    <span class="pulse-dot"></span> Phiên bản 2.5 SaaS
                 </div>
             </div>
-            
-            <div style="margin: 40px 0;">
-                <h1>
-                    Nền tảng quản trị nhân sự toàn diện & hiện đại.
+
+            <div class="hero-center">
+                <h1 class="hero-headline">
+                    Quản trị nhân lực thông minh, <br><span class="hero-gradient-text">tối ưu & bứt phá hiệu suất.</span>
                 </h1>
-                <p>
-                    Tối ưu hóa quản lý hồ sơ nhân sự, chấm công thời gian thực, bảng lương tự động, đánh giá KPI và phê duyệt nghỉ phép trực tuyến.
+                <p class="hero-description">
+                    Nền tảng hợp nhất hồ sơ nhân sự 360°, chấm công thời gian thực, tự động hóa bảng lương và phân tích dữ liệu chuyên sâu chuẩn mực Enterprise.
                 </p>
 
-                <div class="login-features">
-                    <div class="login-feature-item">
-                        <div class="login-feature-icon">
+                <div class="hero-feature-grid">
+                    <div class="hero-feat-card">
+                        <div class="feat-icon theme-indigo">
+                            {{ icon('users') }}
+                        </div>
+                        <div>
+                            <b>Hồ sơ 360° & Ảnh thẻ 3x4</b>
+                            <p>Quản lý hợp đồng, bằng cấp và định danh ảnh thẻ chuẩn</p>
+                        </div>
+                    </div>
+                    <div class="hero-feat-card">
+                        <div class="feat-icon theme-emerald">
                             {{ icon('check-square') }}
                         </div>
-                        <span>Theo dõi chấm công, ngày công và tình hình đi làm</span>
-                    </div>
-                    <div class="login-feature-item">
-                        <div class="login-feature-icon">
-                            {{ icon('wallet') }}
+                        <div>
+                            <b>Chấm công & Phân ca</b>
+                            <p>Điểm danh vào/ra tức thì, giải trình công và theo dõi OT</p>
                         </div>
-                        <span>Quản lý bảng lương minh bạch, hợp đồng và tăng ca</span>
                     </div>
-                    <div class="login-feature-item">
-                        <div class="login-feature-icon">
-                            {{ icon('award') }}
+                    <div class="hero-feat-card">
+                        <div class="feat-icon theme-cyan">
+                            {{ icon('pie-chart') }}
                         </div>
-                        <span>Đánh giá hiệu suất KPI và quy trình phê duyệt nghỉ phép</span>
+                        <div>
+                            <b>Báo cáo & Thống kê hình tròn</b>
+                            <p>Biểu đồ cơ cấu phòng ban, chấm công và biến động nhân sự</p>
+                        </div>
                     </div>
-                    <div class="login-feature-item">
-                        <div class="login-feature-icon">
-                            {{ icon('send') }}
+                    <div class="hero-feat-card">
+                        <div class="feat-icon theme-purple">
+                            {{ icon('zap') }}
                         </div>
-                        <span>Gửi và nhận thông báo nội bộ tức thì theo phân quyền</span>
+                        <div>
+                            <b>Trợ lý AI & Cảnh báo nghỉ việc</b>
+                            <p>Hỏi đáp phép năm 24/7 và phát hiện rủi ro thôi việc sớm</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <small style="color:#94a3b8;font-size:12px">
-                © Nhóm 9 - Hệ thống Quản trị Nhân sự Doanh nghiệp
-            </small>
+            <div class="hero-footer">
+                <span>© 2026 Nhóm 9 • Đại học Công nghệ GTVT • Bảo mật SSL/TLS 256-bit</span>
+                <span style="display:flex;gap:12px">
+                    <a href="#" style="color:#94a3b8;font-size:12px">Điều khoản</a>
+                    <a href="#" style="color:#94a3b8;font-size:12px">Bảo mật</a>
+                </span>
+            </div>
         </section>
 
-        <section class="lf">
-            <form method="post">
-                <input type="hidden" name="_csrf" value="{{ csrf }}">
-                <h2>
-                    Đăng nhập hệ thống
-                </h2>
-                <p>
-                    Vui lòng chọn vai trò truy cập và nhập thông tin đăng nhập của bạn.
-                </p>
-
-                <div class="seg">
-                    {% for k, v, ic in [('NhanVien','Nhân viên','user'), ('QuanLy','Quản lý','briefcase'), ('Admin','Admin','shield')] %}
-                        <label>
-                            <input type="radio" name="role" value="{{ k }}" {{ 'checked' if k == sel }}>
-                            <span>
-                                {{ icon(ic) }}
-                                {{ v }}
-                            </span>
-                        </label>
-                    {% endfor %}
+        <!-- Cột phải: Form Đăng nhập Glassmorphism -->
+        <section class="login-panel">
+            <div class="login-box glass-panel">
+                <div class="login-header">
+                    <h2>Đăng nhập hệ thống</h2>
+                    <p>Chọn vai trò tài khoản để đăng nhập vào không gian làm việc</p>
                 </div>
 
-                <div style="margin-bottom:16px">
-                    <label for="u">
-                        Tên đăng nhập
-                    </label>
-                    <input id="u" name="user" required autofocus autocomplete="username" placeholder="Nhập mã nhân viên hoặc username...">
-                </div>
+                <form method="post" id="loginForm" autocomplete="on">
+                    <input type="hidden" name="_csrf" value="{{ csrf }}">
 
-                <div style="margin-bottom:24px">
-                    <label for="p">
-                        Mật khẩu
-                    </label>
-                    <input id="p" type="password" name="pw" required autocomplete="current-password" placeholder="Nhập mật khẩu...">
-                </div>
+                    <!-- Role Selector Segment -->
+                    <div class="role-selector">
+                        {% for k, v, ic in [('NhanVien','Nhân viên','user'), ('QuanLy','Quản lý','briefcase'), ('Admin','Quản trị','shield')] %}
+                            <label class="role-chip">
+                                <input type="radio" name="role" value="{{ k }}" {{ 'checked' if k == sel }} onchange="updateRoleHint('{{ k }}')">
+                                <span class="role-content">
+                                    {{ icon(ic) }}
+                                    <span>{{ v }}</span>
+                                </span>
+                            </label>
+                        {% endfor %}
+                    </div>
 
-                <button class="btn" style="width:100%;justify-content:center;padding:12px;font-size:14px">
-                    {{ icon('log-in') }}
-                    Đăng nhập
-                </button>
-            </form>
+                    <!-- Input Tên đăng nhập -->
+                    <div class="form-group-modern">
+                        <label for="u">Tên đăng nhập hoặc Mã nhân viên</label>
+                        <div class="input-wrap">
+                            <span class="input-icon">{{ icon('user') }}</span>
+                            <input id="u" name="user" required autofocus autocomplete="username" placeholder="Ví dụ: admin, ql001, nv002...">
+                        </div>
+                    </div>
+
+                    <!-- Input Mật khẩu -->
+                    <div class="form-group-modern">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                            <label for="p" style="margin:0">Mật khẩu bảo mật</label>
+                            <span style="font-size:12px;color:var(--brand);cursor:pointer" onclick="alert('Vui lòng liên hệ Quản trị viên nhân sự để được cấp lại mật khẩu.')">Quên mật khẩu?</span>
+                        </div>
+                        <div class="input-wrap">
+                            <span class="input-icon">{{ icon('lock') }}</span>
+                            <input id="p" type="password" name="pw" required autocomplete="current-password" placeholder="Nhập mật khẩu truy cập...">
+                            <button type="button" class="pw-toggle-btn" onclick="togglePasswordVisibility()" title="Ẩn/Hiện mật khẩu">👁</button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Demo Credentials Pill -->
+                    <div class="demo-hints">
+                        <span style="font-size:11.5px;font-weight:600;color:var(--mut)">Đăng nhập mẫu nhanh:</span>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+                            <button type="button" class="demo-pill" onclick="fillDemo('Admin', 'admin', 'admin123')">Admin</button>
+                            <button type="button" class="demo-pill" onclick="fillDemo('QuanLy', 'ql001', '123456')">Quản lý (ql001)</button>
+                            <button type="button" class="demo-pill" onclick="fillDemo('NhanVien', 'nv002', '123456')">Nhân viên (nv002)</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary-gradient" style="width:100%;margin-top:20px;padding:12px;font-size:14px;font-weight:700">
+                        {{ icon('log-in') }}
+                        Xác nhận đăng nhập
+                    </button>
+                </form>
+            </div>
         </section>
     </div>
+
+    <script>
+        function fillDemo(role, user, pw) {
+            var radios = document.getElementsByName('role');
+            for (var i = 0; i < radios.length; i++) {
+                if (radios[i].value === role) radios[i].checked = true;
+            }
+            document.getElementById('u').value = user;
+            document.getElementById('p').value = pw;
+        }
+
+        function togglePasswordVisibility() {
+            var p = document.getElementById('p');
+            p.type = p.type === 'password' ? 'text' : 'password';
+        }
+    </script>
 {% endblock %}

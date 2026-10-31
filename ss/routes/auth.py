@@ -17,11 +17,18 @@ def login():
         pw = request.form.get('pw', '')
         db_conn = get_db()
 
+        auth_table = None
         if role == AD:
-            row = db_conn.execute("SELECT * FROM TaiKhoan WHERE TenDN=? AND LoaiTK='Admin'", (user,)).fetchone() or \
-                  db_conn.execute('SELECT * FROM TaiKhoanAdmin WHERE TenDN=?', (user,)).fetchone()
+            row = db_conn.execute("SELECT * FROM TaiKhoan WHERE TenDN=? AND LoaiTK='Admin'", (user,)).fetchone()
+            if row:
+                auth_table = 'TaiKhoan'
+            else:
+                row = db_conn.execute('SELECT * FROM TaiKhoanAdmin WHERE TenDN=?', (user,)).fetchone()
+                if row:
+                    auth_table = 'TaiKhoanAdmin'
         elif role in (NV, QL):
             row = db_conn.execute('SELECT * FROM TaiKhoan WHERE TenDN=? AND LoaiTK=?', (user, role)).fetchone()
+            auth_table = 'TaiKhoan'
         else:
             row = None
 
@@ -40,7 +47,9 @@ def login():
                 uid=row['MaTK'],
                 role=role,
                 mnv=row['MaNV'] if role != AD else None,
-                name=user
+                name=user,
+                username=user,
+                auth_table=auth_table
             )
             if role != AD:
                 emp = db_conn.execute('SELECT HoTen FROM NhanVien WHERE MaNV=?', (row['MaNV'],)).fetchone()
@@ -71,8 +80,15 @@ def change_pw():
         new = request.form.get('new', '')
         cf = request.form.get('cf', '')
         db_conn = get_db()
-        table = 'TaiKhoanAdmin' if session['role'] == AD else 'TaiKhoan'
-        row = db_conn.execute(f'SELECT MatKhau FROM {table} WHERE MaTK=?', (session['uid'],)).fetchone()
+        table = session.get('auth_table') or ('TaiKhoanAdmin' if session['role'] == AD else 'TaiKhoan')
+        username = session.get('username') or session.get('name')
+
+        row = None
+        if table:
+            row = db_conn.execute(f'SELECT MatKhau FROM {table} WHERE MaTK=?', (session['uid'],)).fetchone()
+        if not row and session['role'] == AD:
+            row = db_conn.execute('SELECT MatKhau FROM TaiKhoanAdmin WHERE MaTK=? OR TenDN=?', (session['uid'], username)).fetchone() or \
+                  db_conn.execute("SELECT MatKhau FROM TaiKhoan WHERE (MaTK=? OR TenDN=?) AND LoaiTK='Admin'", (session['uid'], username)).fetchone()
 
         old_matched = False
         if row:
@@ -89,10 +105,14 @@ def change_pw():
         elif new != cf:
             flash('Xác nhận mật khẩu không khớp.', 'err')
         else:
-            db_conn.execute(
-                f'UPDATE {table} SET MatKhau=? WHERE MaTK=?',
-                (new, session['uid'])
-            )
+            if session['role'] == AD:
+                db_conn.execute('UPDATE TaiKhoanAdmin SET MatKhau=? WHERE MaTK=? OR TenDN=?', (new, session['uid'], username))
+                db_conn.execute("UPDATE TaiKhoan SET MatKhau=? WHERE (MaTK=? OR TenDN=?) AND LoaiTK='Admin'", (new, session['uid'], username))
+            else:
+                db_conn.execute(
+                    f'UPDATE {table} SET MatKhau=? WHERE MaTK=?',
+                    (new, session['uid'])
+                )
             db_conn.commit()
             log_activity(db_conn, 'Đổi mật khẩu', f"Tài khoản ID: {session['uid']}")
             flash('Đổi mật khẩu thành công.', 'ok')

@@ -572,7 +572,7 @@ def register_course(kid):
     mnv = session.get('mnv')
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M')
 
-    course = db_conn.execute("SELECT * FROM KhoaDaoTao WHERE MaKDT=?", (kid)).fetchone()
+    course = db_conn.execute("SELECT * FROM KhoaDaoTao WHERE MaKDT=?", (kid,)).fetchone()
     if not course:
         abort(404)
 

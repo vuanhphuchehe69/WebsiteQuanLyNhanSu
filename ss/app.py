@@ -5,6 +5,49 @@ import sys
 import secrets
 from flask import Flask, session, render_template, url_for
 from markupsafe import Markup
+from jinja2 import BaseLoader
+
+TEMPLATE_ALIASES = {
+    'analytics.html': 'BaoCaoPhanTich.html',
+    'BaoCaoPhanTich.html': 'analytics.html',
+    'profile_edit.html': 'CapNhatThongTin.html',
+    'CapNhatThongTin.html': 'profile_edit.html',
+    'feedback.html': 'DexuatKhieunai.html',
+    'DexuatKhieunai.html': 'feedback.html',
+    'form_advance.html': 'Đonxinungluong.html',
+    'Đonxinungluong.html': 'form_advance.html',
+    'Donxinungluong.html': 'form_advance.html',
+    'audit_log.html': 'NhatKyHD.html',
+    'NhatKyHD.html': 'audit_log.html',
+    'approvals.html': 'PheDuyet.html',
+    'PheDuyet.html': 'approvals.html',
+    'backup.html': 'SaoLuuData.html',
+    'SaoLuuData.html': 'backup.html',
+    'announcements.html': 'ThongBao.html',
+    'ThongBao.html': 'announcements.html',
+    'payroll_calc.html': 'TinhLuong.html',
+    'TinhLuong.html': 'payroll_calc.html',
+    'dash.html': 'TongQuanHeThong.html',
+    'TongQuanHeThong.html': 'dash.html',
+}
+
+class AliasedLoader(BaseLoader):
+    """Fallback loader to seamlessly map between canonical and localized template names."""
+    def __init__(self, base_loader, aliases):
+        self.base_loader = base_loader
+        self.aliases = aliases
+
+    def get_source(self, environment, template):
+        try:
+            return self.base_loader.get_source(environment, template)
+        except Exception:
+            alias = self.aliases.get(template)
+            if alias:
+                return self.base_loader.get_source(environment, alias)
+            raise
+
+    def list_templates(self):
+        return self.base_loader.list_templates()
 
 # Ensure stdout and stderr support UTF-8 on Windows terminals
 if sys.platform == 'win32':
@@ -33,6 +76,10 @@ def create_app():
     """Application factory for the Flask app."""
     app = Flask(__name__)
     app.secret_key = SECRET_KEY
+
+    # Configure aliased template loader for localized template names
+    if app.jinja_loader:
+        app.jinja_loader = AliasedLoader(app.jinja_loader, TEMPLATE_ALIASES)
 
     # Database teardown
     app.teardown_appcontext(close_db)

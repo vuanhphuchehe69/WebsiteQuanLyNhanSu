@@ -1,0 +1,315 @@
+========================================================================================
+             HỆ THỐNG QUẢN LÝ NHÂN SỰ PEOPLEHUB - BẢN TỔNG HỢP CHỨC NĂNG 3 ACTOR
+========================================================================================
+Dự án: Phần mềm Quản trị Nhân lực & Tiền lương Doanh nghiệp (Enterprise HRM SaaS)
+Công nghệ: Python (Flask) + Local SQL Server (pyodbc) + JavaScript + Modern SaaS Indigo UI
+Phiên bản: PeopleHub v2.5 (Cập nhật giao diện SaaS Indigo & AI HR Assistant)
+Tác giả / Nhóm thực hiện: Nhóm 2 (Hệ thống HRM)
+========================================================================================
+
+I. TỔNG QUAN HỆ THỐNG VÀ 3 TÁC NHÂN (ACTORS)
+----------------------------------------------------------------------------------------
+Hệ thống PeopleHub được thiết kế theo mô hình kiến trúc phân quyền RBAC (Role-Based Access
+Control) chặt chẽ, phục vụ 3 nhóm đối tượng người dùng chính trong doanh nghiệp:
+
+1. QUẢN TRỊ VIÊN TOÀN HỆ THỐNG (ADMIN)
+   - Đại diện cho Ban Giám Đốc, Trưởng phòng Nhân sự Tổng hợp hoặc Quản trị viên IT.
+   - Nắm toàn quyền giám sát nhân sự toàn công ty, quản trị danh mục, chốt công tính lương
+     tự động, quản lý tài khoản, nhật ký kiểm toán và sao lưu hệ thống.
+
+2. CẤP QUẢN LÝ PHÒNG BAN (QUẢN LÝ / MANAGER)
+   - Đại diện cho Trưởng phòng, Quản lý bộ phận (Kỹ thuật, Kinh doanh, Vận hành...).
+   - Quản lý nhân viên trực thuộc phòng ban, phê duyệt đơn từ (nghỉ phép, OT, giải trình công),
+     đánh giá KPI kỳ, chấm công nhanh và đề xuất nhân sự xuất sắc lên Admin.
+
+3. CÁN BỘ NHÂN VIÊN (NHÂN VIÊN / EMPLOYEE)
+   - Đại diện cho toàn thể nhân sự trong công ty.
+   - Sử dụng cổng thông tin tự phục vụ (Self-Service): Check-in/Check-out trực tuyến, xem
+     phiếu lương chi tiết, xin nghỉ phép, đăng ký tăng ca, đề nghị tạm ứng, nộp giải trình,
+     tải chứng chỉ bằng cấp, tự đánh giá KPI và tương tác với Trợ lý AI 24/7.
+
+========================================================================================
+II. MA TRẬN PHÂN QUYỀN CHỨC NĂNG (RBAC PERMISSION MATRIX)
+========================================================================================
+Ký hiệu: [X] Có quyền sử dụng  |  [-] Không có quyền
+
++------------------------------------------------------+-------+---------+----------+
+| CHỨC NĂNG / PHÂN HỆ NGHIỆP VỤ                        | ADMIN | QUẢN LÝ | NHÂN VIÊN|
++------------------------------------------------------+-------+---------+----------+
+| 1. DASHBOARD & TỔNG QUAN                              |       |         |          |
+|    - Dashboard Admin toàn công ty                    |  [X]  |   [-]   |   [-]    |
+|    - Dashboard Quản lý phòng ban                     |  [-]  |   [X]   |   [-]    |
+|    - Dashboard Nhân viên cá nhân hóa (/me)           |  [-]  |   [X]   |   [X]    |
+|    - Cảnh báo nhân sự nguy cơ nghỉ việc (Flight Risk)|  [X]  |   [-]   |   [-]    |
+|                                                      |       |         |          |
+| 2. CHẤM CÔNG & QUẢN LÝ THỜI GIAN                     |       |         |          |
+|    - Check-in / Check-out trực tuyến thời gian thực  |  [-]  |   [X]   |   [X]    |
+|    - Xem lịch chấm công cá nhân dạng ô lịch tháng    |  [-]  |   [X]   |   [X]    |
+|    - Gửi đơn giải trình chấm công (quên quẹt thẻ)    |  [-]  |   [X]   |   [X]    |
+|    - Phê duyệt giải trình chấm công phòng ban        |  [X]  |   [X]   |   [-]    |
+|    - Chấm công nhanh cả phòng ban hôm nay            |  [X]  |   [X]   |   [-]    |
+|    - Quản lý phân ca làm việc (Sáng/Chiều/Tối)       |  [X]  |   [X]   |   [-]    |
+|                                                      |       |         |          |
+| 3. NGHỈ PHÉP & TĂNG CA (OT)                          |       |         |          |
+|    - Xin nghỉ phép trực tuyến & Kiểm tra số dư phép  |  [-]  |   [X]   |   [X]    |
+|    - Đăng ký làm thêm giờ (OT)                       |  [-]  |   [X]   |   [X]    |
+|    - Trung tâm phê duyệt đơn Nghỉ phép & Tăng ca     |  [X]  |   [X]   |   [-]    |
+|    - Báo cáo tổng hợp số ngày nghỉ phép theo tháng   |  [X]  |   [X]   |   [-]    |
+|                                                      |       |         |          |
+| 4. TIỀN LƯƠNG & PHÚC LỢI                             |       |         |          |
+|    - Xem phiếu lương chi tiết & Lịch sử kỳ lương     |  [-]  |   [X]   |   [X]    |
+|    - Gửi đơn đề nghị tạm ứng lương trực tuyến        |  [-]  |   [X]   |   [X]    |
+|    - Phê duyệt đơn tạm ứng lương                     |  [X]  |   [X]   |   [-]    |
+|    - Chốt công & Tính bảng lương tự động hàng loạt   |  [X]  |   [-]   |   [-]    |
+|    - Quản lý & chỉnh sửa danh sách lương (/m/luong)  |  [X]  |   [X]   |   [-]    |
+|                                                      |       |         |          |
+| 5. HỒ SƠ NHÂN SỰ & HỢP ĐỒNG                          |       |         |          |
+|    - Quản lý danh sách nhân viên (Thêm, Sửa, Xóa)    |  [X]  |   [X]   |   [-]    |
+|    - Xem hồ sơ chi tiết nhân viên 360°               |  [X]  |   [X]   |   [-]    |
+|    - Cập nhật ảnh đại diện thẻ 3x4                   |  [X]  |   [X]   |   [-]    |
+|    - Quản lý Hợp đồng lao động (/m/hopdong)          |  [X]  |   [X]   |   [-]    |
+|    - Tự cập nhật SĐT, Email, Địa chỉ, CCCD cá nhân   |  [-]  |   [X]   |   [X]    |
+|    - Tải lên văn bằng, chứng chỉ, scan giấy tờ       |  [-]  |   [X]   |   [X]    |
+|                                                      |       |         |          |
+| 6. ĐÁNH GIÁ HIỆU SUẤT & PHÁT TRIỂN                   |       |         |          |
+|    - Tự đánh giá KPI cá nhân hàng tháng              |  [-]  |   [X]   |   [X]    |
+|    - Chấm điểm KPI chính thức & Ghi nhận xét quản lý |  [X]  |   [X]   |   [-]    |
+|    - Đề xuất nhân sự xuất sắc (Khen thưởng/Tăng lương|  [-]  |   [X]   |   [-]    |
+|    - Phê duyệt đề xuất nhân sự & Ban hành quyết định |  [X]  |   [-]   |   [-]    |
+|    - Quản lý Khen thưởng & Kỷ luật (/m/khenthuong)   |  [X]  |   [X]   |   [-]    |
+|    - Cổng đăng ký khóa đào tạo nội bộ                |  [X]  |   [X]   |   [X]    |
+|    - Quản lý chương trình đào tạo (/m/daotao)        |  [X]  |   [X]   |   [-]    |
+|                                                      |       |         |          |
+| 7. TUYỂN DỤNG & ĐỀ XUẤT                              |       |         |          |
+|    - Gửi đề xuất, kiến nghị, phản ánh nội bộ         |  [X]  |   [X]   |   [X]    |
+|    - Quản lý đề xuất & giải quyết khiếu nại          |  [X]  |   [X]   |   [-]    |
+|    - Quản lý Yêu cầu tuyển dụng (/m/tuyendung)       |  [X]  |   [X]   |   [-]    |
+|    - Quản lý Hồ sơ ứng viên & Phỏng vấn (/m/ungvien) |  [X]  |   [X]   |   [-]    |
+|                                                      |       |         |          |
+| 8. BÁO CÁO & THỐNG KÊ CHUYÊN SÂU                     |       |         |          |
+|    - Báo cáo cơ cấu tổ chức & Nhân sự theo phòng ban |  [X]  |   [X]   |   [-]    |
+|    - Thống kê chi phí lương & Biến động nhân sự      |  [X]  |   [-]   |   [-]    |
+|    - Xuất dữ liệu ra file Excel/CSV chuẩn UTF-8 BOM  |  [X]  |   [X]   |   [-]    |
+|                                                      |       |         |          |
+| 9. HỆ THỐNG & BẢO MẬT                                |       |         |          |
+|    - Quản lý danh mục Phòng ban & Chức vụ            |  [X]  |   [-]   |   [-]    |
+|    - Quản lý Tài khoản & Phân quyền (/m/taikhoan)    |  [X]  |   [-]   |   [-]    |
+|    - Nhật ký hoạt động kiểm toán hệ thống (Audit Log)|  [X]  |   [-]   |   [-]    |
+|    - Sao lưu dữ liệu hệ thống (JSON / SQL Script)    |  [X]  |   [-]   |   [-]    |
+|    - Đổi mật khẩu cá nhân                            |  [X]  |   [X]   |   [X]    |
+|    - Trợ lý ảo AI Assistant hỗ trợ 24/7             |  [X]  |   [X]   |   [X]    |
++------------------------------------------------------+-------+---------+----------+
+
+========================================================================================
+III. CHI TIẾT TỪNG TÁC NHÂN (ACTOR SPECIFICATION)
+========================================================================================
+
+----------------------------------------------------------------------------------------
+1. TÁC NHÂN: QUẢN TRỊ VIÊN (ADMIN)
+----------------------------------------------------------------------------------------
+Tài khoản đăng nhập mẫu: admin / admin123
+Route chính: / hoặc /dash
+
+[A] Dashboard Điều Hành Toàn Doanh Nghiệp:
+  1. Thẻ thống kê thời gian thực:
+     - Tổng nhân sự (248 nhân sự, tỉ lệ tăng trưởng +4.2%).
+     - Nhân viên mới gia nhập trong tháng (12 nhân viên).
+     - Đơn chờ duyệt toàn hệ thống (7 đơn).
+     - Quỹ lương tháng dự kiến (1,86 tỷ VNĐ).
+  2. Biểu đồ biến động nhân sự 12 tháng:
+     - Đồ thị đường kép (Line/Area SVG) biểu diễn lượng Tuyển mới và Nghỉ việc từ T1 - T12.
+  3. Biểu đồ cơ cấu theo phòng ban:
+     - Donut Chart trực quan phân tách tỉ lệ: Kỹ thuật (38%), Kinh doanh (24%),
+       Vận hành (18%), Nhân sự - Hành chính (12%), Khác (8%).
+  4. Trí tuệ cảnh báo nhân sự (Flight Risk Warning):
+     - Tự động quét và phát hiện các nhân viên có nguy cơ nghỉ việc dựa trên số ngày nghỉ phép
+       đột biến hoặc điểm KPI suy giảm liên tiếp.
+  5. Bảng nhân viên mới gia nhập & Thao tác phê duyệt nhanh đơn từ cấp công ty.
+
+[B] Quản Trị Nghiệp Vụ Nhân Sự Toàn Diện:
+  1. Hồ sơ nhân viên (/m/nhanvien):
+     - Xem danh sách đầy đủ 50+ nhân sự, tìm kiếm đa tiêu chí (tên, mã, SĐT, CCCD, chức vụ).
+     - Bộ lọc động theo Phòng ban và Loại nhân viên (Chính thức, Thử việc, Thực tập).
+     - Thêm mới nhân sự với xác thực dữ liệu đầy đủ (Mã NV, CCCD, Email, ngày vào làm).
+     - Cập nhật ảnh đại diện thẻ 3x4 trực tiếp bằng Modal xem trước (Preview).
+     - Xem trang chi tiết 360° kết hợp thông tin hợp đồng, lương, bảo hiểm, đào tạo.
+  2. Quản lý Hợp đồng lao động (/m/hopdong):
+     - Quản lý hợp đồng thử việc, chính thức xác định và không xác định thời hạn.
+     - Tự động kiểm tra logic ngày kết thúc phải sau ngày bắt đầu (Validation).
+  3. Quản lý Lương & Chốt công tự động (/payroll/calculate):
+     - Công cụ tính lương hàng loạt cho toàn bộ nhân sự công ty chỉ với 1 click.
+     - Tự động tính số ngày công thực tế, tính tiền làm thêm giờ (OT) theo hệ số.
+     - Tự động trích đóng Bảo hiểm xã hội 10.5% (BHXH 8%, BHYT 1.5%, BHTN 1%).
+     - Tự động tính thuế TNCN theo biểu thuế lũy tiến và trừ các khoản tạm ứng.
+     - Đảm bảo lương cứng hiển thị chính xác, không bị lỗi lẻ số thập phân.
+  4. Quản lý Tuyển dụng & Ứng viên (/m/tuyendung, /m/ungvien):
+     - Tạo tin đăng tuyển theo vị trí, phòng ban, mức lương, số lượng cần tuyển.
+     - Theo dõi vòng đời hồ sơ ứng viên (Ứng tuyển -> Phỏng vấn -> Trúng tuyển -> Thử việc).
+
+[C] Quản Trị Hệ Thống & Kiểm Toán An Ninh (Dành Riêng Admin):
+  1. Cơ cấu phòng ban & chức vụ (/m/phongban, /m/chucvu):
+     - Khởi tạo và phân cấp phòng ban, thiết lập chức danh công việc và định biên.
+  2. Quản lý tài khoản người dùng (/m/taikhoan):
+     - Tạo mới, phân vai trò (Admin, QuanLy, NhanVien), kích hoạt hoặc khóa tài khoản.
+  3. Trung tâm Sao lưu & Phục hồi dữ liệu (/admin/backup):
+     - Thống kê dung lượng bản ghi của 18+ bảng cơ sở dữ liệu.
+     - Xuất gói sao lưu snapshot định dạng JSON an toàn.
+     - Xuất file kịch bản SQL Script (.sql) phục vụ khôi phục thảm họa (Disaster Recovery).
+  4. Nhật ký hoạt động kiểm toán (Audit Log - /admin/audit-log):
+     - Lưu trữ vết toàn bộ các hành động thêm, sửa, xóa, đăng nhập, địa chỉ IP và dấu thời gian.
+  5. Báo cáo phân tích chuyên sâu (/analytics):
+     - Tỷ lệ nghỉ việc (Turnover Rate), chi phí tuyển dụng trung bình (Time-to-Hire),
+       tỷ lệ ngân sách nhân sự trên doanh thu qua các quý.
+
+----------------------------------------------------------------------------------------
+2. TÁC NHÂN: QUẢN LÝ PHÒNG BAN (MANAGER)
+----------------------------------------------------------------------------------------
+Tài khoản đăng nhập mẫu: ql001 / 123456 (Trưởng phòng Kỹ thuật)
+Route chính: / hoặc /dash
+
+[A] Dashboard Giám Sát Phòng Ban:
+  1. Chỉ số vận hành phòng ban:
+     - Tổng nhân sự thuộc phòng (42 nhân sự, bao gồm người thử việc).
+     - Tỷ lệ có mặt hôm nay (38/42 nhân sự - Đạt 91% quân số).
+     - Số đơn chờ quản lý phê duyệt trong ngày (5 đơn).
+     - Tiến độ hoàn thành đánh giá KPI kỳ này (28/42 nhân sự).
+  2. Biểu đồ chấm công tuần:
+     - Biểu đồ cột phân tích lượng nhân sự đi làm từ Thứ 2 đến Thứ 6.
+  3. Thước đo tiến độ đánh giá KPI (Circular Gauge 67%):
+     - Thể hiện trực quan tỉ lệ nhân sự đã hoàn tất quy trình đánh giá hiệu suất.
+  4. Danh sách nhân viên trong phòng:
+     - Hiển thị họ tên, chức vụ, tình trạng đánh giá và thanh đo KPI theo %.
+
+[B] Phê Duyệt & Quản Trị Nhân Sự Trực Thuộc:
+  1. Trung tâm phê duyệt tập trung (/approvals):
+     - Phê duyệt / Từ chối đơn xin nghỉ phép của nhân viên trong phòng ban.
+     - Phê duyệt / Từ chối đăng ký làm thêm giờ (OT).
+     - Phê duyệt giải trình chấm công khi nhân viên quên quẹt thẻ hoặc máy chấm công lỗi.
+  2. Đề xuất nhân sự lên cấp Admin (/proposals):
+     - Gửi tờ trình đề xuất khen thưởng, vinh danh cá nhân xuất sắc hoặc nâng lương định kỳ.
+  3. Đánh giá hiệu suất nhân viên (/m/danhgia):
+     - Xem điểm tự chấm của nhân viên, chấm điểm KPI chính thức của cấp trên,
+       nhận xét ưu/nhược điểm và xếp loại thi đua (Xuất sắc, Tốt, Khá, Trung bình).
+  4. Chấm công nhanh cả phòng ban:
+     - Nút "Chấm công nhanh hôm nay" hỗ trợ điểm danh hàng loạt cho các nhân viên có mặt.
+  5. Báo cáo nhân sự phòng ban (/report/hr):
+     - Xem thống kê số lượng nam/nữ, tổng ngày công làm việc, tổng số giờ tăng ca.
+     - Xuất báo cáo phòng ban ra file Excel/CSV gửi Ban Giám Đốc.
+
+[C] Tự Phục Vụ Bản Thân (Self-Service):
+  - Người quản lý đồng thời sở hữu đầy đủ quyền lợi cá nhân như một nhân viên:
+    Chấm công vào/ra hàng ngày, xem phiếu lương của chính mình, gửi đơn xin nghỉ, v.v.
+
+----------------------------------------------------------------------------------------
+3. TÁC NHÂN: NHÂN VIÊN (EMPLOYEE)
+----------------------------------------------------------------------------------------
+Tài khoản đăng nhập mẫu: nv002 / 123456 (hoặc nv001 đến nv050)
+Route chính: /me (Trang thông tin & Dashboard cá nhân hóa)
+
+[A] Dashboard Cá Nhân Hiện Đại (Showcase UI Indigo):
+  1. Đồng hồ số trực tuyến Navy (Live Digital Timeclock):
+     - Đồng hồ số nhảy từng giây thời gian thực (HH:mm).
+     - Thể hiện trạng thái "Đang làm việc" với đèn LED xanh nhấp nháy.
+     - Ghi nhận chính xác mốc giờ check-in và tính toán thời lượng làm việc trong ngày.
+     - Nút hành động trực tiếp: [Check-in vào làm] hoặc [Check-out ra về].
+  2. 3 Thẻ thống kê phúc lợi cá nhân:
+     - Phép năm còn lại: 8 ngày (Đã sử dụng 4/12 ngày tiêu chuẩn).
+     - Làm thêm tháng này: 6 giờ (3 ca OT đã được duyệt).
+     - Đơn đang chờ duyệt: 1 đơn (Đơn xin nghỉ phép ngày 25/11).
+  3. Banner hành động nhanh:
+     - Lối tắt 1-click: [Xin nghỉ phép] và [Đăng ký tăng ca].
+  4. Lưới lịch chấm công tháng (Calendar Grid):
+     - Lưới 7 cột (Thứ 2 đến Chủ nhật) thể hiện rõ ngày đã đi làm, ngày hôm nay và ngày nghỉ.
+  5. Phiếu lương tháng chi tiết:
+     - Bóc tách minh bạch: Lương cơ bản, Thưởng hiệu suất, Phụ cấp chức vụ, Khấu trừ bảo hiểm
+       và thuế TNCN, Thực nhận cuối cùng. Nút đề nghị tạm ứng nhanh.
+  6. Thẻ theo dõi đơn từ cá nhân & Bảng vàng vinh danh khen thưởng gần nhất.
+
+[B] Dịch Vụ Nhân Sự Tự Phục Vụ (Employee Self-Service):
+  1. Cập nhật hồ sơ cá nhân (/me/profile/edit):
+     - Tự cập nhật thông tin liên hệ: Số điện thoại, Email, Địa chỉ thường trú, Ngày sinh,
+       Giới tính, Trình độ học vấn và Chuyên môn.
+  2. Quản lý văn bằng & Chứng chỉ (/me/document/upload):
+     - Tải lên kho lưu trữ: Bằng tốt nghiệp đại học, chứng chỉ ngoại ngữ, chứng chỉ nghề,
+       scan CCCD. Xem và quản lý các tài liệu đã nộp.
+  3. Xin nghỉ phép online (/me/leave/request):
+     - Chọn ngày bắt đầu, ngày kết thúc, lý do nghỉ.
+     - Hệ thống tự động kiểm tra tính hợp lệ của ngày tháng và tính toán số ngày nghỉ.
+     - Hỗ trợ nhân viên chủ động bấm [Hủy đơn] nếu đơn đang ở trạng thái "Chờ duyệt".
+  4. Đăng ký làm thêm giờ - OT (/me/ot/register):
+     - Đăng ký ca làm thêm ngoài giờ: Số giờ làm, loại ngày (ngày thường / cuối tuần / lễ),
+       kèm lý do công việc để quản lý phòng ban xem xét phê duyệt.
+  5. Giải trình chấm công (/me/attendance/explain):
+     - Gửi giải trình trong các trường hợp quên quẹt thẻ, máy chấm công lỗi hoặc đi công tác
+       ngoài văn phòng sáng sớm; đề xuất bổ sung giờ vào/ra thực tế.
+  6. Đề nghị tạm ứng tiền lương (/me/advance/request):
+     - Gửi yêu cầu ứng trước tiền lương phục vụ việc cá nhân đột xuất.
+  7. Tự đánh giá KPI (/me/kpi/self-eval):
+     - Tự chấm điểm hiệu suất cá nhân và ghi nhận xét đóng góp trong tháng.
+  8. Cổng đào tạo nội bộ doanh nghiệp (/training):
+     - Xem danh mục khóa đào tạo kỹ năng chuyên môn, thời gian, giảng viên và bấm đăng ký.
+  9. Hộp thư đề xuất & Khiếu nại (/feedback):
+     - Gửi ý kiến phản ánh, đóng góp sáng kiến cải tiến quy trình công việc lên cấp lãnh đạo.
+ 10. Bảng thông báo nội bộ (/announcements):
+     - Theo dõi các thông báo chính sách mới, lịch nghỉ lễ và tin tức doanh nghiệp.
+
+========================================================================================
+IV. CÁC TIỆN ÍCH THÔNG MINH DÙNG CHUNG TOÀN HỆ THỐNG
+========================================================================================
+1. TRỢ LÝ ẢO AI NHÂN SỰ 24/7 (AI HR ASSISTANT WIDGET):
+   - Cửa sổ trò chuyện thông minh tích hợp góc phải màn hình.
+   - Hỗ trợ giải đáp tự động 4 nhóm nghiệp vụ chính:
+     a) Tra cứu số ngày nghỉ phép còn lại của người dùng theo thời gian thực.
+     b) Hướng dẫn quy trình 4 bước thủ tục xin tạm ứng tiền lương chuẩn quy chế.
+     c) Tự động tóm tắt hồ sơ CV ứng viên tuyển dụng, nêu bật điểm mạnh/kinh nghiệm.
+     d) Gợi ý nhận xét, đánh giá KPI cho cấp quản lý theo tiêu chuẩn khách quan.
+
+2. COMMAND PALETTE TÌM KIẾM NHANH (PHÍM TẮT CTRL + K):
+   - Cho phép người dùng bấm tổ hợp phím Ctrl + K từ bất kỳ trang nào để gõ tên chức năng,
+     tên phòng ban hoặc trang nghiệp vụ và chuyển hướng tức thì không cần duyệt menu.
+
+3. CHUYỂN ĐỔI GIAO DIỆN SÁNG / TỐI (LIGHT / DARK MODE):
+   - Nút bật/tắt chế độ tối (🌙 / ☀️) trên thanh Header, tự động lưu cấu hình người dùng
+     vào LocalStorage của trình duyệt.
+
+4. BẢO MẬT & TOÀN VẸN DỮ LIỆU CHUẨN ENTERPRISE:
+   - Phòng chống tấn công CSRF (Cross-Site Request Forgery) trên toàn bộ Form thao tác.
+   - Chống tấn công XSS, SQL Injection với tham số hóa truy vấn (Parameterized Queries).
+   - Kiểm soát phiên làm việc Session Guard tự động đăng xuất khi hết hạn hoặc không hợp lệ.
+
+========================================================================================
+V. DANH SÁCH TÀI KHOẢN MẪU ĐỂ TRẢI NGHIỆM VÀ DEMO
+========================================================================================
+1. TÀI KHOẢN ADMIN:
+   - Tên đăng nhập: admin
+   - Mật khẩu: admin123
+   - Vai trò: Quản trị viên tối cao (Quản lý toàn bộ 50 nhân viên, 7 phòng ban, tính lương,
+     sao lưu dữ liệu và kiểm toán hệ thống).
+
+2. TÀI KHOẢN QUẢN LÝ (MANAGER):
+   - Tên đăng nhập: ql001
+   - Mật khẩu: 123456
+   - Vai trò: Trưởng phòng Kỹ thuật (Quản lý 42 nhân sự phòng Kỹ thuật, duyệt đơn, đánh giá KPI).
+   - Các quản lý khác: ql002 (Kinh doanh), ql003 (Nhân sự - Hành chính), v.v. (Mật khẩu: 123456).
+
+3. TÀI KHOẢN NHÂN VIÊN (EMPLOYEE):
+   - Tên đăng nhập: nv002
+   - Mật khẩu: 123456
+   - Vai trò: Lập trình viên chính thức (Check-in/out, xin phép, xem lương, nộp chứng chỉ).
+   - Danh sách mở rộng: nv001 đến nv050 (Mật khẩu mặc định: 123456).
+
+========================================================================================
+VI. HƯỚNG DẪN KHỞI CHẠY VÀ TRẢI NGHIỆM
+========================================================================================
+1. Mở Terminal (PowerShell hoặc Command Prompt) tại thư mục dự án:
+   cd D:\Ghost\WebsiteQuanLyNhanSu\ss
+
+2. Khởi động Web Server Flask:
+   py app.py
+
+3. Truy cập trên trình duyệt web:
+   http://127.0.0.1:5000
+
+4. Đăng nhập lần lượt bằng 3 tài khoản (admin, ql001, nv002) để trải nghiệm sự khác biệt
+   về giao diện, luồng duyệt đơn và chức năng phân quyền giữa 3 Actor.
+========================================================================================

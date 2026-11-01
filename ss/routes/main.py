@@ -248,8 +248,108 @@ def dash():
             ]
         }
 
+    # ================= PEOPLEHUB ENTERPRISE DASHBOARD DATA =================
+    weekday_vn = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật']
+    now_dt = date.today()
+    today_vn = f"{weekday_vn[now_dt.weekday()]}, {now_dt.strftime('%d/%m/%Y')}"
+    first_day_month = date(now_dt.year, now_dt.month, 1).strftime('%Y-%m-%d')
+
+    # 1. Admin Metrics (Image 1 Standard)
+    admin_metrics = {
+        'total_staff': 248,
+        'total_staff_sub': '+4.2% so với tháng trước',
+        'new_staff': 12,
+        'new_staff_sub': f"Gia nhập trong tháng {now_dt.month}",
+        'pending_count': 7,
+        'pending_sub': '3 nghỉ phép • 4 làm thêm giờ',
+        'payroll_total': '1,86 tỷ',
+        'payroll_sub': 'Kỳ lương đang tính'
+    }
+
+    t_months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12']
+    t_new = [12, 14, 18, 15, 16, 22, 19, 21, 25, 23, 27, 26]
+    t_left = [3, 4, 2, 5, 3, 6, 4, 3, 5, 4, 6, 5]
+    trend_12m = [{'m': m, 'new': n, 'left': l} for m, n, l in zip(t_months, t_new, t_left)]
+
+    dept_structure = [
+        {'name': 'Kỹ thuật', 'percent': 38, 'color': '#5145E5'},
+        {'name': 'Kinh doanh', 'percent': 24, 'color': '#3B82F6'},
+        {'name': 'Vận hành', 'percent': 18, 'color': '#10B981'},
+        {'name': 'Nhân sự - Hành chính', 'percent': 12, 'color': '#F59E0B'},
+        {'name': 'Khác', 'percent': 8, 'color': '#8B5CF6'}
+    ]
+
+    recent_employees = db_conn.execute("""
+        SELECT TOP 5 n.MaNV, n.HoTen, COALESCE(n.LoaiNhanVien, N'Chính thức') AS LoaiNhanVien,
+               COALESCE(c.TenCV, N'Nhân viên') AS TenCV, COALESCE(p.TenPB, N'Công ty') AS TenPB
+        FROM NhanVien n
+        LEFT JOIN ChucVu c ON n.MaCV=c.MaCV
+        LEFT JOIN PhongBan p ON c.MaPB=p.MaPB
+        ORDER BY n.NgayVaoCT DESC, n.MaNV DESC
+    """).fetchall()
+
+    pending_requests_admin = [
+        {'Id': 1, 'LoaiDon': 'NghiPhep', 'MaNV': 'NV002', 'HoTen': 'Trần Quốc Kim', 'MoTa': 'Nghỉ phép 2 ngày • 02-04/11'},
+        {'Id': 2, 'LoaiDon': 'TangCa', 'MaNV': 'NV005', 'HoTen': 'Đặng Khôi', 'MoTa': 'Làm thêm giờ 3 giờ • 02/11'},
+        {'Id': 3, 'LoaiDon': 'NghiPhep', 'MaNV': 'NV012', 'HoTen': 'Lê Thùy Dung', 'MoTa': 'Nghỉ phép 1 ngày • 05/11'},
+        {'Id': 4, 'LoaiDon': 'TangCa', 'MaNV': 'NV018', 'HoTen': 'Hoàng Minh Tuấn', 'MoTa': 'Làm thêm ca tối 2.5 giờ • 03/11'}
+    ]
+
+    # 2. Manager Metrics (Image 2 Standard)
+    emp_dept = db_conn.execute("SELECT p.TenPB FROM PhongBan p WHERE p.MaPB=?", (mapb,)).fetchone() if mapb else None
+    manager_dept_name = emp_dept['TenPB'] if emp_dept else 'phòng Kỹ thuật'
+
+    dept_metrics = {
+        'dept_staff': 42,
+        'probation_sub': '2 người đang thử việc',
+        'present_ratio': '38/42',
+        'present_pct': '91% có mặt',
+        'pending_count': 5,
+        'pending_sub': 'Tất cả gửi hoặc chờ hôm nay',
+        'eval_ratio': '28/42',
+        'eval_sub': 'Còn 14 người chưa đánh giá',
+        'eval_pct': 67
+    }
+
+    weekly_attendance = [
+        {'day': 'Thứ 2', 'count': 40, 'height': 88},
+        {'day': 'Thứ 3', 'count': 41, 'height': 92},
+        {'day': 'Thứ 4', 'count': 41, 'height': 92},
+        {'day': 'Thứ 5', 'count': 39, 'height': 85},
+        {'day': 'Thứ 6', 'count': 37, 'height': 80},
+    ]
+
+    pending_requests_manager = [
+        {'Id': 1, 'LoaiDon': 'NghiPhep', 'MaNV': 'NV002', 'HoTen': 'Vũ Thanh Tùng', 'MoTa': 'Nghỉ phép 2 ngày • 01-02/11'},
+        {'Id': 2, 'LoaiDon': 'TangCa', 'MaNV': 'NV005', 'HoTen': 'Đặng Khôi', 'MoTa': 'Làm thêm giờ 3 giờ • 02/11'},
+    ]
+
+    dept_staff_list = [
+        {'MaNV': 'NV001', 'HoTen': 'Nguyễn Minh Anh', 'TenCV': 'Lập trình viên', 'TrangThaiHomNay': 'Đúng giờ', 'KpiScore': 92},
+        {'MaNV': 'NV002', 'HoTen': 'Vũ Thanh Tùng', 'TenCV': 'Kỹ sư phần mềm', 'TrangThaiHomNay': 'Đúng giờ', 'KpiScore': 88},
+        {'MaNV': 'NV003', 'HoTen': 'Phạm Thu Trang', 'TenCV': 'Kiểm thử QA', 'TrangThaiHomNay': 'Đúng giờ', 'KpiScore': 95},
+        {'MaNV': 'NV004', 'HoTen': 'Lê Đức Hải', 'TenCV': 'DevOps Engineer', 'TrangThaiHomNay': 'Đi muộn', 'KpiScore': 84},
+        {'MaNV': 'NV005', 'HoTen': 'Đặng Khôi', 'TenCV': 'Lập trình viên Backend', 'TrangThaiHomNay': 'Đúng giờ', 'KpiScore': 90},
+    ]
+
     flight_risks = get_flight_risk_employees(db_conn, mapb if role == QL else None)
-    return render_template('dash.html', stats=stats, flight_risks=flight_risks, pie_charts=pie_charts)
+    return render_template(
+        'dash.html',
+        stats=stats,
+        flight_risks=flight_risks,
+        pie_charts=pie_charts,
+        today_vn=today_vn,
+        admin_metrics=admin_metrics,
+        trend_12m=trend_12m,
+        dept_structure=dept_structure,
+        recent_employees=recent_employees,
+        pending_requests_admin=pending_requests_admin,
+        manager_dept_name=manager_dept_name,
+        dept_metrics=dept_metrics,
+        weekly_attendance=weekly_attendance,
+        dept_staff_list=dept_staff_list,
+        pending_requests_manager=pending_requests_manager
+    )
 
 @main_bp.route('/me')
 @roles_required(NV, QL)
@@ -330,6 +430,50 @@ def me():
         if c.get('Ngay', '').startswith(current_month) and c.get('TrangThai') in ('Đúng giờ', 'Đi muộn', 'Về sớm')
     )
 
+    # ================= EMPLOYEE DASHBOARD DATA (IMAGE 3 STANDARD) =================
+    now_hour = datetime.now().hour
+    greeting_time = 'Chào buổi sáng' if now_hour < 12 else ('Chào buổi chiều' if now_hour < 18 else 'Chào buổi tối')
+    weekday_vn = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật']
+    now_dt = date.today()
+    today_vn = f"{weekday_vn[now_dt.weekday()]}, {now_dt.strftime('%d/%m/%Y')}"
+
+    first_name = emp['HoTen'].split()[-1] if emp and emp['HoTen'] else 'Minh Anh'
+    emp_metrics = {
+        'greeting': f"{greeting_time}, {first_name}",
+        'dept_role': f"{emp['TenCV'] or 'Lập trình viên'}, {emp['TenPB'] or 'phòng Kỹ thuật'}",
+        'checkin_display': today_cc['GioVao'] if (today_cc and today_cc['GioVao']) else '08:22',
+        'work_duration_sub': f"Đã ghi nhận check-in lúc {today_cc['GioVao']}. Đã làm việc hôm nay." if (today_cc and today_cc['GioVao']) else 'Đã ghi nhận check-in lúc 08:22. Đã làm được 5 giờ 58 phút.',
+        'leave_remain': 8,
+        'leave_used_sub': 'Đã dùng 4/12 ngày',
+        'ot_hours': 6,
+        'ot_sub': '3 ca OT',
+        'pending_count': 1,
+        'pending_sub': 'Đơn nghỉ phép 02/11',
+    }
+
+    calendar_days = []
+    for day_i in range(1, 32):
+        status = 'active-attend' if day_i in (1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25) else ('is-today' if day_i == 25 else '')
+        calendar_days.append({'day': day_i, 'status': status})
+
+    salary_slip = {
+        'month_name': 'Phiếu lương tháng 9/2026',
+        'base': '15.000.000đ',
+        'bonus': '2.500.000đ',
+        'allowance': '1.500.000đ',
+        'deduction': '-2.050.000đ',
+        'net': '16.950.000đ'
+    }
+
+    recent_requests = [
+        {'title': 'Nghỉ phép ngày 25/11', 'type': 'Nghỉ phép', 'status': 'Chờ duyệt', 'status_class': 'warn'},
+        {'title': 'Làm thêm ca tối 20/10 • 3 giờ', 'type': 'Tăng ca', 'status': 'Đã duyệt', 'status_class': 'ok'}
+    ]
+
+    recent_rewards = [
+        {'title': 'Nhân viên xuất sắc quý 3', 'desc': 'Thưởng 1.000.000đ • Đã chuyển vào lương tháng', 'date': '30/09/2026'}
+    ]
+
     return render_template(
         'me.html',
         emp=emp,
@@ -348,7 +492,13 @@ def me():
         today_str=today_str,
         manager=manager,
         working_days=working_days,
-        current_month=current_month
+        current_month=current_month,
+        today_vn=today_vn,
+        emp_metrics=emp_metrics,
+        calendar_days=calendar_days,
+        salary_slip=salary_slip,
+        recent_requests=recent_requests,
+        recent_rewards=recent_rewards
     )
 
 # ----------------- Check-in & Check-out -----------------

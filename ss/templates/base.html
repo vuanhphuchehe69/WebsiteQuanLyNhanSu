@@ -16,14 +16,18 @@
             <input type="checkbox" id="mt" hidden>
             <aside class="side">
                 <div class="brand">
-                    <b>
-                        NS
-                    </b>
-                    <div>
-                        Quản lý nhân sự
-                        <small>
-                            Nhóm 2
-                        </small>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <span class="logo-icon-box" style="width:34px;height:34px;border-radius:9px;background:#5145E5;display:grid;place-items:center;color:#fff;box-shadow:0 3px 10px rgba(81,69,229,0.35);flex-shrink:0">
+                            <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </span>
+                        <div class="brand-text">
+                            <b style="font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-0.3px">PeopleHub</b>
+                        </div>
                     </div>
                 </div>
                 <nav class="nav">
@@ -51,12 +55,12 @@
                         <label for="mt" class="ib menu" aria-label="Mở menu">
                             {{icon('menu')}}
                         </label>
-                        <!-- Command Palette Shortcut Button -->
-                        <button type="button" class="cmd-trigger-btn" onclick="openCmdPalette()" title="Tìm kiếm nhanh toàn hệ thống (Ctrl + K)">
-                            <svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                            <span>Tìm kiếm chức năng...</span>
-                            
-                        </button>
+                        <!-- Command Palette Trigger with Ctrl+K Hint -->
+                        <div class="cmd-trigger-btn" onclick="openCmdPalette()" title="Tìm kiếm nhanh toàn hệ thống (Ctrl + K)" style="cursor:pointer; display:flex; align-items:center; gap:8px; background:var(--bg); padding:6px 14px; border-radius:99px; border:1px solid var(--line); font-size:13px; color:var(--mut)">
+                            <svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px;color:var(--mut)"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            <span>Tìm chức năng, phòng ban...</span>
+                            <kbd style="font-size:10px; background:var(--card); padding:2px 5px; border-radius:4px; border:1px solid var(--line); margin-left:8px">Ctrl K</kbd>
+                        </div>
                     </div>
 
                     <div style="display:flex;align-items:center;gap:12px">

@@ -1358,3 +1358,250 @@ dd {
     transition: none !important;
   }
 }
+
+/* ==========================================================================
+   ACTOR DASHBOARD DESIGN SYSTEM (Admin, Manager, Employee)
+   Matching Reference Showcase
+   ========================================================================== */
+
+/* Top Greeting Bar */
+.dash-greeting-bar {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.dash-greeting-bar h1 {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 0 0 4px;
+  letter-spacing: -0.4px;
+}
+.dash-greeting-bar p {
+  font-size: 13.5px;
+  color: var(--mut);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 4 Top Stat Cards Grid */
+.stat-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.stat-card-modern {
+  background-color: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.stat-card-modern:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.stat-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.stat-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mut);
+}
+.stat-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+}
+.stat-card-icon svg {
+  width: 18px;
+  height: 18px;
+}
+.stat-card-number {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.15;
+  margin-bottom: 6px;
+  letter-spacing: -0.5px;
+}
+.stat-card-subtext {
+  font-size: 12px;
+  color: var(--mut);
+}
+
+/* Employee Dark Navy Timeclock Card */
+.timeclock-card-navy {
+  background: linear-gradient(145deg, #1A163B 0%, #29235C 60%, #352E72 100%);
+  color: #FFFFFF;
+  border-radius: var(--r-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 10px 30px rgba(41, 35, 92, 0.2);
+  min-height: 230px;
+}
+.timeclock-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.timeclock-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #C5CAE9;
+}
+.timeclock-live-display {
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  font-family: 'Inter', monospace;
+  margin: 12px 0 6px;
+  line-height: 1;
+  color: #FFFFFF;
+}
+.timeclock-desc {
+  font-size: 12.5px;
+  color: #B0B7D6;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.btn-checkout-white {
+  width: 100%;
+  height: 42px;
+  border: none;
+  border-radius: 10px;
+  background-color: #FFFFFF;
+  color: #29235C;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: grid;
+  place-items: center;
+}
+.btn-checkout-white:hover {
+  background-color: #F0F2FA;
+  transform: translateY(-1px);
+}
+
+/* Action Prompt Card */
+.action-prompt-card {
+  background: linear-gradient(135deg, #F5F3FF 0%, #EEF2FF 100%);
+  border: 1px solid #E0E7FF;
+  border-radius: var(--r-lg);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.action-prompt-card h4 {
+  margin: 0 0 2px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #3730A3;
+}
+.action-prompt-card p {
+  margin: 0;
+  font-size: 12px;
+  color: #4338CA;
+}
+
+/* Calendar Grid */
+.calendar-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  text-align: center;
+}
+.calendar-weekday-hdr {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mut);
+  padding: 6px 0;
+  text-transform: uppercase;
+}
+.calendar-day-cell {
+  height: 38px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  background-color: var(--bg);
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+.calendar-day-cell.active-attend {
+  background-color: #E8F8F5;
+  color: #0E6655;
+  border-color: #A3E4D7;
+}
+.calendar-day-cell.is-today {
+  border-color: #5145E5;
+  background-color: #EEF2FF;
+  color: #5145E5;
+  font-weight: 800;
+}
+.calendar-day-cell.dimmed {
+  opacity: 0.35;
+}
+
+/* Salary Breakdown Slip */
+.salary-breakdown-slip {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.salary-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--mut);
+}
+.salary-item-row b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.salary-net-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+.salary-net-val {
+  font-size: 20px;
+  font-weight: 800;
+  color: #5145E5;
+}
+
+@media (max-width: 1100px) {
+  .stat-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 650px) {
+  .stat-grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+

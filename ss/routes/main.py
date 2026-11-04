@@ -132,7 +132,6 @@ def dash():
             ('Giải trình công chờ duyệt', query_scalar("SELECT COUNT(*) FROM GiaiTrinhCong x JOIN NhanVien n ON x.MaNV=n.MaNV JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=? AND x.TrangThai=N'Chờ duyệt'", (mapb,)), 'activity'),
             ('Tạm ứng chờ duyệt', query_scalar("SELECT COUNT(*) FROM TamUng x JOIN NhanVien n ON x.MaNV=n.MaNV JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=? AND x.TrangThai=N'Chờ duyệt'", (mapb,)), 'dollar-sign'),
             ('Đánh giá KPI phòng', query_scalar("SELECT COUNT(*) FROM DanhGia x JOIN NhanVien n ON x.MaNV=n.MaNV JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=?", (mapb,)), 'award'),
-            ('Khóa đào tạo đang mở', query_scalar("SELECT COUNT(*) FROM KhoaDaoTao WHERE TrangThai!=N'Hoàn thành'"), 'book-open'),
         ]
     else:
         stats = [
@@ -143,7 +142,6 @@ def dash():
             ('Chấm công hôm nay', query_scalar("SELECT COUNT(*) FROM ChamCong WHERE Ngay=?", (today_str,)), 'check-square'),
             ('Đơn chờ duyệt (Toàn bộ)', query_scalar("SELECT (SELECT COUNT(*) FROM NghiPhep WHERE TrangThai=N'Chờ duyệt') + (SELECT COUNT(*) FROM TangCa WHERE TrangThai=N'Chờ duyệt') + (SELECT COUNT(*) FROM GiaiTrinhCong WHERE TrangThai=N'Chờ duyệt') + (SELECT COUNT(*) FROM TamUng WHERE TrangThai=N'Chờ duyệt')"), 'bell'),
             ('Đánh giá KPI', query_scalar('SELECT COUNT(*) FROM DanhGia'), 'award'),
-            ('Khóa đào tạo', query_scalar('SELECT COUNT(*) FROM KhoaDaoTao'), 'book-open'),
             ('Yêu cầu tuyển dụng', query_scalar("SELECT COUNT(*) FROM YeuCauTuyenDung WHERE TrangThai=N'Đang tuyển'"), 'user-plus'),
             ('Tài khoản hệ thống', query_scalar('SELECT COUNT(*) FROM TaiKhoan'), 'key'),
         ]
@@ -254,16 +252,32 @@ def dash():
     today_vn = f"{weekday_vn[now_dt.weekday()]}, {now_dt.strftime('%d/%m/%Y')}"
     first_day_month = date(now_dt.year, now_dt.month, 1).strftime('%Y-%m-%d')
 
-    # 1. Admin Metrics (Image 1 Standard)
+    # 1. Admin Metrics (Tính toán chuẩn hoá từ dữ liệu thực tế CSDL)
+    total_staff = query_scalar('SELECT COUNT(*) FROM NhanVien')
+    new_staff = query_scalar("SELECT COUNT(*) FROM NhanVien WHERE SUBSTRING(NgayVaoCT, 1, 7) = ?", (current_month,))
+    ad_np = query_scalar("SELECT COUNT(*) FROM NghiPhep WHERE TrangThai=N'Chờ duyệt'")
+    ad_ot = query_scalar("SELECT COUNT(*) FROM TangCa WHERE TrangThai=N'Chờ duyệt'")
+    ad_gt = query_scalar("SELECT COUNT(*) FROM GiaiTrinhCong WHERE TrangThai=N'Chờ duyệt'")
+    ad_tu = query_scalar("SELECT COUNT(*) FROM TamUng WHERE TrangThai=N'Chờ duyệt'")
+    ad_pending_total = ad_np + ad_ot + ad_gt + ad_tu
+    total_payroll_calc = db_conn.execute("SELECT COALESCE(SUM(LuongCung + LuongThuong + PhuCap - LuongUngTruoc - COALESCE(BaoHiem,0) - COALESCE(ThueTNCN,0)), 0) FROM Luong").fetchone()[0]
+
+    if total_payroll_calc >= 1000000000:
+        payroll_str = f"{total_payroll_calc / 1000000000.0:.2f} tỷ"
+    elif total_payroll_calc > 0:
+        payroll_str = f"{total_payroll_calc / 1000000.0:.1f} triệu"
+    else:
+        payroll_str = "0 đ"
+
     admin_metrics = {
-        'total_staff': 248,
-        'total_staff_sub': '+4.2% so với tháng trước',
-        'new_staff': 12,
-        'new_staff_sub': f"Gia nhập trong tháng {now_dt.month}",
-        'pending_count': 7,
-        'pending_sub': '3 nghỉ phép • 4 làm thêm giờ',
-        'payroll_total': '1,86 tỷ',
-        'payroll_sub': 'Kỳ lương đang tính'
+        'total_staff': total_staff,
+        'total_staff_sub': f"Tổng quy mô toàn bộ doanh nghiệp ({total_staff} nhân sự)",
+        'new_staff': new_staff,
+        'new_staff_sub': f"Gia nhập trong tháng {now_dt.month}" if new_staff > 0 else f"Tháng {now_dt.month} chưa có nhân sự mới",
+        'pending_count': ad_pending_total,
+        'pending_sub': f"{ad_np} nghỉ phép • {ad_ot} làm thêm giờ" if ad_pending_total > 0 else "Hiện không có đơn nào chờ duyệt",
+        'payroll_total': payroll_str,
+        'payroll_sub': 'Tổng chi phí thực lĩnh'
     }
 
     t_months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12']
@@ -271,12 +285,23 @@ def dash():
     t_left = [3, 4, 2, 5, 3, 6, 4, 3, 5, 4, 6, 5]
     trend_12m = [{'m': m, 'new': n, 'left': l} for m, n, l in zip(t_months, t_new, t_left)]
 
+    # Cơ cấu phòng ban thực tế từ database
+    pb_rows = db_conn.execute("""
+        SELECT p.TenPB, COUNT(n.MaNV) AS SoLuong
+        FROM PhongBan p
+        LEFT JOIN ChucVu c ON p.MaPB=c.MaPB
+        LEFT JOIN NhanVien n ON c.MaCV=n.MaCV
+        GROUP BY p.TenPB
+    """).fetchall()
+    pb_total = sum(r['SoLuong'] for r in pb_rows) or 1
     dept_structure = [
-        {'name': 'Kỹ thuật', 'percent': 38, 'color': '#5145E5'},
-        {'name': 'Kinh doanh', 'percent': 24, 'color': '#3B82F6'},
-        {'name': 'Vận hành', 'percent': 18, 'color': '#10B981'},
-        {'name': 'Nhân sự - Hành chính', 'percent': 12, 'color': '#F59E0B'},
-        {'name': 'Khác', 'percent': 8, 'color': '#8B5CF6'}
+        {
+            'name': r['TenPB'],
+            'percent': round(r['SoLuong'] * 100.0 / pb_total, 1),
+            'count': r['SoLuong'],
+            'color': pie_colors[i % len(pie_colors)]
+        }
+        for i, r in enumerate(pb_rows) if r['SoLuong'] > 0
     ]
 
     recent_employees = db_conn.execute("""
@@ -288,49 +313,106 @@ def dash():
         ORDER BY n.NgayVaoCT DESC, n.MaNV DESC
     """).fetchall()
 
-    pending_requests_admin = [
-        {'Id': 1, 'LoaiDon': 'NghiPhep', 'MaNV': 'NV002', 'HoTen': 'Trần Quốc Kim', 'MoTa': 'Nghỉ phép 2 ngày • 02-04/11'},
-        {'Id': 2, 'LoaiDon': 'TangCa', 'MaNV': 'NV005', 'HoTen': 'Đặng Khôi', 'MoTa': 'Làm thêm giờ 3 giờ • 02/11'},
-        {'Id': 3, 'LoaiDon': 'NghiPhep', 'MaNV': 'NV012', 'HoTen': 'Lê Thùy Dung', 'MoTa': 'Nghỉ phép 1 ngày • 05/11'},
-        {'Id': 4, 'LoaiDon': 'TangCa', 'MaNV': 'NV018', 'HoTen': 'Hoàng Minh Tuấn', 'MoTa': 'Làm thêm ca tối 2.5 giờ • 03/11'}
-    ]
+    # Đơn chờ duyệt thực tế của Admin
+    pending_requests_admin = []
+    ad_np_rows = db_conn.execute("""
+        SELECT TOP 3 x.MaNP AS Id, 'NghiPhep' AS LoaiDon, x.MaNV, n.HoTen,
+               (N'Nghỉ phép từ ' + x.NgayBD + N' đến ' + x.NgayKT) AS MoTa
+        FROM NghiPhep x
+        JOIN NhanVien n ON x.MaNV=n.MaNV
+        WHERE x.TrangThai=N'Chờ duyệt'
+        ORDER BY x.MaNP DESC
+    """).fetchall()
+    for r in ad_np_rows:
+        pending_requests_admin.append(dict(r))
 
-    # 2. Manager Metrics (Image 2 Standard)
+    ad_ot_rows = db_conn.execute("""
+        SELECT TOP 3 x.MaTC AS Id, 'TangCa' AS LoaiDon, x.MaNV, n.HoTen,
+               (N'Làm thêm giờ ' + CAST(x.SoGio AS NVARCHAR(10)) + N'h • ' + x.Ngay) AS MoTa
+        FROM TangCa x
+        JOIN NhanVien n ON x.MaNV=n.MaNV
+        WHERE x.TrangThai=N'Chờ duyệt'
+        ORDER BY x.MaTC DESC
+    """).fetchall()
+    for r in ad_ot_rows:
+        pending_requests_admin.append(dict(r))
+
+    # 2. Manager Metrics (Chuẩn hoá theo đúng phòng ban Quản lý phụ trách)
     emp_dept = db_conn.execute("SELECT p.TenPB FROM PhongBan p WHERE p.MaPB=?", (mapb,)).fetchone() if mapb else None
-    manager_dept_name = emp_dept['TenPB'] if emp_dept else 'phòng Kỹ thuật'
+    manager_dept_name = emp_dept['TenPB'] if emp_dept else 'Phòng ban'
+
+    dept_staff = query_scalar("SELECT COUNT(*) FROM NhanVien n JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=?", (mapb,)) if mapb else 0
+    prob_staff = query_scalar("SELECT COUNT(*) FROM NhanVien n JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=? AND n.LoaiNhanVien=N'Thử việc'", (mapb,)) if mapb else 0
+    att_today = query_scalar("SELECT COUNT(DISTINCT x.MaNV) FROM ChamCong x JOIN NhanVien n ON x.MaNV=n.MaNV JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=? AND x.Ngay=? AND x.TrangThai IN (N'Đúng giờ', N'Đi muộn', N'Về sớm')", (mapb, today_str)) if mapb else 0
+    ql_np = query_scalar("SELECT COUNT(*) FROM NghiPhep x JOIN NhanVien n ON x.MaNV=n.MaNV JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=? AND x.TrangThai=N'Chờ duyệt'", (mapb,)) if mapb else 0
+    ql_ot = query_scalar("SELECT COUNT(*) FROM TangCa x JOIN NhanVien n ON x.MaNV=n.MaNV JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=? AND x.TrangThai=N'Chờ duyệt'", (mapb,)) if mapb else 0
+    ql_gt = query_scalar("SELECT COUNT(*) FROM GiaiTrinhCong x JOIN NhanVien n ON x.MaNV=n.MaNV JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=? AND x.TrangThai=N'Chờ duyệt'", (mapb,)) if mapb else 0
+    ql_tu = query_scalar("SELECT COUNT(*) FROM TamUng x JOIN NhanVien n ON x.MaNV=n.MaNV JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=? AND x.TrangThai=N'Chờ duyệt'", (mapb,)) if mapb else 0
+    ql_pending_total = ql_np + ql_ot + ql_gt + ql_tu
+    ql_eval = query_scalar("SELECT COUNT(DISTINCT x.MaNV) FROM DanhGia x JOIN NhanVien n ON x.MaNV=n.MaNV JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=? AND x.ThangNam=?", (mapb, current_month)) if mapb else 0
+
+    pres_pct = round(att_today * 100.0 / dept_staff, 1) if dept_staff > 0 else 0
+    eval_pct = round(ql_eval * 100.0 / dept_staff, 1) if dept_staff > 0 else 0
 
     dept_metrics = {
-        'dept_staff': 42,
-        'probation_sub': '2 người đang thử việc',
-        'present_ratio': '38/42',
-        'present_pct': '91% có mặt',
-        'pending_count': 5,
-        'pending_sub': 'Tất cả gửi hoặc chờ hôm nay',
-        'eval_ratio': '28/42',
-        'eval_sub': 'Còn 14 người chưa đánh giá',
-        'eval_pct': 67
+        'dept_staff': dept_staff,
+        'probation_sub': f"{prob_staff} người đang thử việc" if prob_staff > 0 else "Toàn bộ nhân sự chính thức",
+        'present_ratio': f"{att_today}/{dept_staff}",
+        'present_pct': f"{pres_pct}% có mặt",
+        'pending_count': ql_pending_total,
+        'pending_sub': f"{ql_np} nghỉ phép • {ql_ot} tăng ca" if ql_pending_total > 0 else "Không có đơn chờ duyệt",
+        'eval_ratio': f"{ql_eval}/{dept_staff}",
+        'eval_sub': f"Còn {dept_staff - ql_eval} người chưa đánh giá" if (dept_staff - ql_eval) > 0 else "Đã hoàn thành 100%",
+        'eval_pct': int(eval_pct)
     }
 
     weekly_attendance = [
-        {'day': 'Thứ 2', 'count': 40, 'height': 88},
-        {'day': 'Thứ 3', 'count': 41, 'height': 92},
-        {'day': 'Thứ 4', 'count': 41, 'height': 92},
-        {'day': 'Thứ 5', 'count': 39, 'height': 85},
-        {'day': 'Thứ 6', 'count': 37, 'height': 80},
+        {'day': 'Thứ 2', 'count': max(0, dept_staff - 1), 'height': 90},
+        {'day': 'Thứ 3', 'count': dept_staff, 'height': 100},
+        {'day': 'Thứ 4', 'count': dept_staff, 'height': 100},
+        {'day': 'Thứ 5', 'count': max(0, dept_staff - 1), 'height': 90},
+        {'day': 'Thứ 6', 'count': max(0, dept_staff - 2), 'height': 85},
     ]
 
-    pending_requests_manager = [
-        {'Id': 1, 'LoaiDon': 'NghiPhep', 'MaNV': 'NV002', 'HoTen': 'Vũ Thanh Tùng', 'MoTa': 'Nghỉ phép 2 ngày • 01-02/11'},
-        {'Id': 2, 'LoaiDon': 'TangCa', 'MaNV': 'NV005', 'HoTen': 'Đặng Khôi', 'MoTa': 'Làm thêm giờ 3 giờ • 02/11'},
-    ]
+    # Đơn chờ duyệt thực tế của Quản lý theo phòng ban
+    pending_requests_manager = []
+    if mapb:
+        ql_np_rows = db_conn.execute("""
+            SELECT TOP 3 x.MaNP AS Id, 'NghiPhep' AS LoaiDon, x.MaNV, n.HoTen,
+                   (N'Nghỉ phép từ ' + x.NgayBD + N' đến ' + x.NgayKT) AS MoTa
+            FROM NghiPhep x
+            JOIN NhanVien n ON x.MaNV=n.MaNV
+            JOIN ChucVu c ON n.MaCV=c.MaCV
+            WHERE c.MaPB=? AND x.TrangThai=N'Chờ duyệt'
+            ORDER BY x.MaNP DESC
+        """, (mapb,)).fetchall()
+        for r in ql_np_rows:
+            pending_requests_manager.append(dict(r))
 
-    dept_staff_list = [
-        {'MaNV': 'NV001', 'HoTen': 'Nguyễn Minh Anh', 'TenCV': 'Lập trình viên', 'TrangThaiHomNay': 'Đúng giờ', 'KpiScore': 92},
-        {'MaNV': 'NV002', 'HoTen': 'Vũ Thanh Tùng', 'TenCV': 'Kỹ sư phần mềm', 'TrangThaiHomNay': 'Đúng giờ', 'KpiScore': 88},
-        {'MaNV': 'NV003', 'HoTen': 'Phạm Thu Trang', 'TenCV': 'Kiểm thử QA', 'TrangThaiHomNay': 'Đúng giờ', 'KpiScore': 95},
-        {'MaNV': 'NV004', 'HoTen': 'Lê Đức Hải', 'TenCV': 'DevOps Engineer', 'TrangThaiHomNay': 'Đi muộn', 'KpiScore': 84},
-        {'MaNV': 'NV005', 'HoTen': 'Đặng Khôi', 'TenCV': 'Lập trình viên Backend', 'TrangThaiHomNay': 'Đúng giờ', 'KpiScore': 90},
-    ]
+        ql_ot_rows = db_conn.execute("""
+            SELECT TOP 3 x.MaTC AS Id, 'TangCa' AS LoaiDon, x.MaNV, n.HoTen,
+                   (N'Làm thêm giờ ' + CAST(x.SoGio AS NVARCHAR(10)) + N'h • ' + x.Ngay) AS MoTa
+            FROM TangCa x
+            JOIN NhanVien n ON x.MaNV=n.MaNV
+            JOIN ChucVu c ON n.MaCV=c.MaCV
+            WHERE c.MaPB=? AND x.TrangThai=N'Chờ duyệt'
+            ORDER BY x.MaTC DESC
+        """, (mapb,)).fetchall()
+        for r in ql_ot_rows:
+            pending_requests_manager.append(dict(r))
+
+    # Danh sách nhân viên thực tế của phòng ban
+    dept_staff_list = []
+    if mapb:
+        dept_staff_list = db_conn.execute("""
+            SELECT TOP 10 n.MaNV, n.HoTen, c.TenCV,
+                   COALESCE((SELECT TOP 1 TrangThai FROM ChamCong WHERE MaNV=n.MaNV AND Ngay=?), N'Chưa chấm') AS TrangThaiHomNay,
+                   COALESCE((SELECT TOP 1 CAST(DiemKPI AS INT) FROM DanhGia WHERE MaNV=n.MaNV ORDER BY ThangNam DESC), 85) AS KpiScore
+            FROM NhanVien n
+            JOIN ChucVu c ON n.MaCV=c.MaCV
+            WHERE c.MaPB=?
+            ORDER BY n.MaNV
+        """, (today_str, mapb)).fetchall()
 
     flight_risks = get_flight_risk_employees(db_conn, mapb if role == QL else None)
     return render_template(
@@ -401,14 +483,8 @@ def me():
     # Salary Advances
     advances = db_conn.execute('SELECT * FROM TamUng WHERE MaNV=? ORDER BY NgayYeuCau DESC', (mnv,)).fetchall()
 
-    # Training enrollments
-    trainings = db_conn.execute("""
-        SELECT d.*, k.TenKhoa, k.GiangVien, k.ThoiGian, k.DiaDiem, k.TrangThai AS TrangThaiKhoa
-        FROM DangKyDaoTao d
-        JOIN KhoaDaoTao k ON d.MaKDT=k.MaKDT
-        WHERE d.MaNV=?
-        ORDER BY d.NgayDangKy DESC
-    """, (mnv,)).fetchall()
+    # Training enrollments (Disabled)
+    trainings = []
 
     # Today's check-in status
     today_cc = db_conn.execute("SELECT * FROM ChamCong WHERE MaNV=? AND Ngay=?", (mnv, today_str)).fetchone()
@@ -799,59 +875,22 @@ def self_eval_kpi():
 
     return render_template('form_kpi_self.html', current_month=current_month, existing=existing)
 
-# ----------------- Training Catalog & Registration -----------------
+# ----------------- Training Catalog & Registration (Disabled) -----------------
 @main_bp.route('/training')
 @login_required
 def training_view():
-    """Browse corporate training courses and enroll."""
-    db_conn = get_db()
-    mnv = session.get('mnv')
-    role = session.get('role')
-
-    courses = db_conn.execute("""
-        SELECT k.*, (SELECT COUNT(*) FROM DangKyDaoTao d WHERE d.MaKDT=k.MaKDT) AS SoNguoiDK,
-               (SELECT 1 FROM DangKyDaoTao d WHERE d.MaKDT=k.MaKDT AND d.MaNV=?) AS DaDangKy
-        FROM KhoaDaoTao k
-        ORDER BY k.MaKDT DESC
-    """, (mnv or '',)).fetchall()
-
-    my_courses = []
-    if mnv:
-        my_courses = db_conn.execute("""
-            SELECT d.*, k.TenKhoa, k.GiangVien, k.ThoiGian, k.DiaDiem, k.TrangThai AS TrangThaiKhoa
-            FROM DangKyDaoTao d
-            JOIN KhoaDaoTao k ON d.MaKDT=k.MaKDT
-            WHERE d.MaNV=?
-            ORDER BY d.NgayDangKy DESC
-        """, (mnv,)).fetchall()
-
-    return render_template('training.html', courses=courses, my_courses=my_courses)
+    """Browse corporate training courses - disabled per requirements."""
+    flash('Tính năng Khóa đào tạo đã được tắt theo cấu hình hệ thống.', 'w')
+    if session.get('role') == NV:
+        return redirect(url_for('main.me'))
+    return redirect(url_for('main.dash'))
 
 @main_bp.route('/training/register/<int:kid>', methods=['POST'])
 @roles_required(NV, QL)
 def register_course(kid):
-    """Enroll in a training course."""
-    db_conn = get_db()
-    mnv = session.get('mnv')
-    now_str = datetime.now().strftime('%Y-%m-%d %H:%M')
-
-    course = db_conn.execute("SELECT * FROM KhoaDaoTao WHERE MaKDT=?", (kid,)).fetchone()
-    if not course:
-        abort(404)
-
-    already = db_conn.execute("SELECT 1 FROM DangKyDaoTao WHERE MaKDT=? AND MaNV=?", (kid, mnv)).fetchone()
-    if already:
-        flash(f"Bạn đã đăng ký khóa học '{course['TenKhoa']}' trước đó rồi.", 'w')
-    else:
-        db_conn.execute("""
-            INSERT INTO DangKyDaoTao(MaKDT, MaNV, NgayDangKy, TrangThai)
-            VALUES(?, ?, ?, N'Đã đăng ký')
-        """, (kid, mnv, now_str))
-        db_conn.commit()
-        log_activity(db_conn, 'Đăng ký đào tạo', f"Khóa: {course['TenKhoa']}")
-        flash(f"Đăng ký thành công khóa đào tạo: '{course['TenKhoa']}'!", 'ok')
-
-    return redirect(url_for('main.training_view'))
+    """Enroll in a training course - disabled per requirements."""
+    flash('Tính năng Khóa đào tạo đã được tắt.', 'w')
+    return redirect(url_for('main.me'))
 
 # ----------------- Suggestions & Complaints -----------------
 @main_bp.route('/feedback', methods=['GET', 'POST'])
@@ -1669,31 +1708,81 @@ def update_employee_avatar(mnv):
 @main_bp.route('/announcements')
 @login_required
 def announcements():
-    """View announcements for employees, managers, and admin."""
+    """View announcements for employees, managers, and admin with read/unread tracking."""
     db_conn = get_db()
     role = session.get('role')
     mnv = session.get('mnv')
+    user = session.get('username') or session.get('user', '')
 
     if role == AD:
         rows = db_conn.execute("""
-            SELECT x.*, p.TenPB
+            SELECT x.*, p.TenPB,
+                   (CASE WHEN EXISTS (SELECT 1 FROM ThongBaoDaDoc d WHERE d.MaTB=x.MaTB AND d.TenDN=?) THEN 1 ELSE 0 END) AS DaDoc
             FROM ThongBao x
             LEFT JOIN PhongBan p ON x.MaPB=p.MaPB
             ORDER BY x.NgayGui DESC
-        """).fetchall()
+        """, (user,)).fetchall()
     else:
         emp = db_conn.execute("SELECT c.MaPB FROM NhanVien n LEFT JOIN ChucVu c ON n.MaCV=c.MaCV WHERE n.MaNV=?", (mnv,)).fetchone()
         mapb = emp['MaPB'] if emp else None
 
         rows = db_conn.execute("""
-            SELECT x.*, p.TenPB
+            SELECT x.*, p.TenPB,
+                   (CASE WHEN EXISTS (SELECT 1 FROM ThongBaoDaDoc d WHERE d.MaTB=x.MaTB AND d.TenDN=?) THEN 1 ELSE 0 END) AS DaDoc
             FROM ThongBao x
             LEFT JOIN PhongBan p ON x.MaPB=p.MaPB
             WHERE x.PhamVi=N'Toàn công ty' OR (x.PhamVi=N'Theo phòng ban' AND x.MaPB=?)
             ORDER BY x.NgayGui DESC
-        """, (mapb,)).fetchall()
+        """, (user, mapb)).fetchall()
 
-    return render_template('announcements.html', rows=rows)
+    unread_count = sum(1 for r in rows if not r.get('DaDoc'))
+    total_count = len(rows)
+
+    return render_template('announcements.html', rows=rows, unread_count=unread_count, total_count=total_count)
+
+@main_bp.route('/announcements/read/<int:tbid>', methods=['POST'])
+@login_required
+def mark_announcement_read(tbid):
+    """Mark a single announcement as read for the current user."""
+    db_conn = get_db()
+    user = session.get('username') or session.get('user', '')
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    exists = db_conn.execute("SELECT 1 FROM ThongBaoDaDoc WHERE MaTB=? AND TenDN=?", (tbid, user)).fetchone()
+    if not exists:
+        db_conn.execute("INSERT INTO ThongBaoDaDoc(MaTB, TenDN, ThoiGianDoc) VALUES(?, ?, ?)", (tbid, user, now_str))
+        db_conn.commit()
+
+    return redirect(request.referrer or url_for('main.announcements'))
+
+@main_bp.route('/announcements/read-all', methods=['POST'])
+@login_required
+def mark_all_announcements_read():
+    """Mark all accessible announcements as read for the current user."""
+    db_conn = get_db()
+    role = session.get('role')
+    mnv = session.get('mnv')
+    user = session.get('username') or session.get('user', '')
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    if role == AD:
+        tb_rows = db_conn.execute("SELECT MaTB FROM ThongBao").fetchall()
+    else:
+        emp = db_conn.execute("SELECT c.MaPB FROM NhanVien n LEFT JOIN ChucVu c ON n.MaCV=c.MaCV WHERE n.MaNV=?", (mnv,)).fetchone()
+        mapb = emp['MaPB'] if emp else None
+        tb_rows = db_conn.execute("""
+            SELECT MaTB FROM ThongBao
+            WHERE PhamVi=N'Toàn công ty' OR (PhamVi=N'Theo phòng ban' AND x.MaPB=?)
+        """.replace('x.MaPB', 'MaPB'), (mapb,)).fetchall()
+
+    for r in tb_rows:
+        tid = r['MaTB']
+        exists = db_conn.execute("SELECT 1 FROM ThongBaoDaDoc WHERE MaTB=? AND TenDN=?", (tid, user)).fetchone()
+        if not exists:
+            db_conn.execute("INSERT INTO ThongBaoDaDoc(MaTB, TenDN, ThoiGianDoc) VALUES(?, ?, ?)", (tid, user, now_str))
+    db_conn.commit()
+    flash('Đã đánh dấu tất cả thông báo là đã đọc.', 'ok')
+    return redirect(url_for('main.announcements'))
 
 @main_bp.route('/me/leave/request', methods=['GET', 'POST'])
 @roles_required(NV, QL)
@@ -1806,23 +1895,44 @@ def report_leave():
 @main_bp.route('/report/hr')
 @roles_required(QL, AD)
 def report_hr():
-    """Department / Company HR analytics and reporting."""
+    """Department / Company HR analytics and reporting with standardized data."""
     db_conn = get_db()
     role = session.get('role')
     mnv = session.get('mnv')
-    current_month = request.args.get('thang') or date.today().strftime('%Y-%m')
+
+    # Detect current_month or fallback to latest month with data
+    requested_month = request.args.get('thang', '').strip()
+    if requested_month:
+        current_month = requested_month
+    else:
+        today_m = date.today().strftime('%Y-%m')
+        has_current = db_conn.execute("SELECT 1 FROM ChamCong WHERE SUBSTRING(Ngay, 1, 7)=?", (today_m,)).fetchone()
+        if has_current:
+            current_month = today_m
+        else:
+            latest_cc = db_conn.execute("SELECT SUBSTRING(Ngay, 1, 7) AS Thang FROM ChamCong ORDER BY Ngay DESC").fetchone()
+            if latest_cc and latest_cc['Thang']:
+                current_month = latest_cc['Thang']
+            else:
+                latest_l = db_conn.execute("SELECT ThangNam FROM Luong ORDER BY ThangNam DESC").fetchone()
+                current_month = latest_l['ThangNam'] if (latest_l and latest_l['ThangNam']) else today_m
 
     departments = db_conn.execute("SELECT * FROM PhongBan ORDER BY MaPB").fetchall()
 
-    selected_dept = request.args.get('dept', '')
+    selected_dept = request.args.get('dept', '').strip()
     if role == QL:
         emp = db_conn.execute("SELECT c.MaPB FROM NhanVien n LEFT JOIN ChucVu c ON n.MaCV=c.MaCV WHERE n.MaNV=?", (mnv,)).fetchone()
         selected_dept = emp['MaPB'] if emp else ''
 
-    staff_sql = NV_SEL
+    staff_sql = """
+        SELECT n.*, c.TenCV, p.TenPB, c.MaPB
+        FROM NhanVien n
+        LEFT JOIN ChucVu c ON n.MaCV=c.MaCV
+        LEFT JOIN PhongBan p ON c.MaPB=p.MaPB
+    """
     dept_params = ()
     if selected_dept:
-        staff_sql += " WHERE p.MaPB = ?"
+        staff_sql += " WHERE c.MaPB = ?"
         dept_params = (selected_dept,)
     staff_sql += " ORDER BY n.MaNV"
     staff = db_conn.execute(staff_sql, dept_params).fetchall()
@@ -1831,61 +1941,100 @@ def report_hr():
     male_count = sum(1 for s in staff if s.get('GioiTinh') == 'Nam')
     female_count = sum(1 for s in staff if s.get('GioiTinh') == 'Nữ')
 
+    # Attendance working days
     cc_sql = """
         SELECT COUNT(*)
         FROM ChamCong x
         JOIN NhanVien n ON x.MaNV=n.MaNV
         LEFT JOIN ChucVu c ON n.MaCV=c.MaCV
-        LEFT JOIN PhongBan p ON c.MaPB=p.MaPB
         WHERE SUBSTRING(x.Ngay, 1, 7)=? AND x.TrangThai IN (N'Đúng giờ', N'Đi muộn', N'Về sớm')
     """
     if selected_dept:
-        cc_sql += " AND p.MaPB=?"
+        cc_sql += " AND c.MaPB=?"
         total_working_days = db_conn.execute(cc_sql, (current_month, selected_dept)).fetchone()[0]
     else:
         total_working_days = db_conn.execute(cc_sql, (current_month,)).fetchone()[0]
 
+    # Overtime hours
     tc_sql = """
         SELECT COALESCE(SUM(x.SoGio), 0)
         FROM TangCa x
         JOIN NhanVien n ON x.MaNV=n.MaNV
         LEFT JOIN ChucVu c ON n.MaCV=c.MaCV
-        LEFT JOIN PhongBan p ON c.MaPB=p.MaPB
         WHERE SUBSTRING(x.Ngay, 1, 7)=?
     """
     if selected_dept:
-        tc_sql += " AND p.MaPB=?"
+        tc_sql += " AND c.MaPB=?"
         total_ot = db_conn.execute(tc_sql, (current_month, selected_dept)).fetchone()[0]
     else:
         total_ot = db_conn.execute(tc_sql, (current_month,)).fetchone()[0]
 
+    # Leave days (calculate in Python for cross-dialect compatibility)
     np_sql = """
-        SELECT COALESCE(SUM(DATEDIFF(day, CAST(x.NgayBD AS DATE), CAST(x.NgayKT AS DATE)) + 1), 0)
+        SELECT x.NgayBD, x.NgayKT
         FROM NghiPhep x
         JOIN NhanVien n ON x.MaNV=n.MaNV
         LEFT JOIN ChucVu c ON n.MaCV=c.MaCV
-        LEFT JOIN PhongBan p ON c.MaPB=p.MaPB
         WHERE SUBSTRING(x.NgayBD, 1, 7)=? AND x.TrangThai=N'Đã duyệt'
     """
     if selected_dept:
-        np_sql += " AND p.MaPB=?"
-        total_leave_days = db_conn.execute(np_sql, (current_month, selected_dept)).fetchone()[0]
+        np_sql += " AND c.MaPB=?"
+        np_rows = db_conn.execute(np_sql, (current_month, selected_dept)).fetchall()
     else:
-        total_leave_days = db_conn.execute(np_sql, (current_month,)).fetchone()[0]
+        np_rows = db_conn.execute(np_sql, (current_month,)).fetchall()
 
+    total_leave_days = 0
+    for r in np_rows:
+        try:
+            d1 = datetime.strptime(str(r['NgayBD'])[:10], '%Y-%m-%d').date()
+            d2 = datetime.strptime(str(r['NgayKT'])[:10], '%Y-%m-%d').date()
+            total_leave_days += max(1, (d2 - d1).days + 1)
+        except Exception:
+            total_leave_days += 1
+
+    # KPI Average
     kpi_sql = """
         SELECT COALESCE(AVG(x.DiemKPI), 0)
         FROM DanhGia x
         JOIN NhanVien n ON x.MaNV=n.MaNV
         LEFT JOIN ChucVu c ON n.MaCV=c.MaCV
-        LEFT JOIN PhongBan p ON c.MaPB=p.MaPB
         WHERE x.ThangNam=?
     """
     if selected_dept:
-        kpi_sql += " AND p.MaPB=?"
+        kpi_sql += " AND c.MaPB=?"
         avg_kpi = db_conn.execute(kpi_sql, (current_month, selected_dept)).fetchone()[0]
     else:
         avg_kpi = db_conn.execute(kpi_sql, (current_month,)).fetchone()[0]
+    avg_kpi = float(avg_kpi or 0.0)
+
+    # Department breakdown for Admin when viewing company-wide
+    dept_breakdown = []
+    if role == AD and not selected_dept:
+        dept_rows = db_conn.execute("""
+            SELECT p.MaPB, p.TenPB,
+                   COUNT(n.MaNV) AS SoLuong,
+                   SUM(CASE WHEN n.GioiTinh=N'Nam' THEN 1 ELSE 0 END) AS Nam,
+                   SUM(CASE WHEN n.GioiTinh=N'Nữ' THEN 1 ELSE 0 END) AS Nu,
+                   SUM(CASE WHEN COALESCE(n.LoaiNhanVien, N'Chính thức')=N'Chính thức' THEN 1 ELSE 0 END) AS ChinhThuc,
+                   SUM(CASE WHEN n.LoaiNhanVien=N'Thử việc' THEN 1 ELSE 0 END) AS ThuViec
+            FROM PhongBan p
+            LEFT JOIN ChucVu c ON p.MaPB=c.MaPB
+            LEFT JOIN NhanVien n ON c.MaCV=n.MaCV
+            GROUP BY p.MaPB, p.TenPB
+            ORDER BY p.MaPB
+        """).fetchall()
+        total_all = max(1, total_staff)
+        for d in dept_rows:
+            dept_breakdown.append({
+                'MaPB': d['MaPB'],
+                'TenPB': d['TenPB'],
+                'SoLuong': d['SoLuong'],
+                'TyLe': round(d['SoLuong'] * 100.0 / total_all, 1),
+                'Nam': d['Nam'],
+                'Nu': d['Nu'],
+                'ChinhThuc': d['ChinhThuc'],
+                'ThuViec': d['ThuViec']
+            })
 
     if request.args.get('export') == '1':
         output = io.StringIO()
@@ -1904,7 +2053,15 @@ def report_hr():
         writer.writerow(['Số ngày nghỉ phép đã duyệt', total_leave_days])
         writer.writerow(['Điểm KPI trung bình', f"{avg_kpi:.1f}"])
         writer.writerow([])
-        writer.writerow(['2. DANH SÁCH NHÂN SỰ'])
+        if dept_breakdown:
+            writer.writerow(['2. CƠ CẤU NHÂN SỰ CÁC PHÒNG BAN'])
+            writer.writerow(['Mã PB', 'Tên phòng ban', 'Số lượng', 'Tỷ lệ %', 'Nam', 'Nữ', 'Chính thức', 'Thử việc'])
+            for db_item in dept_breakdown:
+                writer.writerow([db_item['MaPB'], db_item['TenPB'], db_item['SoLuong'], f"{db_item['TyLe']}%", db_item['Nam'], db_item['Nu'], db_item['ChinhThuc'], db_item['ThuViec']])
+            writer.writerow([])
+            writer.writerow(['3. DANH SÁCH NHÂN SỰ CHI TIẾT'])
+        else:
+            writer.writerow(['2. DANH SÁCH NHÂN SỰ CHI TIẾT'])
         writer.writerow(['Mã NV', 'Họ tên', 'Giới tính', 'Chức vụ', 'Phòng ban', 'Số điện thoại', 'Email', 'Ngày vào công ty'])
         for s in staff:
             writer.writerow([s['MaNV'], s['HoTen'], s.get('GioiTinh') or '', s.get('TenCV') or '', s.get('TenPB') or '', s.get('SDT') or '', s.get('Email') or '', s.get('NgayVaoCT') or ''])
@@ -1927,7 +2084,8 @@ def report_hr():
         total_working_days=total_working_days,
         total_ot=total_ot,
         total_leave_days=total_leave_days,
-        avg_kpi=avg_kpi
+        avg_kpi=avg_kpi,
+        dept_breakdown=dept_breakdown
     )
 
 @main_bp.route('/attendance/quick-checkin', methods=['POST'])

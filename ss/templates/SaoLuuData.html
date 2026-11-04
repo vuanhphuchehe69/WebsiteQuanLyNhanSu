@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                {{ icon('database') }}
+                Sao lưu & Quản lý dữ liệu hệ thống
+            </h1>
+            <p>
+                Công cụ quản trị dành cho Quản trị viên (Admin) để sao lưu, lưu trữ dữ liệu định kỳ và phục hồi.
+            </p>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <a class="btn" href="{{ url_for('main.backup_export') }}" title="Xuất toàn bộ cơ sở dữ liệu dưới dạng tệp JSON">
+                {{ icon('download') }}
+                Tải bản sao lưu JSON
+            </a>
+            <a class="btn g" href="{{ url_for('main.backup_sql') }}" title="Xuất kịch bản câu lệnh SQL INSERT">
+                {{ icon('database') }}
+                Tải kịch bản SQL Script
+            </a>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="stat">
+            <div class="ic">
+                {{ icon('database') }}
+            </div>
+            <div>
+                <b>{{ database_name }}</b>
+                <span>Tên cơ sở dữ liệu</span>
+            </div>
+        </div>
+        <div class="stat">
+            <div class="ic">
+                {{ icon('list') }}
+            </div>
+            <div>
+                <b>{{ table_stats|length }} bảng</b>
+                <span>Tổng số bảng CSDL</span>
+            </div>
+        </div>
+        <div class="stat">
+            <div class="ic">
+                {{ icon('users') }}
+            </div>
+            <div>
+                <b>{{ total_records }} bản ghi</b>
+                <span>Tổng dữ liệu hệ thống</span>
+            </div>
+        </div>
+        <div class="stat">
+            <div class="ic">
+                {{ icon('clock') }}
+            </div>
+            <div>
+                <b>{{ now }}</b>
+                <span>Thời gian kiểm tra</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card flush">
+        <div style="padding:16px 20px 14px">
+            <h3 style="margin:0">
+                {{ icon('hard-drive') }}
+                Thống kê dữ liệu từng bảng trong hệ thống
+            </h3>
+        </div>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tên bảng CSDL</th>
+                        <th>Nội dung quản lý</th>
+                        <th class="num">Số lượng bản ghi</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tbl, lbl, cnt in table_stats %}
+                        <tr>
+                            <td>
+                                <b><code>{{ tbl }}</code></b>
+                            </td>
+                            <td>{{ lbl }}</td>
+                            <td class="num">
+                                <b style="color:var(--brand);font-size:14px">{{ cnt }}</b>
+                            </td>
+                            <td>
+                                <span class="tag {{ 'ok' if cnt > 0 else 'n' }}">
+                                    {{ 'Hoạt động' if cnt > 0 else 'Trống' }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

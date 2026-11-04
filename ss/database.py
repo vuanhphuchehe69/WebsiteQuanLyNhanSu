@@ -88,12 +88,66 @@ class CursorWrapper:
     def __iter__(self):
         return iter(self.fetchall())
 
+import re
+
+def _clean_sql_for_sqlite(sql):
+    """Normalize SQL syntax for SQLite compatibility when running without MSSQL."""
+    if not sql:
+        return sql
+    # Strip N'...' -> '...'
+    sql = re.sub(r"\bN'((?:[^']|'')*)'", r"'\1'", sql)
+    # Quote datepart keyword in DATEDIFF for SQLite (e.g. DATEDIFF(day, ...) -> DATEDIFF('day', ...))
+    sql = re.sub(r'\bDATEDIFF\s*\(\s*([a-zA-Z]+)\s*,', r"DATEDIFF('\1',", sql, flags=re.IGNORECASE)
+    # Convert (SELECT TOP N ...) inside subqueries (handles nested parens like CAST(...))
+    sql = re.sub(r'\(\s*SELECT\s+TOP\s+(\d+)\s+((?:[^()]+|\([^()]*\))*)\)', r'(SELECT \2 LIMIT \1)', sql, flags=re.IGNORECASE)
+    # Convert outer SELECT TOP N ...
+    if not sql.strip().startswith('('):
+        top_match = re.search(r'^\s*SELECT\s+TOP\s+(\d+)\s+', sql, flags=re.IGNORECASE)
+        if top_match:
+            limit_val = top_match.group(1)
+            sql = re.sub(r'^\s*SELECT\s+TOP\s+\d+\s+', 'SELECT ', sql, count=1, flags=re.IGNORECASE)
+            if not re.search(r'\bLIMIT\b', sql, flags=re.IGNORECASE):
+                sql = f"{sql} LIMIT {limit_val}"
+    return sql
+
+def setup_sqlite_conn(conn):
+    """Register MSSQL compatibility functions in SQLite."""
+    conn.row_factory = sqlite3.Row
+    conn.execute('PRAGMA foreign_keys = ON')
+
+    def datediff_impl(unit, d1, d2):
+        try:
+            dt1 = datetime.strptime(str(d1)[:10], '%Y-%m-%d')
+            dt2 = datetime.strptime(str(d2)[:10], '%Y-%m-%d')
+            return (dt2 - dt1).days
+        except Exception:
+            return 0
+
+    def substring_impl(s, start, length=None):
+        if s is None:
+            return ''
+        s_str = str(s)
+        st = max(0, int(start) - 1)
+        if length is not None:
+            return s_str[st:st + int(length)]
+        return s_str[st:]
+
+    def concat_impl(*args):
+        return ''.join(str(a) if a is not None else '' for a in args)
+
+    conn.create_function('DATEDIFF', 3, datediff_impl)
+    conn.create_function('SUBSTRING', 3, substring_impl)
+    conn.create_function('SUBSTRING', 2, substring_impl)
+    conn.create_function('CONCAT', -1, concat_impl)
+
 class ConnectionWrapper:
     def __init__(self, raw_conn, is_mssql=True):
         self._conn = raw_conn
         self.is_mssql = is_mssql
 
     def execute(self, sql, params=None):
+        if not self.is_mssql:
+            sql = _clean_sql_for_sqlite(sql)
         cur = self._conn.cursor()
         if params is not None:
             cur.execute(sql, params)
@@ -102,6 +156,8 @@ class ConnectionWrapper:
         return CursorWrapper(cur)
 
     def executemany(self, sql, param_list):
+        if not self.is_mssql:
+            sql = _clean_sql_for_sqlite(sql)
         cur = self._conn.cursor()
         cur.executemany(sql, param_list)
         return CursorWrapper(cur)
@@ -127,17 +183,25 @@ def build_mssql_connection_string(database=None):
         f"Trusted_Connection={MSSQL_TRUSTED_CONNECTION};TrustServerCertificate=yes;"
     )
 
+_mssql_failed = False
+
 def get_db():
-    """Get or create database connection for the current Flask application context."""
+    """Get or create database connection for the current Flask application context with automatic SQLite fallback."""
+    global _mssql_failed
     if 'db' not in g:
-        if DB_TYPE == 'mssql' and PYODBC_AVAILABLE:
-            raw_conn = pyodbc.connect(build_mssql_connection_string(), timeout=10)
-            g.db = ConnectionWrapper(raw_conn, is_mssql=True)
-        else:
-            conn = sqlite3.connect(DB_PATH)
-            conn.row_factory = sqlite3.Row
-            conn.execute('PRAGMA foreign_keys = ON')
-            g.db = conn
+        if DB_TYPE == 'mssql' and PYODBC_AVAILABLE and not _mssql_failed:
+            try:
+                raw_conn = pyodbc.connect(build_mssql_connection_string(), timeout=2)
+                g.db = ConnectionWrapper(raw_conn, is_mssql=True)
+                return g.db
+            except Exception as e:
+                _mssql_failed = True
+                print(f"[THÔNG BÁO CSDL] Không thể kết nối Microsoft SQL Server ({e}).\n-> Tự động chuyển sang chế độ SQLite ({DB_PATH}).")
+
+        conn = sqlite3.connect(DB_PATH)
+        setup_sqlite_conn(conn)
+        init_sqlite_schema(conn)
+        g.db = ConnectionWrapper(conn, is_mssql=False)
     return g.db
 
 def close_db(e=None):
@@ -451,6 +515,14 @@ CREATE TABLE ChotCong(
     TongSoCong FLOAT DEFAULT 0,
     GhiChu NVARCHAR(MAX)
 );
+
+IF OBJECT_ID(N'ThongBaoDaDoc', N'U') IS NULL
+CREATE TABLE ThongBaoDaDoc(
+    MaTB INT NOT NULL,
+    TenDN NVARCHAR(100) NOT NULL,
+    ThoiGianDoc NVARCHAR(25) NOT NULL,
+    CONSTRAINT PK_ThongBaoDaDoc PRIMARY KEY (MaTB, TenDN)
+);
 """
 
 def clean_all_duplicates(db):
@@ -486,6 +558,13 @@ def clean_all_duplicates(db):
     except Exception:
         pass
     try:
+        # Purge deprecated tables (KhoaDaoTao, DangKyDaoTao, PhanCa)
+        db.execute("DELETE FROM DangKyDaoTao;")
+        db.execute("DELETE FROM KhoaDaoTao;")
+        db.execute("DELETE FROM PhanCa;")
+    except Exception:
+        pass
+    try:
         # Deduplicate NhatKyHoatDong
         db.execute("DELETE FROM NhatKyHoatDong WHERE MaNK NOT IN (SELECT MIN(MaNK) FROM NhatKyHoatDong GROUP BY ThoiGian, NguoiDung, HanhDong);")
     except Exception:
@@ -495,79 +574,257 @@ def clean_all_duplicates(db):
     except Exception:
         pass
 
+def init_sqlite_schema(conn):
+    """Create complete SQLite tables if running in SQLite fallback mode."""
+    schema = """
+    CREATE TABLE IF NOT EXISTS PhongBan(MaPB TEXT PRIMARY KEY, TenPB TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS ChucVu(MaCV TEXT PRIMARY KEY, TenCV TEXT NOT NULL, MaPB TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS NhanVien(MaNV TEXT PRIMARY KEY, HoTen TEXT NOT NULL, DiaChi TEXT, SDT TEXT, CCCD TEXT UNIQUE, Email TEXT, NgaySinh TEXT, NgayVaoCT TEXT, GioiTinh TEXT, TrinhDo TEXT, ChuyenMon TEXT, LoaiNhanVien TEXT DEFAULT 'Chính thức', SoBHXH TEXT, MaSoThue TEXT, HinhAnh TEXT, MaCV TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS HopDong(MaHD TEXT PRIMARY KEY, MaNV TEXT NOT NULL, LoaiHD TEXT NOT NULL, NgayBD TEXT NOT NULL, NgayKT TEXT, LuongCoBan REAL DEFAULT 0, TrangThai TEXT DEFAULT 'Hiệu lực', GhiChu TEXT, HinhAnh TEXT);
+    CREATE TABLE IF NOT EXISTS Luong(MaLuong INTEGER PRIMARY KEY AUTOINCREMENT, MaNV TEXT NOT NULL, ThangNam TEXT NOT NULL, LuongCung REAL DEFAULT 0, LuongThuong REAL DEFAULT 0, LuongUngTruoc REAL DEFAULT 0, PhuCap REAL DEFAULT 0, BaoHiem REAL DEFAULT 0, ThueTNCN REAL DEFAULT 0, KhauTruKhac REAL DEFAULT 0, UNIQUE(MaNV, ThangNam));
+    CREATE TABLE IF NOT EXISTS NghiPhep(MaNP INTEGER PRIMARY KEY AUTOINCREMENT, MaNV TEXT NOT NULL, NgayBD TEXT NOT NULL, NgayKT TEXT NOT NULL, TrangThai TEXT DEFAULT 'Chờ duyệt', LyDo TEXT);
+    CREATE TABLE IF NOT EXISTS TangCa(MaTC INTEGER PRIMARY KEY AUTOINCREMENT, MaNV TEXT NOT NULL, SoGio REAL NOT NULL, Ngay TEXT NOT NULL, Loai TEXT, TrangThai TEXT DEFAULT 'Đã duyệt', LyDo TEXT, NguoiDuyet TEXT);
+    CREATE TABLE IF NOT EXISTS ChamCong(MaCC INTEGER PRIMARY KEY AUTOINCREMENT, MaNV TEXT NOT NULL, Ngay TEXT NOT NULL, GioVao TEXT, GioRa TEXT, TrangThai TEXT, GhiChu TEXT, UNIQUE(MaNV, Ngay));
+    CREATE TABLE IF NOT EXISTS DanhGia(MaDG INTEGER PRIMARY KEY AUTOINCREMENT, MaNV TEXT NOT NULL, ThangNam TEXT NOT NULL, DiemKPI REAL, XepLoai TEXT, NhanXet TEXT, NguoiDanhGia TEXT, DiemTuDanhGia REAL, NhanXetCaNhan TEXT, UNIQUE(MaNV, ThangNam));
+    CREATE TABLE IF NOT EXISTS TaiLieuNhanVien(MaTL INTEGER PRIMARY KEY AUTOINCREMENT, MaNV TEXT NOT NULL, TenTaiLieu TEXT NOT NULL, Loai TEXT, NgayCap TEXT, NoiCap TEXT, TepDinhKem TEXT, HinhAnh TEXT, NgayTai TEXT, GhiChu TEXT);
+    CREATE TABLE IF NOT EXISTS GiaiTrinhCong(MaGT INTEGER PRIMARY KEY AUTOINCREMENT, MaNV TEXT NOT NULL, Ngay TEXT NOT NULL, GioVaoDeXuat TEXT, GioRaDeXuat TEXT, LyDo TEXT, TrangThai TEXT DEFAULT 'Chờ duyệt', NguoiDuyet TEXT, NgayGui TEXT);
+    CREATE TABLE IF NOT EXISTS KhenThuongKyLuat(MaKTKL INTEGER PRIMARY KEY AUTOINCREMENT, MaNV TEXT NOT NULL, Loai TEXT, SoQuyetDinh TEXT, NgayQuyetDinh TEXT, HinhThuc TEXT, SoTien REAL DEFAULT 0, LyDo TEXT, NguoiKy TEXT);
+    CREATE TABLE IF NOT EXISTS KhoaDaoTao(MaKDT INTEGER PRIMARY KEY AUTOINCREMENT, TenKhoa TEXT NOT NULL, GiangVien TEXT, ThoiGian TEXT, DiaDiem TEXT, SoLuong INTEGER, MoTa TEXT, TrangThai TEXT DEFAULT 'Sắp diễn ra');
+    CREATE TABLE IF NOT EXISTS DangKyDaoTao(MaDK INTEGER PRIMARY KEY AUTOINCREMENT, MaKDT INTEGER NOT NULL, MaNV TEXT NOT NULL, NgayDangKy TEXT, TrangThai TEXT DEFAULT 'Đã đăng ký');
+    CREATE TABLE IF NOT EXISTS DeXuatKhieuNai(MaDX INTEGER PRIMARY KEY AUTOINCREMENT, MaNV TEXT NOT NULL, TieuDe TEXT NOT NULL, Loai TEXT, NoiDung TEXT, NgayGui TEXT, TrangThai TEXT DEFAULT 'Chờ xử lý', PhanHoi TEXT, NguoiXuLy TEXT);
+    CREATE TABLE IF NOT EXISTS TamUng(MaTU INTEGER PRIMARY KEY AUTOINCREMENT, MaNV TEXT NOT NULL, ThangNam TEXT NOT NULL, SoTien REAL NOT NULL, LyDo TEXT, NgayYeuCau TEXT, TrangThai TEXT DEFAULT 'Chờ duyệt', NguoiDuyet TEXT);
+    CREATE TABLE IF NOT EXISTS PhanCa(MaPC INTEGER PRIMARY KEY AUTOINCREMENT, MaNV TEXT NOT NULL, Ngay TEXT NOT NULL, CaLam TEXT, GhiChu TEXT);
+    CREATE TABLE IF NOT EXISTS DeXuatNhanSu(MaDXNS INTEGER PRIMARY KEY AUTOINCREMENT, MaNV TEXT NOT NULL, NguoiDeXuat TEXT, LoaiDeXuat TEXT, MucDeXuat TEXT, LyDo TEXT, NgayDeXuat TEXT, TrangThai TEXT DEFAULT 'Chờ HR phê duyệt', YKienPheDuyet TEXT, NguoiPheDuyet TEXT);
+    CREATE TABLE IF NOT EXISTS YeuCauTuyenDung(MaYC INTEGER PRIMARY KEY AUTOINCREMENT, MaPB TEXT NOT NULL, ViTri TEXT NOT NULL, SoLuong INTEGER DEFAULT 1, YeuCau TEXT, LyDo TEXT, HanTuyen TEXT, TrangThai TEXT DEFAULT 'Chờ duyệt');
+    CREATE TABLE IF NOT EXISTS UngVien(MaUV INTEGER PRIMARY KEY AUTOINCREMENT, MaYC INTEGER, HoTen TEXT NOT NULL, Email TEXT, SDT TEXT, ViTriUngTuyen TEXT, MaPB TEXT, NgayPV TEXT, NguoiPV TEXT, KetQua TEXT DEFAULT 'Chờ phỏng vấn', NhanXet TEXT);
+    CREATE TABLE IF NOT EXISTS QuyTrinhNhanSu(MaQT INTEGER PRIMARY KEY AUTOINCREMENT, MaNV TEXT NOT NULL, Loai TEXT NOT NULL, NgayBD TEXT NOT NULL, TrangThai TEXT DEFAULT 'Đang thực hiện', GhiChu TEXT);
+    CREATE TABLE IF NOT EXISTS NhatKyHoatDong(MaNK INTEGER PRIMARY KEY AUTOINCREMENT, ThoiGian TEXT NOT NULL, NguoiDung TEXT NOT NULL, VaiTro TEXT, HanhDong TEXT NOT NULL, ChiTiet TEXT, IP TEXT);
+    CREATE TABLE IF NOT EXISTS ChotCong(MaCC_Thang INTEGER PRIMARY KEY AUTOINCREMENT, ThangNam TEXT NOT NULL UNIQUE, NgayChot TEXT NOT NULL, NguoiChot TEXT NOT NULL, TongSoCong REAL, GhiChu TEXT);
+    CREATE TABLE IF NOT EXISTS ThongBao(MaTB INTEGER PRIMARY KEY AUTOINCREMENT, TieuDe TEXT NOT NULL, NoiDung TEXT NOT NULL, PhamVi TEXT DEFAULT 'Toàn công ty', MaPB TEXT, NguoiGui TEXT NOT NULL, NgayGui TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS ThongBaoDaDoc(MaTB INTEGER NOT NULL, TenDN TEXT NOT NULL, ThoiGianDoc TEXT NOT NULL, PRIMARY KEY(MaTB, TenDN));
+    CREATE TABLE IF NOT EXISTS TaiKhoanAdmin(MaTK INTEGER PRIMARY KEY AUTOINCREMENT, TenDN TEXT NOT NULL UNIQUE, MatKhau TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS TaiKhoan(MaTK INTEGER PRIMARY KEY AUTOINCREMENT, TenDN TEXT NOT NULL UNIQUE, MatKhau TEXT NOT NULL, MaNV TEXT, LoaiTK TEXT NOT NULL);
+    """
+    for stmt in schema.strip().split(';'):
+        s = stmt.strip()
+        if s:
+            conn.execute(s)
+    conn.commit()
+
+def ensure_department_heads_and_staff(db):
+    """Ensure all department heads (Trưởng phòng) and multiple departmental staff accounts exist."""
+    # 1. Ensure Positions (Chức vụ) for all departments
+    positions = [
+        ('CV01', 'Trưởng phòng', 'PB01'),
+        ('CV02', 'Chuyên viên nhân sự', 'PB01'),
+        ('CV03', 'Kế toán viên', 'PB02'),
+        ('CV04', 'Nhân viên kinh doanh', 'PB03'),
+        ('CV05', 'Lập trình viên', 'PB04'),
+        ('CV06', 'Trưởng phòng Kế toán', 'PB02'),
+        ('CV07', 'Trưởng phòng Kinh doanh', 'PB03'),
+        ('CV08', 'Trưởng phòng Kỹ thuật', 'PB04'),
+        ('CV09', 'Kế toán tổng hợp', 'PB02'),
+        ('CV10', 'Chuyên viên Marketing', 'PB03'),
+        ('CV11', 'Kỹ sư Kiểm thử (QA)', 'PB04'),
+        ('CV12', 'Kỹ sư DevOps', 'PB04'),
+        ('CV13', 'Chuyên viên Tuyển dụng', 'PB01')
+    ]
+    for mcv, tencv, mapb in positions:
+        row = db.execute("SELECT 1 FROM ChucVu WHERE MaCV=?", (mcv,)).fetchone()
+        if not row:
+            db.execute("INSERT INTO ChucVu(MaCV, TenCV, MaPB) VALUES(?, ?, ?)", (mcv, tencv, mapb))
+
+    # 2. Ensure Employees (Nhân viên)
+    employees = [
+        ('NV001', 'Nguyễn Văn An', 'Hà Nội', '0901000001', '001090000001', 'an@vnm.vn', '1985-03-12', '2015-06-01', 'Nam', 'Thạc sĩ', 'Quản trị nhân sự', 'Chính thức', 'BH001859', 'MST001859', '/static/uploads/avatars/avatar_NV001.svg', 'CV01'),
+        ('NV002', 'Trần Thị Bình', 'Hà Nội', '0901000002', '001090000002', 'binh@vnm.vn', '1992-07-21', '2019-02-15', 'Nữ', 'Đại học', 'Quản lý lao động', 'Chính thức', 'BH002927', 'MST002927', '/static/uploads/avatars/avatar_NV002.svg', 'CV02'),
+        ('NV003', 'Lê Minh Cường', 'Hải Phòng', '0901000003', '001090000003', 'cuong@vnm.vn', '1994-11-02', '2020-09-01', 'Nam', 'Đại học', 'Kế toán doanh nghiệp', 'Chính thức', 'BH003941', 'MST003941', '/static/uploads/avatars/avatar_NV003.svg', 'CV03'),
+        ('NV004', 'Phạm Thu Dung', 'Bắc Ninh', '0901000004', '001090000004', 'dung@vnm.vn', '1996-01-30', '2021-04-12', 'Nữ', 'Đại học', 'Quản trị kinh doanh', 'Chính thức', 'BH004961', 'MST004961', '/static/uploads/avatars/avatar_NV004.svg', 'CV04'),
+        ('NV005', 'Hoàng Quốc Em', 'Nam Định', '0901000005', '001090000005', 'em@vnm.vn', '1998-05-18', '2022-08-08', 'Nam', 'Đại học', 'Kỹ thuật phần mềm', 'Chính thức', 'BH005985', 'MST005985', '/static/uploads/avatars/avatar_NV005.svg', 'CV05'),
+        ('NV006', 'Vũ Thị Hoa', 'Hà Nội', '0901000006', '001090000006', 'hoa.vu@vnm.vn', '1988-04-15', '2017-03-01', 'Nữ', 'Thạc sĩ', 'Tài chính kế toán', 'Chính thức', 'BH006123', 'MST006123', '/static/uploads/avatars/avatar_NV006.svg', 'CV06'),
+        ('NV007', 'Bùi Quang Huy', 'Hải Phòng', '0901000007', '001090000007', 'huy.bui@vnm.vn', '1989-08-20', '2018-05-10', 'Nam', 'Thạc sĩ', 'Quản trị kinh doanh', 'Chính thức', 'BH007234', 'MST007234', '/static/uploads/avatars/avatar_NV007.svg', 'CV07'),
+        ('NV008', 'Đỗ Hoàng Long', 'Hà Nội', '0901000008', '001090000008', 'long.do@vnm.vn', '1987-11-12', '2016-10-01', 'Nam', 'Thạc sĩ', 'Công nghệ thông tin', 'Chính thức', 'BH008345', 'MST008345', '/static/uploads/avatars/avatar_NV008.svg', 'CV08'),
+        ('NV009', 'Trương Mai Phương', 'Nam Định', '0901000009', '001090000009', 'phuong.truong@vnm.vn', '1995-02-18', '2021-06-15', 'Nữ', 'Đại học', 'Kiểm toán', 'Chính thức', 'BH009456', 'MST009456', '/static/uploads/avatars/avatar_NV009.svg', 'CV09'),
+        ('NV010', 'Nguyễn Đức Thắng', 'Bắc Ninh', '0901000010', '001090000010', 'thang.nguyen@vnm.vn', '1997-09-05', '2022-01-10', 'Nam', 'Đại học', 'Marketing số', 'Chính thức', 'BH010567', 'MST010567', '/static/uploads/avatars/avatar_NV010.svg', 'CV10'),
+        ('NV011', 'Lý Thu Trang', 'Hà Nội', '0901000011', '001090000011', 'trang.ly@vnm.vn', '1996-12-25', '2021-09-01', 'Nữ', 'Đại học', 'Đảm bảo chất lượng phần mềm', 'Chính thức', 'BH011678', 'MST011678', '/static/uploads/avatars/avatar_NV011.svg', 'CV11'),
+        ('NV012', 'Vũ Tuấn Kiệt', 'Hải Dương', '0901000012', '001090000012', 'kiet.vu@vnm.vn', '1998-07-14', '2023-03-01', 'Nam', 'Đại học', 'Điện toán đám mây & DevOps', 'Chính thức', 'BH012789', 'MST012789', '/static/uploads/avatars/avatar_NV012.svg', 'CV12'),
+        ('NV013', 'Phan Mỹ Linh', 'Hà Nội', '0901000013', '001090000013', 'linh.phan@vnm.vn', '1999-03-30', '2023-07-15', 'Nữ', 'Đại học', 'Quản trị nhân sự', 'Chính thức', 'BH013890', 'MST013890', '/static/uploads/avatars/avatar_NV013.svg', 'CV13')
+    ]
+    for emp in employees:
+        row = db.execute("SELECT 1 FROM NhanVien WHERE MaNV=?", (emp[0],)).fetchone()
+        if not row:
+            db.execute("""
+                INSERT INTO NhanVien(MaNV, HoTen, DiaChi, SDT, CCCD, Email, NgaySinh, NgayVaoCT, GioiTinh, TrinhDo, ChuyenMon, LoaiNhanVien, SoBHXH, MaSoThue, HinhAnh, MaCV)
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, emp)
+        else:
+            db.execute("UPDATE NhanVien SET HinhAnh=? WHERE (HinhAnh IS NULL OR HinhAnh='') AND MaNV=?", (emp[14], emp[0]))
+
+    # 3. Ensure Contracts (Hợp đồng)
+    contracts = [
+        ('HD006', 'NV006', 'Không xác định thời hạn', '2017-03-01', None, 22000000, 'Hiệu lực', 'Hợp đồng cán bộ quản lý'),
+        ('HD007', 'NV007', 'Không xác định thời hạn', '2018-05-10', None, 24000000, 'Hiệu lực', 'Hợp đồng cán bộ quản lý'),
+        ('HD008', 'NV008', 'Không xác định thời hạn', '2016-10-01', None, 26000000, 'Hiệu lực', 'Hợp đồng cán bộ quản lý'),
+        ('HD009', 'NV009', 'Xác định thời hạn (3 năm)', '2021-06-15', '2024-06-15', 17000000, 'Hiệu lực', 'Tái ký hợp đồng'),
+        ('HD010', 'NV010', 'Xác định thời hạn (1 năm)', '2022-01-10', '2023-01-10', 16000000, 'Hiệu lực', 'Hợp đồng 1 năm'),
+        ('HD011', 'NV011', 'Xác định thời hạn (1 năm)', '2021-09-01', '2022-09-01', 18000000, 'Hiệu lực', 'Hợp đồng 1 năm'),
+        ('HD012', 'NV012', 'Xác định thời hạn (1 năm)', '2023-03-01', '2024-03-01', 19000000, 'Hiệu lực', 'Hợp đồng 1 năm'),
+        ('HD013', 'NV013', 'Xác định thời hạn (1 năm)', '2023-07-15', '2024-07-15', 15000000, 'Hiệu lực', 'Hợp đồng 1 năm')
+    ]
+    for hd in contracts:
+        row = db.execute("SELECT 1 FROM HopDong WHERE MaHD=?", (hd[0],)).fetchone()
+        if not row:
+            db.execute("INSERT INTO HopDong(MaHD, MaNV, LoaiHD, NgayBD, NgayKT, LuongCoBan, TrangThai, GhiChu) VALUES(?, ?, ?, ?, ?, ?, ?, ?)", hd)
+
+    # 4. Ensure Salaries (Lương) for current month
+    current_month = date.today().strftime('%Y-%m')
+    for hd in contracts:
+        mnv_i = hd[1]
+        base_sal = hd[5]
+        bh = round(base_sal * 0.105, 0)
+        thue = round((base_sal - 11000000) * 0.05, 0) if base_sal > 11000000 else 0
+        if not db.execute("SELECT 1 FROM Luong WHERE MaNV=? AND ThangNam=?", (mnv_i, current_month)).fetchone():
+            db.execute(
+                "INSERT INTO Luong(MaNV, ThangNam, LuongCung, LuongThuong, LuongUngTruoc, PhuCap, BaoHiem, ThueTNCN, KhauTruKhac) VALUES(?, ?, ?, 1000000, 0, 500000, ?, ?, 0)",
+                (mnv_i, current_month, base_sal, bh, thue)
+            )
+
+    # 5. Ensure Attendance (Chấm công hôm nay)
+    today_str = date.today().strftime('%Y-%m-%d')
+    for i in range(6, 14):
+        mnv_i = f'NV{i:03d}'
+        if not db.execute("SELECT 1 FROM ChamCong WHERE MaNV=? AND Ngay=?", (mnv_i, today_str)).fetchone():
+            db.execute(
+                "INSERT INTO ChamCong(MaNV, Ngay, GioVao, GioRa, TrangThai, GhiChu) VALUES(?, ?, '08:00', '17:30', 'Đúng giờ', 'Chấm công máy vân tay')",
+                (mnv_i, today_str)
+            )
+
+    # 6. Ensure Accounts (Tài khoản) - Username = Mã nhân viên, Mật khẩu = 123456
+    # Trưởng phòng: LoaiTK = 'QuanLy'
+    # Nhân viên: LoaiTK = 'NhanVien'
+    accounts = [
+        # Trưởng phòng (Quản lý)
+        ('nv001', '123456', 'NV001', 'QuanLy'),
+        ('ql001', '123456', 'NV001', 'QuanLy'),
+        ('nv006', '123456', 'NV006', 'QuanLy'),
+        ('nv007', '123456', 'NV007', 'QuanLy'),
+        ('nv008', '123456', 'NV008', 'QuanLy'),
+        # Nhân viên các phòng ban khác
+        ('nv002', '123456', 'NV002', 'NhanVien'),
+        ('nv003', '123456', 'NV003', 'NhanVien'),
+        ('nv004', '123456', 'NV004', 'NhanVien'),
+        ('nv005', '123456', 'NV005', 'NhanVien'),
+        ('nv009', '123456', 'NV009', 'NhanVien'),
+        ('nv010', '123456', 'NV010', 'NhanVien'),
+        ('nv011', '123456', 'NV011', 'NhanVien'),
+        ('nv012', '123456', 'NV012', 'NhanVien'),
+        ('nv013', '123456', 'NV013', 'NhanVien'),
+    ]
+    for tdn, mk, mnv_acc, loai in accounts:
+        acc_row = db.execute("SELECT MaTK FROM TaiKhoan WHERE TenDN=?", (tdn,)).fetchone()
+        if not acc_row:
+            db.execute("INSERT INTO TaiKhoan(TenDN, MatKhau, MaNV, LoaiTK) VALUES(?, ?, ?, ?)", (tdn, mk, mnv_acc, loai))
+        else:
+            db.execute("UPDATE TaiKhoan SET MatKhau=?, MaNV=?, LoaiTK=? WHERE TenDN=?", (mk, mnv_acc, loai, tdn))
+
+    db.commit()
+
 def init_db():
     """Initialize the database (create database, schema, and sample data if needed)."""
-    if DB_TYPE == 'mssql' and PYODBC_AVAILABLE:
-        # Step 1: Ensure QLNhanSu_Nhom9 database exists on MSSQL server
-        master_conn = pyodbc.connect(build_mssql_connection_string(database='master'), autocommit=True, timeout=10)
-        master_cur = master_conn.cursor()
-        master_cur.execute(f"IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'{MSSQL_DATABASE}') CREATE DATABASE [{MSSQL_DATABASE}]")
-        master_conn.close()
-
-        # Step 2: Connect to the project database and create tables
-        raw_conn = pyodbc.connect(build_mssql_connection_string(), timeout=10)
-        db = ConnectionWrapper(raw_conn, is_mssql=True)
-
-        for stmt in MSSQL_SCHEMA.split(';'):
-            s = stmt.strip()
-            if s:
-                db.execute(s)
-        db.commit()
-
-        # Step 2.1: Schema migration for existing databases
-        migrations = [
-            "IF COL_LENGTH('NghiPhep', 'TrangThai') IS NULL ALTER TABLE NghiPhep ADD TrangThai NVARCHAR(50) DEFAULT N'Đã duyệt' WITH VALUES",
-            "IF COL_LENGTH('NghiPhep', 'LyDo') IS NULL ALTER TABLE NghiPhep ADD LyDo NVARCHAR(255)",
-            "IF COL_LENGTH('NhanVien', 'TrinhDo') IS NULL ALTER TABLE NhanVien ADD TrinhDo NVARCHAR(100)",
-            "IF COL_LENGTH('NhanVien', 'ChuyenMon') IS NULL ALTER TABLE NhanVien ADD ChuyenMon NVARCHAR(100)",
-            "IF COL_LENGTH('NhanVien', 'LoaiNhanVien') IS NULL ALTER TABLE NhanVien ADD LoaiNhanVien NVARCHAR(50) DEFAULT N'Chính thức' WITH VALUES",
-            "IF COL_LENGTH('NhanVien', 'SoBHXH') IS NULL ALTER TABLE NhanVien ADD SoBHXH NVARCHAR(50)",
-            "IF COL_LENGTH('NhanVien', 'MaSoThue') IS NULL ALTER TABLE NhanVien ADD MaSoThue NVARCHAR(50)",
-            "IF COL_LENGTH('NhanVien', 'HinhAnh') IS NULL ALTER TABLE NhanVien ADD HinhAnh NVARCHAR(500)",
-            "IF COL_LENGTH('TangCa', 'TrangThai') IS NULL ALTER TABLE TangCa ADD TrangThai NVARCHAR(50) DEFAULT N'Đã duyệt' WITH VALUES",
-            "IF COL_LENGTH('TangCa', 'LyDo') IS NULL ALTER TABLE TangCa ADD LyDo NVARCHAR(255)",
-            "IF COL_LENGTH('TangCa', 'NguoiDuyet') IS NULL ALTER TABLE TangCa ADD NguoiDuyet NVARCHAR(100)",
-            "IF COL_LENGTH('DanhGia', 'DiemTuDanhGia') IS NULL ALTER TABLE DanhGia ADD DiemTuDanhGia FLOAT",
-            "IF COL_LENGTH('DanhGia', 'NhanXetCaNhan') IS NULL ALTER TABLE DanhGia ADD NhanXetCaNhan NVARCHAR(MAX)",
-            "IF COL_LENGTH('Luong', 'BaoHiem') IS NULL ALTER TABLE Luong ADD BaoHiem FLOAT DEFAULT 0 WITH VALUES",
-            "IF COL_LENGTH('Luong', 'ThueTNCN') IS NULL ALTER TABLE Luong ADD ThueTNCN FLOAT DEFAULT 0 WITH VALUES",
-            "IF COL_LENGTH('Luong', 'KhauTruKhac') IS NULL ALTER TABLE Luong ADD KhauTruKhac FLOAT DEFAULT 0 WITH VALUES",
-            "IF COL_LENGTH('HopDong', 'HinhAnh') IS NULL ALTER TABLE HopDong ADD HinhAnh NVARCHAR(500)",
-            "IF COL_LENGTH('TaiLieuNhanVien', 'HinhAnh') IS NULL ALTER TABLE TaiLieuNhanVien ADD HinhAnh NVARCHAR(500)",
-        ]
-        for mig in migrations:
-            db.execute(mig)
-        db.commit()
-
-        # Update avatars for default staff if currently empty
-        db.execute("UPDATE NhanVien SET HinhAnh=N'/static/uploads/avatars/avatar_' + MaNV + '.svg' WHERE HinhAnh IS NULL AND MaNV IN ('NV001','NV002','NV003','NV004','NV005')")
-
-        # Correct any corrupted LuongCung (restore to exact contract LuongCoBan)
-        db.execute("""
-            UPDATE l
-            SET l.LuongCung = h.LuongCoBan,
-                l.BaoHiem = ROUND(h.LuongCoBan * 0.105, 0)
-            FROM Luong l
-            JOIN HopDong h ON l.MaNV = h.MaNV AND h.TrangThai = N'Hiệu lực'
-            WHERE l.LuongCung < 10000000
-        """)
-        db.commit()
-
-        # Ensure TaiKhoan allows Admin role and NULL MaNV
+    global _mssql_failed
+    db = None
+    if DB_TYPE == 'mssql' and PYODBC_AVAILABLE and not _mssql_failed:
         try:
+            # Step 1: Ensure QLNhanSu_Nhom9 database exists on MSSQL server
+            master_conn = pyodbc.connect(build_mssql_connection_string(database='master'), autocommit=True, timeout=2)
+            master_cur = master_conn.cursor()
+            master_cur.execute(f"IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'{MSSQL_DATABASE}') CREATE DATABASE [{MSSQL_DATABASE}]")
+            master_conn.close()
+
+            # Step 2: Connect to the project database and create tables
+            raw_conn = pyodbc.connect(build_mssql_connection_string(), timeout=2)
+            db = ConnectionWrapper(raw_conn, is_mssql=True)
+
+            for stmt in MSSQL_SCHEMA.split(';'):
+                s = stmt.strip()
+                if s:
+                    db.execute(s)
+            db.commit()
+
+            # Step 2.1: Schema migration for existing databases
+            migrations = [
+                "IF COL_LENGTH('NghiPhep', 'TrangThai') IS NULL ALTER TABLE NghiPhep ADD TrangThai NVARCHAR(50) DEFAULT N'Đã duyệt' WITH VALUES",
+                "IF COL_LENGTH('NghiPhep', 'LyDo') IS NULL ALTER TABLE NghiPhep ADD LyDo NVARCHAR(255)",
+                "IF COL_LENGTH('NhanVien', 'TrinhDo') IS NULL ALTER TABLE NhanVien ADD TrinhDo NVARCHAR(100)",
+                "IF COL_LENGTH('NhanVien', 'ChuyenMon') IS NULL ALTER TABLE NhanVien ADD ChuyenMon NVARCHAR(100)",
+                "IF COL_LENGTH('NhanVien', 'LoaiNhanVien') IS NULL ALTER TABLE NhanVien ADD LoaiNhanVien NVARCHAR(50) DEFAULT N'Chính thức' WITH VALUES",
+                "IF COL_LENGTH('NhanVien', 'SoBHXH') IS NULL ALTER TABLE NhanVien ADD SoBHXH NVARCHAR(50)",
+                "IF COL_LENGTH('NhanVien', 'MaSoThue') IS NULL ALTER TABLE NhanVien ADD MaSoThue NVARCHAR(50)",
+                "IF COL_LENGTH('NhanVien', 'HinhAnh') IS NULL ALTER TABLE NhanVien ADD HinhAnh NVARCHAR(500)",
+                "IF COL_LENGTH('TangCa', 'TrangThai') IS NULL ALTER TABLE TangCa ADD TrangThai NVARCHAR(50) DEFAULT N'Đã duyệt' WITH VALUES",
+                "IF COL_LENGTH('TangCa', 'LyDo') IS NULL ALTER TABLE TangCa ADD LyDo NVARCHAR(255)",
+                "IF COL_LENGTH('TangCa', 'NguoiDuyet') IS NULL ALTER TABLE TangCa ADD NguoiDuyet NVARCHAR(100)",
+                "IF COL_LENGTH('DanhGia', 'DiemTuDanhGia') IS NULL ALTER TABLE DanhGia ADD DiemTuDanhGia FLOAT",
+                "IF COL_LENGTH('DanhGia', 'NhanXetCaNhan') IS NULL ALTER TABLE DanhGia ADD NhanXetCaNhan NVARCHAR(MAX)",
+                "IF COL_LENGTH('Luong', 'BaoHiem') IS NULL ALTER TABLE Luong ADD BaoHiem FLOAT DEFAULT 0 WITH VALUES",
+                "IF COL_LENGTH('Luong', 'ThueTNCN') IS NULL ALTER TABLE Luong ADD ThueTNCN FLOAT DEFAULT 0 WITH VALUES",
+                "IF COL_LENGTH('Luong', 'KhauTruKhac') IS NULL ALTER TABLE Luong ADD KhauTruKhac FLOAT DEFAULT 0 WITH VALUES",
+                "IF COL_LENGTH('HopDong', 'HinhAnh') IS NULL ALTER TABLE HopDong ADD HinhAnh NVARCHAR(500)",
+                "IF COL_LENGTH('TaiLieuNhanVien', 'HinhAnh') IS NULL ALTER TABLE TaiLieuNhanVien ADD HinhAnh NVARCHAR(500)",
+            ]
+            for mig in migrations:
+                db.execute(mig)
+            db.commit()
+
+            # Update avatars for default staff if currently empty
+            for m in ('NV001', 'NV002', 'NV003', 'NV004', 'NV005'):
+                db.execute("UPDATE NhanVien SET HinhAnh=? WHERE (HinhAnh IS NULL OR HinhAnh='') AND MaNV=?", (f'/static/uploads/avatars/avatar_{m}.svg', m))
+            db.commit()
+
+            # Correct any corrupted LuongCung (restore to exact contract LuongCoBan)
             db.execute("""
-                DECLARE @chk_name NVARCHAR(256);
-                SELECT @chk_name = name FROM sys.check_constraints WHERE parent_object_id = OBJECT_ID('TaiKhoan') AND definition LIKE '%LoaiTK%';
-                IF @chk_name IS NOT NULL
-                    EXEC('ALTER TABLE TaiKhoan DROP CONSTRAINT ' + @chk_name);
-                ALTER TABLE TaiKhoan ALTER COLUMN MaNV NVARCHAR(50) NULL;
-                ALTER TABLE TaiKhoan ADD CONSTRAINT CK_TaiKhoan_LoaiTK CHECK(LoaiTK IN ('Admin', 'QuanLy', 'NhanVien'));
+                UPDATE l
+                SET l.LuongCung = h.LuongCoBan,
+                    l.BaoHiem = ROUND(h.LuongCoBan * 0.105, 0)
+                FROM Luong l
+                JOIN HopDong h ON l.MaNV = h.MaNV AND h.TrangThai = N'Hiệu lực'
+                WHERE l.LuongCung < 10000000
             """)
             db.commit()
-        except Exception:
-            pass
 
-        # Seed or sync admin in TaiKhoan
+            # Ensure TaiKhoan allows Admin role and NULL MaNV
+            try:
+                db.execute("""
+                    DECLARE @chk_name NVARCHAR(256);
+                    SELECT @chk_name = name FROM sys.check_constraints WHERE parent_object_id = OBJECT_ID('TaiKhoan') AND definition LIKE '%LoaiTK%';
+                    IF @chk_name IS NOT NULL
+                        EXEC('ALTER TABLE TaiKhoan DROP CONSTRAINT ' + @chk_name);
+                    ALTER TABLE TaiKhoan ALTER COLUMN MaNV NVARCHAR(50) NULL;
+                    ALTER TABLE TaiKhoan ADD CONSTRAINT CK_TaiKhoan_LoaiTK CHECK(LoaiTK IN ('Admin', 'QuanLy', 'NhanVien'));
+                """)
+                db.commit()
+            except Exception:
+                pass
+
+            # Seed or sync admin in TaiKhoan
+            try:
+                admin_tk = db.execute("SELECT 1 FROM TaiKhoan WHERE TenDN='admin'").fetchone()
+                if not admin_tk:
+                    db.execute("INSERT INTO TaiKhoan(TenDN, MatKhau, MaNV, LoaiTK) VALUES('admin', 'admin123', NULL, 'Admin')")
+                    db.commit()
+            except Exception:
+                pass
+        except Exception as e:
+            _mssql_failed = True
+            print(f"[THÔNG BÁO] Không thể kết nối SQL Server khi khởi tạo ({e}).\n-> Tự động chuyển sang sử dụng SQLite ({DB_PATH}).")
+            db = None
+
+    if db is None:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        setup_sqlite_conn(conn)
+        init_sqlite_schema(conn)
+        db = ConnectionWrapper(conn, is_mssql=False)
         try:
             admin_tk = db.execute("SELECT 1 FROM TaiKhoan WHERE TenDN='admin'").fetchone()
             if not admin_tk:
@@ -576,141 +833,94 @@ def init_db():
         except Exception:
             pass
 
-        # Clean duplicate records across all core & transaction tables
-        clean_all_duplicates(db)
+    # Clean duplicate records across all core & transaction tables
+    clean_all_duplicates(db)
 
-        # Step 3: Seed initial data if TaiKhoanAdmin is empty
-        admin_row = db.execute("SELECT 1 FROM TaiKhoanAdmin").fetchone()
-        if not admin_row:
-            db.execute("INSERT INTO TaiKhoanAdmin(TenDN, MatKhau) VALUES(?, ?)", ('admin', 'admin123'))
+    # Step 3: Seed initial data if TaiKhoanAdmin is empty
+    admin_row = db.execute("SELECT 1 FROM TaiKhoanAdmin").fetchone()
+    if not admin_row:
+        db.execute("INSERT INTO TaiKhoanAdmin(TenDN, MatKhau) VALUES(?, ?)", ('admin', 'admin123'))
 
-            db.executemany("INSERT INTO PhongBan VALUES(?, ?)", [
-                ('PB01', 'Nhân sự'),
-                ('PB02', 'Kế toán'),
-                ('PB03', 'Kinh doanh'),
-                ('PB04', 'Kỹ thuật')
-            ])
+        db.executemany("INSERT INTO PhongBan VALUES(?, ?)", [
+            ('PB01', 'Nhân sự'),
+            ('PB02', 'Kế toán'),
+            ('PB03', 'Kinh doanh'),
+            ('PB04', 'Kỹ thuật')
+        ])
 
-            db.executemany("INSERT INTO ChucVu VALUES(?, ?, ?)", [
-                ('CV01', 'Trưởng phòng', 'PB01'),
-                ('CV02', 'Chuyên viên nhân sự', 'PB01'),
-                ('CV03', 'Kế toán viên', 'PB02'),
-                ('CV04', 'Nhân viên kinh doanh', 'PB03'),
-                ('CV05', 'Lập trình viên', 'PB04')
-            ])
+        db.executemany("INSERT INTO ChucVu VALUES(?, ?, ?)", [
+            ('CV01', 'Trưởng phòng', 'PB01'),
+            ('CV02', 'Chuyên viên nhân sự', 'PB01'),
+            ('CV03', 'Kế toán viên', 'PB02'),
+            ('CV04', 'Nhân viên kinh doanh', 'PB03'),
+            ('CV05', 'Lập trình viên', 'PB04')
+        ])
 
-            db.executemany("INSERT INTO NhanVien(MaNV, HoTen, DiaChi, SDT, CCCD, Email, NgaySinh, NgayVaoCT, GioiTinh, TrinhDo, ChuyenMon, LoaiNhanVien, SoBHXH, MaSoThue, MaCV) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [
-                ('NV001', 'Nguyễn Văn An', 'Hà Nội', '0901000001', '001090000001', 'an@vnm.vn', '1985-03-12', '2015-06-01', 'Nam', 'Thạc sĩ', 'Quản trị nhân sự', 'Chính thức', 'BH001859', 'MST001859', 'CV01'),
-                ('NV002', 'Trần Thị Bình', 'Hà Nội', '0901000002', '001090000002', 'binh@vnm.vn', '1992-07-21', '2019-02-15', 'Nữ', 'Đại học', 'Quản lý lao động', 'Chính thức', 'BH002927', 'MST002927', 'CV02'),
-                ('NV003', 'Lê Minh Cường', 'Hải Phòng', '0901000003', '001090000003', 'cuong@vnm.vn', '1994-11-02', '2020-09-01', 'Nam', 'Đại học', 'Kế toán doanh nghiệp', 'Chính thức', 'BH003941', 'MST003941', 'CV03'),
-                ('NV004', 'Phạm Thu Dung', 'Bắc Ninh', '0901000004', '001090000004', 'dung@vnm.vn', '1996-01-30', '2021-04-12', 'Nữ', 'Đại học', 'Quản trị kinh doanh', 'Chính thức', 'BH004961', 'MST004961', 'CV04'),
-                ('NV005', 'Hoàng Quốc Em', 'Nam Định', '0901000005', '001090000005', 'em@vnm.vn', '1998-05-18', '2022-08-08', 'Nam', 'Đại học', 'Kỹ thuật phần mềm', 'Chính thức', 'BH005985', 'MST005985', 'CV05')
-            ])
+        db.executemany("INSERT INTO NhanVien(MaNV, HoTen, DiaChi, SDT, CCCD, Email, NgaySinh, NgayVaoCT, GioiTinh, TrinhDo, ChuyenMon, LoaiNhanVien, SoBHXH, MaSoThue, MaCV) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [
+            ('NV001', 'Nguyễn Văn An', 'Hà Nội', '0901000001', '001090000001', 'an@vnm.vn', '1985-03-12', '2015-06-01', 'Nam', 'Thạc sĩ', 'Quản trị nhân sự', 'Chính thức', 'BH001859', 'MST001859', 'CV01'),
+            ('NV002', 'Trần Thị Bình', 'Hà Nội', '0901000002', '001090000002', 'binh@vnm.vn', '1992-07-21', '2019-02-15', 'Nữ', 'Đại học', 'Quản lý lao động', 'Chính thức', 'BH002927', 'MST002927', 'CV02'),
+            ('NV003', 'Lê Minh Cường', 'Hải Phòng', '0901000003', '001090000003', 'cuong@vnm.vn', '1994-11-02', '2020-09-01', 'Nam', 'Đại học', 'Kế toán doanh nghiệp', 'Chính thức', 'BH003941', 'MST003941', 'CV03'),
+            ('NV004', 'Phạm Thu Dung', 'Bắc Ninh', '0901000004', '001090000004', 'dung@vnm.vn', '1996-01-30', '2021-04-12', 'Nữ', 'Đại học', 'Quản trị kinh doanh', 'Chính thức', 'BH004961', 'MST004961', 'CV04'),
+            ('NV005', 'Hoàng Quốc Em', 'Nam Định', '0901000005', '001090000005', 'em@vnm.vn', '1998-05-18', '2022-08-08', 'Nam', 'Đại học', 'Kỹ thuật phần mềm', 'Chính thức', 'BH005985', 'MST005985', 'CV05')
+        ])
 
-            db.executemany("INSERT INTO TaiKhoan(TenDN, MatKhau, MaNV, LoaiTK) VALUES(?, ?, ?, ?)",
-                [('ql001', '123456', 'NV001', QL)] + [(f'nv00{i}', '123456', f'NV00{i}', NV) for i in range(2, 6)]
-            )
+        db.executemany("INSERT INTO TaiKhoan(TenDN, MatKhau, MaNV, LoaiTK) VALUES(?, ?, ?, ?)",
+            [('ql001', '123456', 'NV001', QL)] + [(f'nv00{i}', '123456', f'NV00{i}', NV) for i in range(2, 6)]
+        )
 
-            current_month = date.today().strftime('%Y-%m')
-            day_prefix = date.today().strftime('%Y-%m-')
+        current_month = date.today().strftime('%Y-%m')
+        day_prefix = date.today().strftime('%Y-%m-')
 
-            for i in range(1, 6):
-                base_sal = 12000000 + i * 2000000
-                bh = base_sal * 0.105
-                db.execute(
-                    "INSERT INTO Luong(MaNV, ThangNam, LuongCung, LuongThuong, LuongUngTruoc, PhuCap, BaoHiem, ThueTNCN, KhauTruKhac) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (f'NV00{i}', current_month, base_sal, 1000000, 0, 500000, bh, 200000, 0)
-                )
-
-            db.execute("INSERT INTO NghiPhep(MaNV, NgayBD, NgayKT, TrangThai, LyDo) VALUES(?, ?, ?, N'Đã duyệt', N'Việc gia đình')", ('NV003', day_prefix + '03', day_prefix + '04'))
-            db.execute("INSERT INTO TangCa(MaNV, SoGio, Ngay, Loai, TrangThai, LyDo, NguoiDuyet) VALUES(?, ?, ?, ?, N'Đã duyệt', N'Fix lỗi hệ thống', N'Nguyễn Văn An')", ('NV005', 3, day_prefix + '05', 'Ngày thường'))
-
-            db.executemany(
-                "INSERT INTO HopDong(MaHD, MaNV, LoaiHD, NgayBD, NgayKT, LuongCoBan, TrangThai, GhiChu) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
-                [
-                    ('HD001', 'NV001', 'Không xác định thời hạn', '2015-06-01', None, 14000000, 'Hiệu lực', 'Hợp đồng chính thức'),
-                    ('HD002', 'NV002', 'Xác định thời hạn (3 năm)', '2019-02-15', '2022-02-15', 16000000, 'Hiệu lực', 'Tái ký hợp đồng'),
-                    ('HD003', 'NV003', 'Xác định thời hạn (1 năm)', '2020-09-01', '2021-09-01', 18000000, 'Hiệu lực', 'Hợp đồng 1 năm'),
-                    ('HD004', 'NV004', 'Xác định thời hạn (1 năm)', '2021-04-12', '2022-04-12', 20000000, 'Hiệu lực', 'Hợp đồng 1 năm'),
-                    ('HD005', 'NV005', 'Thử việc', '2022-08-08', '2022-10-08', 22000000, 'Hiệu lực', 'Hợp đồng thử việc')
-                ]
-            )
-
-        # Seed initial data for new tables if empty
-        cc_count = db.execute("SELECT COUNT(*) FROM ChamCong").fetchone()[0]
-        if cc_count == 0:
-            today_str = date.today().strftime('%Y-%m-%d')
-            sample_cc = [
-                ('NV001', today_str, '08:00', '17:30', 'Đúng giờ', 'Chấm công máy vân tay'),
-                ('NV002', today_str, '08:05', '17:30', 'Đúng giờ', 'Chấm công máy vân tay'),
-                ('NV003', today_str, '08:25', '17:30', 'Đi muộn', 'Muộn 25 phút'),
-                ('NV004', today_str, '07:55', '17:30', 'Đúng giờ', 'Chấm công máy vân tay'),
-                ('NV005', today_str, '08:00', '16:30', 'Về sớm', 'Có việc gia đình')
-            ]
-            for mnv_c, d_c, in_c, out_c, st_c, nt_c in sample_cc:
-                db.execute(
-                    "INSERT INTO ChamCong(MaNV, Ngay, GioVao, GioRa, TrangThai, GhiChu) VALUES(?, ?, ?, ?, ?, ?)",
-                    (mnv_c, d_c, in_c, out_c, st_c, nt_c)
-                )
-
-        # Seed training courses
-        kdt_count = db.execute("SELECT COUNT(*) FROM KhoaDaoTao").fetchone()[0]
-        if kdt_count == 0:
-            sample_kdt = [
-                ('Quản trị hiệu suất và thiết lập mục tiêu OKR', 'TS. Trần Minh Khoa', '15/11/2026 - 18/11/2026', 'Phòng Hội nghị A', 35, 'Nâng cao kỹ năng thiết lập mục tiêu và đo lường kết quả công việc then chốt.', 'Sắp diễn ra'),
-                ('Phát triển ứng dụng Web Hiện đại & An toàn thông tin', 'ThS. Lê Hoàng Long', '20/11/2026 - 25/11/2026', 'Phòng Lab Kỹ thuật', 25, 'Kiến trúc bảo mật, tối ưu hóa cơ sở dữ liệu và bảo mật ứng dụng.', 'Sắp diễn ra'),
-                ('Văn hóa doanh nghiệp & Kỹ năng giao tiếp chuyên nghiệp', 'ThS. Nguyễn Lan Hương', '05/11/2026 - 06/11/2026', 'Hội trường Tầng 3', 50, 'Xây dựng môi trường làm việc cởi mở, chuyên nghiệp và gắn kết đội ngũ.', 'Đang diễn ra')
-            ]
-            for tk, gv, tg, dd, sl, mt, st in sample_kdt:
-                db.execute(
-                    "INSERT INTO KhoaDaoTao(TenKhoa, GiangVien, ThoiGian, DiaDiem, SoLuong, MoTa, TrangThai) VALUES(?, ?, ?, ?, ?, ?, ?)",
-                    (tk, gv, tg, dd, sl, mt, st)
-                )
-
-        # Seed sample documents/certificates
-        tl_count = db.execute("SELECT COUNT(*) FROM TaiLieuNhanVien").fetchone()[0]
-        if tl_count == 0:
-            sample_tl = [
-                ('NV002', 'Bằng Cử nhân Quản trị Nhân lực', 'Bằng đại học', '2014-06-20', 'Đại học Kinh tế Quốc dân', None, '2026-10-01 09:00', 'Bằng tốt nghiệp loại Giỏi'),
-                ('NV002', 'Chứng chỉ Tiếng Anh TOEIC 850', 'Chứng chỉ', '2023-04-10', 'IIG Vietnam', None, '2026-10-01 09:05', 'Hiệu lực 2 năm'),
-                ('NV005', 'Bằng Kỹ sư Công nghệ Thông tin', 'Bằng đại học', '2020-07-15', 'Đại học Bách Khoa Hà Nội', None, '2026-10-02 10:00', 'Bằng tốt nghiệp loại Xuất sắc')
-            ]
-            for mnv_t, ten_t, loai_t, nc_t, noic_t, tep_t, nt_t, gc_t in sample_tl:
-                db.execute(
-                    "INSERT INTO TaiLieuNhanVien(MaNV, TenTaiLieu, Loai, NgayCap, NoiCap, TepDinhKem, NgayTai, GhiChu) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
-                    (mnv_t, ten_t, loai_t, nc_t, noic_t, tep_t, nt_t, gc_t)
-                )
-
-        # Seed sample rewards & discipline
-        kt_count = db.execute("SELECT COUNT(*) FROM KhenThuongKyLuat").fetchone()[0]
-        if kt_count == 0:
+        for i in range(1, 6):
+            base_sal = 12000000 + i * 2000000
+            bh = base_sal * 0.105
             db.execute(
-                "INSERT INTO KhenThuongKyLuat(MaNV, Loai, SoQuyetDinh, NgayQuyetDinh, HinhThuc, SoTien, LyDo, NguoiKy) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
-                ('NV002', 'Khen thưởng', 'QĐ-KT/2026-08', '2026-08-15', 'Giấy khen và tiền thưởng', 2000000, 'Hoàn thành xuất sắc kế hoạch tuyển dụng nhân sự quý 2/2026', 'Ban Giám Đốc')
+                "INSERT INTO Luong(MaNV, ThangNam, LuongCung, LuongThuong, LuongUngTruoc, PhuCap, BaoHiem, ThueTNCN, KhauTruKhac) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (f'NV00{i}', current_month, base_sal, 1000000, 0, 500000, bh, 200000, 0)
             )
 
-        # Seed sample recruitment
-        yc_count = db.execute("SELECT COUNT(*) FROM YeuCauTuyenDung").fetchone()[0]
-        if yc_count == 0:
+        db.execute("INSERT INTO NghiPhep(MaNV, NgayBD, NgayKT, TrangThai, LyDo) VALUES(?, ?, ?, 'Đã duyệt', 'Việc gia đình')", ('NV003', day_prefix + '03', day_prefix + '04'))
+        db.execute("INSERT INTO TangCa(MaNV, SoGio, Ngay, Loai, TrangThai, LyDo, NguoiDuyet) VALUES(?, ?, ?, ?, 'Đã duyệt', 'Fix lỗi hệ thống', 'Nguyễn Văn An')", ('NV005', 3, day_prefix + '05', 'Ngày thường'))
+
+        db.executemany(
+            "INSERT INTO HopDong(MaHD, MaNV, LoaiHD, NgayBD, NgayKT, LuongCoBan, TrangThai, GhiChu) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                ('HD001', 'NV001', 'Không xác định thời hạn', '2015-06-01', None, 14000000, 'Hiệu lực', 'Hợp đồng chính thức'),
+                ('HD002', 'NV002', 'Xác định thời hạn (3 năm)', '2019-02-15', '2022-02-15', 16000000, 'Hiệu lực', 'Tái ký hợp đồng'),
+                ('HD003', 'NV003', 'Xác định thời hạn (1 năm)', '2020-09-01', '2021-09-01', 18000000, 'Hiệu lực', 'Hợp đồng 1 năm'),
+                ('HD004', 'NV004', 'Xác định thời hạn (1 năm)', '2021-04-12', '2022-04-12', 20000000, 'Hiệu lực', 'Hợp đồng 1 năm'),
+                ('HD005', 'NV005', 'Thử việc', '2022-08-08', '2022-10-08', 22000000, 'Hiệu lực', 'Hợp đồng thử việc')
+            ]
+        )
+
+    # Seed initial data for new tables if empty
+    cc_count = db.execute("SELECT COUNT(*) FROM ChamCong").fetchone()[0]
+    if cc_count == 0:
+        today_str = date.today().strftime('%Y-%m-%d')
+        sample_cc = [
+            ('NV001', today_str, '08:00', '17:30', 'Đúng giờ', 'Chấm công máy vân tay'),
+            ('NV002', today_str, '08:05', '17:30', 'Đúng giờ', 'Chấm công máy vân tay'),
+            ('NV003', today_str, '08:25', '17:30', 'Đi muộn', 'Muộn 25 phút'),
+            ('NV004', today_str, '07:55', '17:30', 'Đúng giờ', 'Chấm công máy vân tay'),
+            ('NV005', today_str, '08:00', '16:30', 'Về sớm', 'Có việc gia đình')
+        ]
+        for mnv_c, d_c, in_c, out_c, st_c, nt_c in sample_cc:
             db.execute(
-                "INSERT INTO YeuCauTuyenDung(MaPB, ViTri, SoLuong, YeuCau, LyDo, HanTuyen, TrangThai) VALUES(?, ?, ?, ?, ?, ?, ?)",
-                ('PB04', 'Kỹ sư Lập trình Fullstack', 2, 'Kinh nghiệm 2 năm Python/Flask, React, SQL Server.', 'Mở rộng dự án ERP', '2026-12-01', 'Đang tuyển')
-            )
-            y_id = db.execute("SELECT @@IDENTITY").fetchone()[0] if PYODBC_AVAILABLE else 1
-            db.execute(
-                "INSERT INTO UngVien(MaYC, HoTen, Email, SDT, ViTriUngTuyen, MaPB, NgayPV, NguoiPV, KetQua, NhanXet) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (y_id, 'Vũ Đình Mạnh', 'manh.vu@gmail.com', '0912345678', 'Kỹ sư Lập trình Fullstack', 'PB04', '2026-11-05 14:00', 'Nguyễn Văn An', 'Chờ phỏng vấn', 'Hồ sơ ứng viên tiềm năng')
+                "INSERT INTO ChamCong(MaNV, Ngay, GioVao, GioRa, TrangThai, GhiChu) VALUES(?, ?, ?, ?, ?, ?)",
+                (mnv_c, d_c, in_c, out_c, st_c, nt_c)
             )
 
-        # Seed sample shift assignments
-        pc_count = db.execute("SELECT COUNT(*) FROM PhanCa").fetchone()[0]
-        if pc_count == 0:
-            today_str = date.today().strftime('%Y-%m-%d')
-            for i in range(1, 6):
-                db.execute(
-                    "INSERT INTO PhanCa(MaNV, Ngay, CaLam, GhiChu) VALUES(?, ?, ?, ?)",
-                    (f'NV00{i}', today_str, 'Ca hành chính (08:00 - 17:30)', 'Ca làm việc tiêu chuẩn')
-                )
-
+    # Ensure deprecated tables (KhoaDaoTao, PhanCa) are completely cleared
+    try:
+        db.execute("DELETE FROM DangKyDaoTao")
+        db.execute("DELETE FROM KhoaDaoTao")
+        db.execute("DELETE FROM PhanCa")
         db.commit()
-        db.close()
+    except Exception:
+        pass
+
+    # Ensure all department heads (Trưởng phòng) and departmental staff accounts
+    ensure_department_heads_and_staff(db)
+
+    db.commit()
+    db.close()

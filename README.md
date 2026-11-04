@@ -33,12 +33,14 @@ Driver: ODBC Driver 18 for SQL Server
 
 Chạy ứng dụng
 pip install -r requirements.txt
-py app.py          # mở http://127.0.0.1:5000
-Chạy kiểm thử tự động toàn bộ 26 kịch bản:
+py seed_employees.py # Khởi tạo dữ liệu mẫu 13 nhân viên, 4 phòng ban
+py app.py             # mở http://127.0.0.1:5000
 
+Chạy kiểm thử tự động toàn bộ 57 kịch bản:
 py test_app.py
+
 Tài khoản mẫu
-Actor	Đăng nhập với tư cách	Tên đăng nhập	Mật khẩu
-Admin	Admin	admin	admin123
-Quản lý	Quản lý	ql001	123456
-Nhân viên	Nhân viên	nv002 … nv005	123456
+Actor        Đăng nhập với tư cách   Tên đăng nhập   Mật khẩu
+Admin        Admin                   admin           admin123
+Quản lý      Quản lý (Trưởng phòng)  nv001 (PB01), nv006 (PB02), nv007 (PB03), nv008 (PB04)   123456
+Nhân viên    Nhân viên               nv002, nv003, nv004, nv005, nv009...nv013               123456

@@ -20,11 +20,26 @@ def mlist(mod):
     sort = request.args.get('sort')
     desc = request.args.get('d') == '1'
     page = max(1, request.args.get('page', 1, type=int))
-    per_page = 10
+    per_page = 20
 
     sql = module_config['sel']
     where_clauses = []
     args = []
+
+    db_conn = get_db()
+    role = session.get('role')
+    mnv = session.get('mnv')
+
+    # Department scoping for Manager
+    if role == QL and mnv:
+        emp_pb = db_conn.execute("SELECT c.MaPB FROM NhanVien n LEFT JOIN ChucVu c ON n.MaCV=c.MaCV WHERE n.MaNV=?", (mnv,)).fetchone()
+        mapb = emp_pb['MaPB'] if emp_pb else None
+        if mapb:
+            dept_scoped_mods = ('nhanvien', 'nghiphep', 'tangca', 'chamcong', 'tamung', 'hopdong', 'tailieu', 'danhgia', 'dexuat')
+            if mod in dept_scoped_mods:
+                if 'c.MaPB' in sql or 'c.TenCV' in sql:
+                    where_clauses.append("c.MaPB = ?")
+                    args.append(mapb)
 
     if q:
         search_expr = ' OR '.join(f'CAST({c} AS NVARCHAR(MAX)) LIKE ?' for c in module_config['search'])
@@ -97,6 +112,21 @@ def mexport(mod):
     where_clauses = []
     args = []
 
+    db_conn = get_db()
+    role = session.get('role')
+    mnv = session.get('mnv')
+
+    # Department scoping for Manager
+    if role == QL and mnv:
+        emp_pb = db_conn.execute("SELECT c.MaPB FROM NhanVien n LEFT JOIN ChucVu c ON n.MaCV=c.MaCV WHERE n.MaNV=?", (mnv,)).fetchone()
+        mapb = emp_pb['MaPB'] if emp_pb else None
+        if mapb:
+            dept_scoped_mods = ('nhanvien', 'nghiphep', 'tangca', 'chamcong', 'tamung', 'hopdong', 'tailieu', 'danhgia', 'dexuat')
+            if mod in dept_scoped_mods:
+                if 'c.MaPB' in sql or 'c.TenCV' in sql:
+                    where_clauses.append("c.MaPB = ?")
+                    args.append(mapb)
+
     if q:
         search_expr = ' OR '.join(f'CAST({c} AS NVARCHAR(MAX)) LIKE ?' for c in module_config['search'])
         where_clauses.append(f'({search_expr})')
@@ -162,7 +192,7 @@ def approve_leave(lid):
     db_conn.commit()
     log_activity(db_conn, 'Duyệt đơn nghỉ phép', f'Mã NP: {lid}')
     flash('Đã duyệt đơn nghỉ phép thành công.', 'ok')
-    return redirect(url_for('modules.mlist', mod='nghiphep'))
+    return redirect(request.referrer or url_for('modules.mlist', mod='nghiphep'))
 
 @modules_bp.route('/m/nghiphep/<int:lid>/reject', methods=['POST'])
 @roles_required(QL, AD)
@@ -173,7 +203,7 @@ def reject_leave(lid):
     db_conn.commit()
     log_activity(db_conn, 'Từ chối đơn nghỉ phép', f'Mã NP: {lid}')
     flash('Đã từ chối đơn nghỉ phép.', 'ok')
-    return redirect(url_for('modules.mlist', mod='nghiphep'))
+    return redirect(request.referrer or url_for('modules.mlist', mod='nghiphep'))
 
 @modules_bp.route('/m/tangca/<int:tid>/approve', methods=['POST'])
 @roles_required(QL, AD)

@@ -128,7 +128,7 @@ Route chính: / hoặc /dash
 
 [B] Quản Trị Nghiệp Vụ Nhân Sự Toàn Diện:
   1. Hồ sơ nhân viên (/m/nhanvien):
-     - Xem danh sách đầy đủ 50+ nhân sự, tìm kiếm đa tiêu chí (tên, mã, SĐT, CCCD, chức vụ).
+     - Xem danh sách đầy đủ 13 nhân sự chuẩn, tìm kiếm đa tiêu chí (tên, mã, SĐT, CCCD, chức vụ).
      - Bộ lọc động theo Phòng ban và Loại nhân viên (Chính thức, Thử việc, Thực tập).
      - Thêm mới nhân sự với xác thực dữ liệu đầy đủ (Mã NV, CCCD, Email, ngày vào làm).
      - Cập nhật ảnh đại diện thẻ 3x4 trực tiếp bằng Modal xem trước (Preview).
@@ -203,7 +203,7 @@ Route chính: / hoặc /dash
 ----------------------------------------------------------------------------------------
 3. TÁC NHÂN: NHÂN VIÊN (EMPLOYEE)
 ----------------------------------------------------------------------------------------
-Tài khoản đăng nhập mẫu: nv002 / 123456 (hoặc nv001 đến nv050)
+Tài khoản đăng nhập mẫu: nv002 / 123456 (hoặc nv001 đến nv013)
 Route chính: /me (Trang thông tin & Dashboard cá nhân hóa)
 
 [A] Dashboard Cá Nhân Hiện Đại (Showcase UI Indigo):
@@ -283,20 +283,23 @@ V. DANH SÁCH TÀI KHOẢN MẪU ĐỂ TRẢI NGHIỆM VÀ DEMO
 1. TÀI KHOẢN ADMIN:
    - Tên đăng nhập: admin
    - Mật khẩu: admin123
-   - Vai trò: Quản trị viên tối cao (Quản lý toàn bộ 50 nhân viên, 7 phòng ban, tính lương,
+   - Vai trò: Quản trị viên tối cao (Quản lý toàn bộ 13 nhân sự, 4 phòng ban, tính lương,
      sao lưu dữ liệu và kiểm toán hệ thống).
 
-2. TÀI KHOẢN QUẢN LÝ (MANAGER):
-   - Tên đăng nhập: ql001
-   - Mật khẩu: 123456
-   - Vai trò: Trưởng phòng Kỹ thuật (Quản lý 42 nhân sự phòng Kỹ thuật, duyệt đơn, đánh giá KPI).
-   - Các quản lý khác: ql002 (Kinh doanh), ql003 (Nhân sự - Hành chính), v.v. (Mật khẩu: 123456).
+2. TÀI KHOẢN TRƯỞNG PHÒNG / QUẢN LÝ (MANAGER):
+   - nv001 (hoặc ql001): Trưởng phòng Nhân sự - Nguyễn Văn An (Mật khẩu: 123456)
+   - nv006: Trưởng phòng Kế toán - Vũ Thị Hoa (Mật khẩu: 123456)
+   - nv007: Trưởng phòng Kinh doanh - Bùi Quang Huy (Mật khẩu: 123456)
+   - nv008: Trưởng phòng Kỹ thuật - Đỗ Hoàng Long (Mật khẩu: 123456)
 
 3. TÀI KHOẢN NHÂN VIÊN (EMPLOYEE):
-   - Tên đăng nhập: nv002
+   - Tên đăng nhập: mã nhân viên chữ thường (nv002, nv003, nv004, nv005, nv009, nv010, nv011, nv012, nv013)
    - Mật khẩu: 123456
-   - Vai trò: Lập trình viên chính thức (Check-in/out, xin phép, xem lương, nộp chứng chỉ).
-   - Danh sách mở rộng: nv001 đến nv050 (Mật khẩu mặc định: 123456).
+   - Ví dụ:
+     * nv002 : Trần Thị Bình (Chuyên viên Nhân sự)
+     * nv003 : Lê Minh Cường (Kế toán viên)
+     * nv004 : Phạm Thu Dung (Nhân viên kinh doanh)
+     * nv005 : Hoàng Quốc Em (Lập trình viên)
 
 ========================================================================================
 VI. HƯỚNG DẪN KHỞI CHẠY VÀ TRẢI NGHIỆM

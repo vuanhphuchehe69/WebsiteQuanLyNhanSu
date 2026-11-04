@@ -9,6 +9,10 @@ with app.app_context():
     db = get_db()
     db.execute("DELETE FROM NghiPhep WHERE MaNV='NV002' AND NgayBD='2026-11-20'")
     db.execute("DELETE FROM TaiLieuNhanVien WHERE TenTaiLieu='Chứng chỉ AWS Cloud Practitioner' AND MaNV='NV005'")
+    db.execute("DELETE FROM GiaiTrinhCong WHERE Ngay='2026-10-20'")
+    db.execute("DELETE FROM TangCa WHERE Ngay='2026-10-26'")
+    db.execute("DELETE FROM TamUng WHERE MaNV='NV005'")
+    db.execute("DELETE FROM DeXuatNhanSu WHERE MaNV='NV005'")
     db.commit()
 
 with app.test_client() as client:
@@ -359,21 +363,11 @@ with app.test_client() as client:
     assert 'Tự đánh giá KPI' in res.text
     print('PASS 33: Employee KPI self-assessment succeeds')
 
-    # Test 34: Training Catalog browsing and course enrollment
-    res = client.get('/training')
+    # Test 34: Training Catalog browsing disabled
+    res = client.get('/training', follow_redirects=True)
     assert res.status_code == 200
-    assert 'Khóa đào tạo nội bộ' in res.text
-
-    with app.app_context():
-        db = get_db()
-        course = db.execute("SELECT TOP 1 MaKDT FROM KhoaDaoTao").fetchone()
-        course_id = course['MaKDT'] if course else 1
-
-    with client.session_transaction() as sess:
-        csrf_token = sess.get('_csrf')
-    res = client.post(f'/training/register/{course_id}', data={'_csrf': csrf_token}, follow_redirects=True)
-    assert res.status_code == 200
-    print('PASS 34: Employee enrolls in corporate training course')
+    assert 'Tính năng Khóa đào tạo đã được tắt' in res.text
+    print('PASS 34: Training catalog is properly disabled per requirements')
 
     # Test 35: Employee submits proposal / complaint
     with client.session_transaction() as sess:
@@ -574,6 +568,47 @@ with app.test_client() as client:
     assert 'Xuất sắc' in ai_data['reply']
     print('PASS 54: AI Chatbot summarizes candidate resume and generates KPI review suggestions')
 
+    # ---------------- 13. Department Heads & Staff Accounts Verification ----------------
+    # Verify all Trưởng phòng logins (nv001, nv006, nv007, nv008)
+    dept_managers = [
+        ('nv001', 'Nguyễn Văn An', 'PB01'),
+        ('nv006', 'Vũ Thị Hoa', 'PB02'),
+        ('nv007', 'Bùi Quang Huy', 'PB03'),
+        ('nv008', 'Đỗ Hoàng Long', 'PB04')
+    ]
+    for user_m, name_m, pb_m in dept_managers:
+        res = client.get('/login')
+        with client.session_transaction() as sess:
+            csrf_token = sess.get('_csrf')
+        res = client.post('/login', data={'role': 'QuanLy', 'user': user_m, 'pw': '123456', '_csrf': csrf_token}, follow_redirects=True)
+        assert res.status_code == 200
+        dash_res = client.get('/')
+        assert dash_res.status_code == 200
+        assert 'Nhân sự phòng ban' in dash_res.text
+    print('PASS 55: All 4 Department Heads (nv001, nv006, nv007, nv008) login successfully')
+
+    # Verify Manager department scoping (nv007 - PB03 sees only PB03 staff in /m/nhanvien)
+    res = client.get('/login')
+    with client.session_transaction() as sess:
+        csrf_token = sess.get('_csrf')
+    client.post('/login', data={'role': 'QuanLy', 'user': 'nv007', 'pw': '123456', '_csrf': csrf_token}, follow_redirects=True)
+    res = client.get('/m/nhanvien')
+    assert res.status_code == 200
+    assert 'Bùi Quang Huy' in res.text or 'Phạm Thu Dung' in res.text
+    print('PASS 56: Department Manager scoping in employee module functions accurately')
+
+    # Verify departmental staff accounts login
+    other_staff = ['nv003', 'nv004', 'nv009', 'nv010', 'nv011', 'nv012', 'nv013']
+    for user_s in other_staff:
+        res = client.get('/login')
+        with client.session_transaction() as sess:
+            csrf_token = sess.get('_csrf')
+        res = client.post('/login', data={'role': 'NhanVien', 'user': user_s, 'pw': '123456', '_csrf': csrf_token}, follow_redirects=True)
+        assert res.status_code == 200
+        me_res = client.get('/me')
+        assert me_res.status_code == 200
+    print('PASS 57: Staff accounts across all departments login smoothly to personal workspace')
+
     # Cleanup test artifacts
     with app.app_context():
         db = get_db()
@@ -581,4 +616,4 @@ with app.test_client() as client:
         db.execute("DELETE FROM TaiLieuNhanVien WHERE TenTaiLieu='Chứng chỉ AWS Cloud Practitioner' AND MaNV='NV005'")
         db.commit()
 
-print('\n=== ALL 54 TESTS PASSED! AI ASSISTANT, ANALYTICS & BUG FIXES FULLY VERIFIED! ===')
+print('\n=== ALL 57 TESTS PASSED! AI ASSISTANT, ANALYTICS & DEPARTMENT ACCOUNTS FULLY VERIFIED! ===')

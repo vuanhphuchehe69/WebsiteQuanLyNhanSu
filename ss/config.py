@@ -4,8 +4,8 @@ import secrets
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Database Configuration (Microsoft SQL Server)
-DB_TYPE = os.environ.get('DB_TYPE', 'mssql')  # 'mssql' (mặc định CSDL thật) hoặc 'sqlite'
+# Database Configuration (Mặc định SQLite theo đồ án Nhóm 2, có hỗ trợ MSSQL qua biến môi trường)
+DB_TYPE = os.environ.get('DB_TYPE', 'sqlite')
 MSSQL_SERVER = os.environ.get('MSSQL_SERVER', r'.\SQLEXPRESS')
 MSSQL_DATABASE = os.environ.get('MSSQL_DATABASE', 'QLNhanSu_Nhom9')
 MSSQL_DRIVER = os.environ.get('MSSQL_DRIVER', 'ODBC Driver 18 for SQL Server')
@@ -404,63 +404,6 @@ MODS = {
             ('NguoiKy', 'Người ký ban hành', 'text', 1, None),
         ]
     },
-    'daotao': {
-        'title': 'Khóa đào tạo',
-        'icon': 'book-open',
-        'table': 'KhoaDaoTao',
-        'pk': 'MaKDT',
-        'auto': True,
-        'roles': (QL, AD),
-        'sel': "SELECT x.*, (SELECT COUNT(*) FROM DangKyDaoTao d WHERE d.MaKDT=x.MaKDT) AS SoHocVien FROM KhoaDaoTao x",
-        'cols': [
-            ('MaKDT', 'Mã khóa'),
-            ('TenKhoa', 'Tên khóa đào tạo'),
-            ('GiangVien', 'Giảng viên'),
-            ('ThoiGian', 'Thời gian'),
-            ('DiaDiem', 'Địa điểm'),
-            ('SoLuong', 'Chỉ tiêu'),
-            ('SoHocVien', 'Đã đăng ký'),
-            ('TrangThai', 'Trạng thái'),
-        ],
-        'search': ['x.TenKhoa', 'x.GiangVien', 'x.DiaDiem', 'x.TrangThai'],
-        'order': 'MaKDT DESC',
-        'fields': [
-            ('TenKhoa', 'Tên khóa đào tạo', 'text', 1, None),
-            ('GiangVien', 'Giảng viên / Đơn vị đào tạo', 'text', 1, None),
-            ('ThoiGian', 'Thời gian diễn ra', 'text', 1, None),
-            ('DiaDiem', 'Địa điểm học tập', 'text', 1, None),
-            ('SoLuong', 'Số lượng học viên tối đa', 'number', 1, None),
-            ('MoTa', 'Mô tả nội dung & Mục tiêu', 'textarea', 0, None),
-            ('TrangThai', 'Trạng thái khóa học', 'select', 1, 'tt_kdt'),
-        ]
-    },
-    'phanca': {
-        'title': 'Phân ca làm việc',
-        'icon': 'calendar',
-        'table': 'PhanCa',
-        'pk': 'MaPC',
-        'auto': True,
-        'roles': (QL, AD),
-        'date': 'x.Ngay',
-        'sel': "SELECT x.*, n.HoTen, c.TenCV, p.TenPB FROM PhanCa x" + EMP_JOIN,
-        'cols': [
-            ('MaPC', 'Mã PC'),
-            ('MaNV', 'Mã NV'),
-            ('HoTen', 'Họ tên'),
-            ('TenPB', 'Phòng ban'),
-            ('Ngay', 'Ngày làm việc'),
-            ('CaLam', 'Ca phân công'),
-            ('GhiChu', 'Ghi chú'),
-        ],
-        'search': ['x.MaNV', 'n.HoTen', 'x.CaLam', 'p.TenPB'],
-        'order': 'Ngay DESC, MaNV',
-        'fields': [
-            ('MaNV', 'Nhân viên', 'select', 1, 'nv'),
-            ('Ngay', 'Ngày phân ca', 'date', 1, None),
-            ('CaLam', 'Ca làm việc', 'select', 1, 'ca_lam'),
-            ('GhiChu', 'Ghi chú phân ca', 'text', 0, None),
-        ]
-    },
     'tuyendung': {
         'title': 'Yêu cầu tuyển dụng',
         'icon': 'user-plus',
@@ -839,7 +782,6 @@ NAV = [
     ('Trang chủ', 'dash', None, (QL, AD)),
     ('Thông tin cá nhân', 'me', None, (NV, QL)),
     ('Thông báo', 'announcements', None, (NV, QL, AD)),
-    ('Khóa đào tạo', 'training_view', None, (NV, QL, AD)),
     ('Đề xuất & Khiếu nại', 'feedback_view', None, (NV, QL, AD)),
 
     # Nhóm Báo cáo & Thống kê (Đẩy lên trước phần Nghiệp vụ theo yêu cầu)
@@ -851,7 +793,6 @@ NAV = [
     ('Nhân viên', 'mlist', 'nhanvien', (QL, AD)),
     ('Hợp đồng', 'mlist', 'hopdong', (QL, AD)),
     ('Chấm công', 'mlist', 'chamcong', (QL, AD)),
-    ('Phân ca làm việc', 'mlist', 'phanca', (QL, AD)),
     ('Nghỉ phép', 'mlist', 'nghiphep', (QL, AD)),
     ('Tăng ca', 'mlist', 'tangca', (QL, AD)),
     ('Lương', 'mlist', 'luong', (QL, AD)),
@@ -860,7 +801,6 @@ NAV = [
     # Nhóm Hiệu suất & Phát triển
     ('Đánh giá KPI', 'mlist', 'danhgia', (QL, AD)),
     ('Khen thưởng & Kỷ luật', 'mlist', 'khenthuong', (QL, AD)),
-    ('Quản lý đào tạo', 'mlist', 'daotao', (QL, AD)),
     ('Quản lý đề xuất & khiếu nại', 'mlist', 'dexuat', (QL, AD)),
 
     # Nhóm Tuyển dụng
@@ -882,7 +822,6 @@ NAV_ICON = {
     'Trang chủ': 'home',
     'Thông tin cá nhân': 'user',
     'Thông báo': 'bell',
-    'Khóa đào tạo': 'book-open',
     'Đề xuất & Khiếu nại': 'message-square',
     'Nhân viên': 'users',
     'Chấm công': 'check-square',
@@ -890,14 +829,12 @@ NAV_ICON = {
     'Lương': 'wallet',
     'Tạm ứng lương': 'dollar-sign',
     'Nghỉ phép': 'calendar',
-    'Phân ca làm việc': 'calendar',
     'Báo cáo nghỉ phép': 'list',
     'Báo cáo nhân sự': 'pie-chart',
     'Thống kê biến động & Chi phí': 'bar-chart-2',
     'Tăng ca': 'clock',
     'Đánh giá KPI': 'award',
     'Khen thưởng & Kỷ luật': 'award',
-    'Quản lý đào tạo': 'book-open',
     'Quản lý đề xuất & khiếu nại': 'message-square',
     'Yêu cầu tuyển dụng': 'user-plus',
     'Ứng viên phỏng vấn': 'user-check',
@@ -915,7 +852,6 @@ NAV_GROUP = {
     'Trang chủ': None,
     'Thông tin cá nhân': None,
     'Thông báo': None,
-    'Khóa đào tạo': None,
     'Đề xuất & Khiếu nại': None,
 
     'Báo cáo nhân sự': 'Báo cáo & Thống kê',
@@ -925,7 +861,6 @@ NAV_GROUP = {
     'Nhân viên': 'Nghiệp vụ',
     'Hợp đồng': 'Nghiệp vụ',
     'Chấm công': 'Nghiệp vụ',
-    'Phân ca làm việc': 'Nghiệp vụ',
     'Nghỉ phép': 'Nghiệp vụ',
     'Tăng ca': 'Nghiệp vụ',
     'Lương': 'Nghiệp vụ',
@@ -933,7 +868,6 @@ NAV_GROUP = {
 
     'Đánh giá KPI': 'Hiệu suất & Phát triển',
     'Khen thưởng & Kỷ luật': 'Hiệu suất & Phát triển',
-    'Quản lý đào tạo': 'Hiệu suất & Phát triển',
     'Quản lý đề xuất & khiếu nại': 'Hiệu suất & Phát triển',
 
     'Yêu cầu tuyển dụng': 'Tuyển dụng',

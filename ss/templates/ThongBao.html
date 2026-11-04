@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                {{ icon('bell') }}
+                Thông báo nội bộ
+            </h1>
+            <p>
+                Thông tin, chỉ đạo và thông báo quan trọng từ Ban Giám Đốc, Quản lý và Phòng Nhân sự.
+            </p>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
+                {% if unread_count and unread_count > 0 %}
+                    <span class="tag bad" style="font-weight:700;font-size:13px;padding:5px 12px">
+                        ● {{ unread_count }} thông báo chưa đọc
+                    </span>
+                {% else %}
+                    <span class="tag ok" style="font-weight:700;font-size:13px;padding:5px 12px">
+                        ✓ Bạn đã đọc tất cả thông báo
+                    </span>
+                {% endif %}
+                <span class="tag b" style="font-size:13px;padding:5px 12px">
+                    Tổng cộng: {{ total_count }} thông báo
+                </span>
+            </div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            {% if unread_count and unread_count > 0 %}
+                <form method="post" action="{{ url_for('main.mark_all_announcements_read') }}" style="margin:0">
+                    <input type="hidden" name="_csrf" value="{{ csrf }}">
+                    <button class="btn ok" style="padding:8px 14px;font-size:13px">
+                        {{ icon('check-circle') }}
+                        Đánh dấu tất cả là đã đọc
+                    </button>
+                </form>
+            {% endif %}
+            {% if role in ('QuanLy', 'Admin') %}
+                <a class="btn" href="{{ url_for('modules.mnew', mod='thongbao') }}">
+                    {{ icon('send') }}
+                    Đăng thông báo mới
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:18px">
+        {% for r in rows %}
+            <div class="card" style="margin:0;padding:22px;box-shadow:var(--shadow-sm);{% if not r.DaDoc %}border-left:5px solid var(--brand);background:#ffffff;box-shadow:0 4px 16px rgba(79,70,229,0.08);{% else %}border-left:4px solid var(--line);background:#fafafa;opacity:0.92;{% endif %}">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:12px">
+                    <div style="flex:1;min-width:260px">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap">
+                            {% if not r.DaDoc %}
+                                <span class="tag bad" style="font-size:11.5px;font-weight:800;letter-spacing:0.3px;padding:3px 8px">
+                                    ● CHƯA ĐỌC
+                                </span>
+                            {% else %}
+                                <span class="tag" style="font-size:11.5px;font-weight:600;background:#e2e8f0;color:#64748b;padding:3px 8px">
+                                    ✓ Đã đọc
+                                </span>
+                            {% endif %}
+                            <h3 style="margin:0;font-size:17px;color:{% if not r.DaDoc %}var(--brand){% else %}var(--ink){% endif %};font-weight:700">
+                                {{ r.TieuDe }}
+                            </h3>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:12px;color:var(--mut);font-size:12.5px;flex-wrap:wrap">
+                            <span>{{ icon('user') }} Người gửi: <b>{{ r.NguoiGui }}</b></span>
+                            <span>•</span>
+                            <span>{{ icon('clock') }} Thời gian: {{ r.NgayGui }}</span>
+                            <span>•</span>
+                            <span class="tag {{ TONE.get(r.PhamVi, 'b') }}">
+                                {{ r.PhamVi }} {% if r.TenPB %}({{ r.TenPB }}){% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% if not r.DaDoc %}
+                        <form method="post" action="{{ url_for('main.mark_announcement_read', tbid=r.MaTB) }}" style="margin:0">
+                            <input type="hidden" name="_csrf" value="{{ csrf }}">
+                            <button class="btn s" style="font-size:12px;padding:5px 12px;background:#f1f5f9;border:1px solid #cbd5e1;color:#334155" title="Đánh dấu đã đọc thông báo này">
+                                {{ icon('check') }}
+                                Đánh dấu đã đọc
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+                <div style="color:var(--ink);font-size:14px;line-height:1.65;white-space:pre-wrap;background:{% if not r.DaDoc %}#f8fafc{% else %}#ffffff{% endif %};padding:16px 18px;border-radius:var(--r-sm);border:1px solid var(--line)">{{ r.NoiDung }}</div>
+            </div>
+        {% else %}
+            <div class="card empty" style="padding:56px 20px">
+                <div style="width:56px;height:56px;border-radius:50%;background:var(--tint);color:var(--brand);display:grid;place-items:center;margin:0 auto 14px">
+                    {{ icon('bell') }}
+                </div>
+                <h3 style="margin:0 0 6px;color:var(--ink);justify-content:center">Không có thông báo nào</h3>
+                <p style="margin:0;color:var(--mut)">Hiện tại chưa có thông báo mới nào dành cho bạn.</p>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

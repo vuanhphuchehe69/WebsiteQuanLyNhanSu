@@ -90,6 +90,61 @@
         </div>
     </div>
 
+    {% if dept_breakdown %}
+        <div class="card flush" style="margin-bottom:24px">
+            <div style="padding:16px 20px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
+                <h3 style="margin:0;font-size:16px;font-weight:700;color:var(--ink)">
+                    {{ icon('building') }}
+                    Cơ cấu nhân sự các phòng ban (Toàn công ty)
+                </h3>
+                <span style="font-size:12.5px;color:var(--mut)">{{ dept_breakdown|length }} phòng ban hoạt động</span>
+            </div>
+            <div class="tw">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã PB</th>
+                            <th>Tên phòng ban</th>
+                            <th>Số lượng nhân sự</th>
+                            <th>Tỷ lệ cơ cấu</th>
+                            <th>Nam</th>
+                            <th>Nữ</th>
+                            <th>Chính thức</th>
+                            <th>Thử việc</th>
+                            <th>Chi tiết</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in dept_breakdown %}
+                            <tr>
+                                <td><b>{{ d.MaPB }}</b></td>
+                                <td><strong>{{ d.TenPB }}</strong></td>
+                                <td><b style="color:var(--brand)">{{ d.SoLuong }}</b> nhân sự</td>
+                                <td>
+                                    <div style="display:flex;align-items:center;gap:8px">
+                                        <div style="flex:1;height:6px;background:#e2e8f0;border-radius:99px;overflow:hidden;min-width:60px">
+                                            <div style="width:{{ d.TyLe }}%;height:100%;background:var(--brand);border-radius:99px"></div>
+                                        </div>
+                                        <span style="font-size:12px;font-weight:700">{{ d.TyLe }}%</span>
+                                    </div>
+                                </td>
+                                <td>{{ d.Nam }}</td>
+                                <td>{{ d.Nu }}</td>
+                                <td><span class="tag ok">{{ d.ChinhThuc }}</span></td>
+                                <td>{% if d.ThuViec > 0 %}<span class="tag w">{{ d.ThuViec }}</span>{% else %}-{% endif %}</td>
+                                <td>
+                                    <a class="btn g" href="{{ url_for('main.report_hr', dept=d.MaPB, thang=current_month) }}" style="padding:4px 10px;font-size:12px">
+                                        Lọc phòng →
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
     <div class="card flush">
         <div style="padding:16px 20px 14px">
             <h3 style="margin:0">

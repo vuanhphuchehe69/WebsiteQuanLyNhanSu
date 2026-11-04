@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                {{ icon('dollar-sign') }}
+                Đơn xin tạm ứng lương
+            </h1>
+            <p>
+                Đề nghị tạm ứng một phần tiền lương trước kỳ thanh toán lương chính thức.
+            </p>
+        </div>
+    </div>
+    <div class="card fm">
+        <form method="post">
+            <input type="hidden" name="_csrf" value="{{ csrf }}">
+            <div class="fg">
+                <div>
+                    <label for="f_ThangNam">Tháng lương đề nghị tạm ứng <span class="req">*</span></label>
+                    <input id="f_ThangNam" name="ThangNam" type="month" value="{{ current_month }}" required>
+                </div>
+                <div>
+                    <label for="f_SoTien">Số tiền muốn tạm ứng (VNĐ) <span class="req">*</span></label>
+                    <input id="f_SoTien" name="SoTien" type="number" step="100000" min="100000" required placeholder="Ví dụ: 3000000">
+                </div>
+                <div class="full">
+                    <label for="f_LyDo">Lý do xin tạm ứng tiền lương <span class="req">*</span></label>
+                    <textarea id="f_LyDo" name="LyDo" rows="3" required placeholder="Ví dụ: Giải quyết việc gia đình đột xuất, thanh toán viện phí..."></textarea>
+                </div>
+            </div>
+            <p style="margin:26px 0 0;display:flex;gap:12px;align-items:center">
+                <button class="btn">
+                    {{ icon('check') }}
+                    Gửi đề nghị tạm ứng
+                </button>
+                <a class="btn g" href="{{ url_for('main.me') }}">
+                    {{ icon('x') }}
+                    Hủy bỏ
+                </a>
+            </p>
+        </form>
+    </div>
+{% endblock %}
+

@@ -12,7 +12,7 @@ MỤC LỤC TÀI LIỆU:
 1. HƯỚNG DẪN ĐẨY MÃ NGUỒN LÊN GITHUB / GITLAB CHI TIẾT TỪ A ĐẾN Z
 2. BẢN ĐỒ CẤU TRÚC THƯ MỤC DỰ ÁN & VAI TRÒ TỪNG TỆP TIN
 3. HƯỚNG DẪN CÀI ĐẶT MÔI TRƯỜNG & KHỞI CHẠY ỨNG DỤNG
-4. DANH SÁCH TÀI KHOẢN ĐĂNG NHẬP MẪU THEO PHÂN QUYỀN (50 NHÂN VIÊN & 8 PHÒNG BAN)
+4. DANH SÁCH TÀI KHOẢN ĐĂNG NHẬP MẪU THEO PHÂN QUYỀN (13 NHÂN SỰ & 4 PHÒNG BAN)
 5. TỔNG HỢP CÁC TÍNH NĂNG MỚI ĐÃ ĐƯỢC NÂNG CẤP ĐẶC SẮC
 6. HƯỚNG DẪN CHẠY KIỂM THỬ TỰ ĐỘNG (TEST SUITE)
 
@@ -124,14 +124,16 @@ WebsiteQuanLyNhanSu/
 │   │   └── msg.html                     # Trang hiển thị thông báo lỗi thân thiện (403, 400, 404, 500)
 │   │
 │   └── static/                          # [Tài nguyên tĩnh]
-│       ├── css/style.css                # Bộ stylesheet CSS3 cao cấp: Hỗ trợ Dark Mode, Glassmorphism,
-│       │                                # Ảnh thẻ tỷ lệ 3x4, Hiệu ứng chuyển động 60fps mượt mà
+│       ├── css/style.css                # Bộ stylesheet CSS3 cao cấp: Thiết kế hiện đại Glassmorphism,
+│       │                                # Ảnh thẻ tỷ lệ 3x4, Hiệu ứng chuyển động mượt mà
 │       └── uploads/                     # Thư mục lưu trữ tệp tin người dùng tải lên
-│           ├── avatars/                 # Ảnh thẻ chân dung 3x4 của 50 nhân viên (avatar_NV001.svg...)
+│           ├── avatars/                 # Ảnh thẻ chân dung 3x4 của nhân viên (avatar_NV001.svg...)
 │           └── documents/               # File scan bằng cấp, chứng chỉ, hợp đồng đính kèm
 │
-├── seed_50_employees.py                 # [Kịch bản khởi tạo] Script tự động tạo 50 nhân viên, 8 phòng ban,
-│                                        # 16 chức vụ, 50 hợp đồng, 100 bảng lương, chấm công và khen thưởng
+├── seed_employees.py                    # [Kịch bản khởi tạo chuẩn] Script tự động tạo 13 nhân viên, 4 phòng ban,
+│                                        # 13 chức vụ, 13 hợp đồng, bảng lương, chấm công và khen thưởng
+├── seed_50_employees.py                 # Wrapper tương thích ngược chuyển tiếp tới seed_employees.py
+├── seed_all_employee_records.py         # [Kịch bản nạp giao dịch] Nạp chấm công, nghỉ phép, tăng ca, KPI...
 │
 ├── generate_handover_doc.py             # Script tạo file Word bàn giao chính thức (.docx)
 ├── TAI_LIEU_BAN_GIAO_HE_THONG_QUAN_LY_NHAN_SU.docx # Tài liệu Bàn giao Kỹ thuật Word hoàn chỉnh (~48KB)
@@ -154,8 +156,8 @@ CÁC BƯỚC KHỞI CHẠY:
 2. Cài đặt thư viện:
    pip install flask pyodbc python-docx
 
-3. Khởi tạo dữ liệu mẫu 50 nhân viên (nếu cần chạy lại):
-   python seed_50_employees.py
+3. Khởi tạo dữ liệu mẫu chuẩn (nếu cần chạy lại):
+   python seed_employees.py
 
 4. Khởi động máy chủ Web:
    python ss/app.py
@@ -164,11 +166,17 @@ CÁC BƯỚC KHỞI CHẠY:
    http://127.0.0.1:5000
 
 ========================================================================================
-4. DANH SÁCH TÀI KHOẢN ĐĂNG NHẬP MẪU (50 NHÂN VIÊN & 8 PHÒNG BAN)
+4. DANH SÁCH TÀI KHOẢN ĐĂNG NHẬP MẪU (13 NHÂN SỰ & 4 PHÒNG BAN)
 ========================================================================================
 
-Hệ thống đã nạp sẵn 51 tài khoản hoàn chỉnh cho 8 phòng ban.
-Tất cả mật khẩu mặc định là: 123456 (riêng tài khoản admin là: admin123).
+Hệ thống đã nạp sẵn 15 tài khoản hoàn chỉnh cho 4 phòng ban chuẩn:
+- Phòng Nhân sự (PB01)
+- Phòng Kế toán (PB02)
+- Phòng Kinh doanh (PB03)
+- Phòng Kỹ thuật (PB04)
+
+Tất cả tài khoản Trưởng phòng và Nhân viên có tên đăng nhập là mã nhân viên (chữ thường),
+mật khẩu mặc định là: 123456 (riêng tài khoản admin là: admin123).
 
 A. TÀI KHOẢN QUẢN TRỊ VIÊN (ADMIN - TOÀN QUYỀN HỆ THỐNG):
    - Vai trò chọn trên form: Admin
@@ -176,37 +184,36 @@ A. TÀI KHOẢN QUẢN TRỊ VIÊN (ADMIN - TOÀN QUYỀN HỆ THỐNG):
    - Mật khẩu               : admin123
 
 B. TÀI KHOẢN TRƯỞNG PHÒNG / QUẢN LÝ (QUANLY - CÓ QUYỀN DUYỆT ĐƠN & BÁO CÁO PHÒNG):
-   - ql001 : Trưởng phòng Nhân sự (NV001 - Nguyễn Văn An)
-   - ql006 : Kế toán trưởng (NV006 - Vũ Thị Phương Thảo)
-   - ql007 : Trưởng phòng Kinh doanh (NV007 - Đặng Tuấn Anh)
-   - ql008 : Trưởng phòng Công nghệ CNTT (NV008 - Bùi Đức Trọng)
-   - ql009 : Trưởng phòng Kỹ thuật (NV009 - Ngô Quang Huy)
-   - ql010 : Trưởng nhóm Chăm sóc Khách hàng (NV010 - Dương Thúy Hằng)
-   - ql011 : Trưởng phòng Hành chính (NV011 - Lý Gia Bảo)
-   - ql012 : Giám đốc Điều hành CEO (NV012 - Phan Văn Hùng)
+   - nv001 : Trưởng phòng Nhân sự (NV001 - Nguyễn Văn An)
+   - ql001 : Bí danh tương thích Trưởng phòng Nhân sự (NV001)
+   - nv006 : Trưởng phòng Kế toán (NV006 - Vũ Thị Hoa)
+   - nv007 : Trưởng phòng Kinh doanh (NV007 - Bùi Quang Huy)
+   - nv008 : Trưởng phòng Kỹ thuật (NV008 - Đỗ Hoàng Long)
    (Mật khẩu chung: 123456)
 
 C. TÀI KHOẢN NHÂN VIÊN (NHANVIEN - ĐIỂM DANH, XEM LƯƠNG, NỘP ĐƠN TỪ):
-   - nv002 : Trần Thị Bình (Chuyên viên Nhân sự)
-   - nv003 : Lê Minh Cường (Kế toán viên)
-   - nv004 : Phạm Thu Dung (Chuyên viên Kinh doanh)
-   - nv005 : Hoàng Quốc Em (Kỹ sư Phần mềm Fullstack)
-   - nv014 : Đỗ Thành Long (Kỹ sư AI & Dữ liệu)
-   - nv015 : Tạ Minh Khang (Chuyên viên An ninh mạng)
-   - nv016 đến nv050 : Các nhân viên thuộc các bộ phận khác nhau.
+   - nv002 : Trần Thị Bình (Chuyên viên Nhân sự - PB01)
+   - nv013 : Phan Mỹ Linh (Chuyên viên Tuyển dụng - PB01)
+   - nv003 : Lê Minh Cường (Kế toán viên - PB02)
+   - nv009 : Trương Mai Phương (Kế toán tổng hợp - PB02)
+   - nv004 : Phạm Thu Dung (Nhân viên kinh doanh - PB03)
+   - nv010 : Nguyễn Đức Thắng (Chuyên viên Marketing - PB03)
+   - nv005 : Hoàng Quốc Em (Lập trình viên - PB04)
+   - nv011 : Lý Thu Trang (Kỹ sư Kiểm thử QA - PB04)
+   - nv012 : Vũ Tuấn Kiệt (Kỹ sư DevOps - PB04)
    (Mật khẩu chung: 123456)
 
 ========================================================================================
-5. TỔNG HỢP CÁC TÍNH NĂNG MỚI ĐÃ ĐƯỢC NÂNG CẤP ĐẶC SẮC
+5. TỔNG HỢP CÁC TÍNH NĂNG ĐÃ ĐƯỢC CHUẨN HÓA VÀ NÂNG CẤP
 ========================================================================================
 
 1. QUY MÔ DỮ LIỆU CHUẨN DOANH NGHIỆP:
-   - 50 nhân viên chính thức, thử việc và thực tập sinh.
-   - 8 phòng ban chuyên trách và 16 chức vụ rõ ràng.
-   - 50 hợp đồng lao động có lương cơ bản từ 12 triệu đến 50 triệu VNĐ.
-   - 100 bảng lương chi tiết tính sẵn BHXH (10.5%), thuế TNCN và các khoản thưởng.
-   - 62 bản ghi chấm công thực tế phân bổ đúng giờ, đi muộn, về sớm.
-   - 23 quyết định khen thưởng xuất sắc và kỷ luật công bằng.
+   - 13 nhân sự chuẩn thuộc 4 khối phòng ban: Nhân sự, Kế toán, Kinh doanh, Kỹ thuật.
+   - 13 chức vụ chuyên môn và 13 hợp đồng lao động chuẩn.
+   - Bảng lương chi tiết tính sẵn BHXH (10.5%), thuế TNCN và phụ cấp.
+   - Chấm công thực tế tháng 10/2026 đầy đủ đúng giờ, đi muộn, về sớm.
+   - Quyết định khen thưởng, kỷ luật, yêu cầu tuyển dụng và ứng viên thực tế.
+   - Đã loại bỏ hoàn toàn Khóa đào tạo và Phân ca làm việc theo yêu cầu nghiệp vụ.
 
 2. GIAO DIỆN PREMIUM SAAS (LINEAR / NOTION / STRIPE STYLE):
    - Trang đăng nhập chia đôi màn hình (Split screen) với gradient mesh hiện đại.

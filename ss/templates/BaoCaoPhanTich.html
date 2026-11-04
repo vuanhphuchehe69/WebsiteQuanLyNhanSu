@@ -1,0 +1,374 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                {{ icon('bar-chart-2') }}
+                Báo cáo Phân tích Nhân sự & Tài chính
+            </h1>
+            <p>
+                Thống kê toàn diện về tỷ lệ nghỉ việc, thời gian tuyển dụng, tỷ lệ chi phí nhân sự/doanh thu và biểu đồ xu hướng theo tháng/quý.
+            </p>
+        </div>
+        <form style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <input type="month" name="thang" value="{{ current_month }}" style="width:auto">
+            <button class="btn">
+                {{ icon('search') }}
+                Xem báo cáo
+            </button>
+            <a class="btn g" href="{{ url_for('main.analytics_view', thang=current_month, export=1) }}">
+                {{ icon('download') }}
+                Xuất Excel/CSV
+            </a>
+        </form>
+    </div>
+
+    <!-- 1. Chỉ số HR then chốt (Executive KPI Cards) -->
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-bottom: 24px;">
+        <!-- Tỷ lệ nghỉ việc / Giữ chân -->
+        <div class="stat">
+            <div class="ic" style="background:var(--okbg);color:var(--ok)">
+                {{ icon('user-check') }}
+            </div>
+            <div>
+                <b>{{ turnover_stats.retention_rate }}%</b>
+                <span>Tỷ lệ giữ chân nhân sự (Nghỉ việc: {{ turnover_stats.turnover_rate }}%)</span>
+            </div>
+        </div>
+
+        <!-- Thời gian tuyển trung bình -->
+        <div class="stat">
+            <div class="ic" style="background:var(--brand-light);color:var(--brand)">
+                {{ icon('clock') }}
+            </div>
+            <div>
+                <b>{{ avg_hire_days }} ngày</b>
+                <span>Thời gian tuyển trung bình (Time-to-Hire)</span>
+            </div>
+        </div>
+
+        <!-- Chi phí nhân sự / Doanh thu -->
+        <div class="stat">
+            <div class="ic" style="background:var(--badbg);color:var(--bad)">
+                {{ icon('pie-chart') }}
+            </div>
+            <div>
+                <b>{{ hr_cost_ratio }}%</b>
+                <span>Chi phí nhân sự / Doanh thu ({{ cost_status }})</span>
+            </div>
+        </div>
+
+        <!-- Tổng quỹ lương tháng -->
+        <div class="stat">
+            <div class="ic" style="background:#fef3c7;color:#b45309">
+                {{ icon('wallet') }}
+            </div>
+            <div>
+                <b>{{ fmt(total_payroll) }} đ</b>
+                <span>Tổng chi phí quỹ lương tháng {{ current_month }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Hàng Biểu đồ: Hình tròn Tỷ lệ nghỉ việc & Xu hướng Tháng/Quý -->
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap:24px; margin-bottom:28px">
+        
+        <!-- Biểu đồ hình tròn tỷ lệ nghỉ việc -->
+        <div class="card" style="margin:0; display:flex; flex-direction:column; justify-content:space-between">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+                <h3 style="margin:0; font-size:16px">
+                    {{ icon('pie-chart') }}
+                    Biểu đồ Tỷ lệ Nghỉ việc & Giữ chân
+                </h3>
+                <span class="tag ok">Chuẩn ngành &lt; 15%</span>
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-around; flex-wrap:wrap; gap:20px; padding:10px 0">
+                <!-- SVG Donut Chart -->
+                <div style="position:relative; width:160px; height:160px">
+                    {% set r = 60 %}
+                    {% set c = 376.99 %}
+                    {% set ret_dash = c * (turnover_stats.retention_rate / 100.0) %}
+                    {% set turn_dash = c * (turnover_stats.turnover_rate / 100.0) %}
+                    <svg viewBox="0 0 160 160" width="160" height="160" style="transform:rotate(-90deg)">
+                        <!-- Background Circle -->
+                        <circle cx="80" cy="80" r="{{ r }}" fill="transparent" stroke="#f1f5f9" stroke-width="20"/>
+                        <!-- Retention Arc (Green) -->
+                        <circle cx="80" cy="80" r="{{ r }}" fill="transparent" stroke="#10b981" stroke-width="20"
+                                stroke-dasharray="{{ ret_dash }} {{ c - ret_dash }}" stroke-linecap="round"/>
+                        <!-- Turnover Arc (Red) -->
+                        <circle cx="80" cy="80" r="{{ r }}" fill="transparent" stroke="#ef4444" stroke-width="20"
+                                stroke-dasharray="{{ turn_dash }} {{ c - turn_dash }}"
+                                stroke-dashoffset="-{{ ret_dash }}" stroke-linecap="round"/>
+                    </svg>
+                    <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center">
+                        <span style="font-size:22px; font-weight:800; color:#0f172a">{{ turnover_stats.retention_rate }}%</span>
+                        <span style="font-size:11px; color:#64748b; font-weight:600">Giữ chân</span>
+                    </div>
+                </div>
+
+                <!-- Legend & Breakdown -->
+                <div style="display:flex; flex-direction:column; gap:12px; min-width:180px">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 12px; background:#f0fdf4; border-radius:8px">
+                        <div style="display:flex; align-items:center; gap:8px">
+                            <span style="width:12px; height:12px; border-radius:3px; background:#10b981"></span>
+                            <span style="font-size:13px; font-weight:600; color:#166534">Nhân sự ở lại</span>
+                        </div>
+                        <b style="font-size:14px; color:#166534">{{ turnover_stats.total_staff }} NV ({{ turnover_stats.retention_rate }}%)</b>
+                    </div>
+
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 12px; background:#fef2f2; border-radius:8px">
+                        <div style="display:flex; align-items:center; gap:8px">
+                            <span style="width:12px; height:12px; border-radius:3px; background:#ef4444"></span>
+                            <span style="font-size:13px; font-weight:600; color:#991b1b">Nghỉ việc/Thôi việc</span>
+                        </div>
+                        <b style="font-size:14px; color:#991b1b">{{ turnover_stats.resigned_count }} NV ({{ turnover_stats.turnover_rate }}%)</b>
+                    </div>
+
+                    <div style="font-size:12px; color:var(--mut); line-height:1.4">
+                        💡 Tỷ lệ giữ chân đạt mức lý tưởng. Môi trường làm việc và chế độ đãi ngộ đang duy trì ổn định.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Biểu đồ xu hướng theo Tháng & Quý -->
+        <div class="card" style="margin:0; display:flex; flex-direction:column">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px">
+                <h3 style="margin:0; font-size:16px">
+                    {{ icon('trending-up') }}
+                    Biểu đồ Xu hướng Chi phí & Nhân sự
+                </h3>
+                <div style="display:flex; background:#f1f5f9; padding:3px; border-radius:8px; gap:4px">
+                    <button type="button" id="btnTrendMonth" class="btn" style="padding:4px 10px; font-size:11.5px; background:var(--brand); color:#fff; border:none" onclick="switchTrendTab('month')">
+                        Theo Tháng
+                    </button>
+                    <button type="button" id="btnTrendQuarter" class="btn g" style="padding:4px 10px; font-size:11.5px; border:none; background:transparent" onclick="switchTrendTab('quarter')">
+                        Theo Quý
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 1: Xu hướng theo Tháng -->
+            <div id="trendMonthView">
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; height:180px; padding:10px 10px 0; border-bottom:1px solid #e2e8f0; gap:12px">
+                    {% for m in monthly_trends %}
+                        {% set bar_h = (m.ChiPhi / 130000000.0 * 150)|round %}
+                        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:6px">
+                            <span style="font-size:10.5px; font-weight:700; color:var(--brand)">{{ (m.ChiPhi / 1000000)|round(1) }}M</span>
+                            <div style="width:100%; max-width:36px; height:{{ [bar_h, 20]|max }}px; background:linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%); border-radius:6px 6px 0 0" title="{{ m.Thang }}: {{ fmt(m.ChiPhi) }} VNĐ ({{ m.NhanSu }} nhân sự)"></div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px 10px 0; gap:12px">
+                    {% for m in monthly_trends %}
+                        <div style="flex:1; text-align:center; font-size:11.5px; font-weight:600; color:#64748b">
+                            {{ m.Thang }}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Tab 2: Xu hướng theo Quý -->
+            <div id="trendQuarterView" style="display:none">
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; height:180px; padding:10px 10px 0; border-bottom:1px solid #e2e8f0; gap:16px">
+                    {% for q in quarterly_trends %}
+                        {% set q_bar_h = (q.ChiPhi / 360000000.0 * 150)|round %}
+                        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:6px">
+                            <span style="font-size:11px; font-weight:700; color:#7c3aed">{{ (q.ChiPhi / 1000000)|round(0) }}M</span>
+                            <div style="width:100%; max-width:48px; height:{{ [q_bar_h, 30]|max }}px; background:linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%); border-radius:6px 6px 0 0" title="{{ q.Quy }}: {{ fmt(q.ChiPhi) }} VNĐ"></div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px 10px 0; gap:16px">
+                    {% for q in quarterly_trends %}
+                        <div style="flex:1; text-align:center; font-size:11.5px; font-weight:600; color:#64748b">
+                            {{ q.Quy }}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; padding-top:10px; border-top:1px dashed #e2e8f0; font-size:12px; color:var(--mut)">
+                <span>● Cột biểu thị tổng chi phí lương</span>
+                <span>● Quy mô nhân sự dao động: <b>5 - 6 nhân sự</b></span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 3. Cảnh báo nhân viên có dấu hiệu nghỉ việc (Flight Risk) -->
+    {% if flight_risks %}
+        <div class="card flush" style="margin-bottom:28px; border-top: 3px solid var(--bad)">
+            <div style="padding:16px 20px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px">
+                <div style="display:flex; align-items:center; gap:10px">
+                    <span style="display:grid; place-items:center; width:34px; height:34px; border-radius:8px; background:var(--badbg); color:var(--bad)">
+                        {{ icon('activity') }}
+                    </span>
+                    <div>
+                        <h3 style="margin:0; font-size:16px; color:var(--ink)">
+                            Cảnh báo nhân viên có dấu hiệu nghỉ việc (Flight Risk Detector)
+                        </h3>
+                        <p style="margin:2px 0 0; font-size:12.5px; color:var(--mut)">
+                            Phát hiện tự động dựa trên: tần suất đi muộn tăng, điểm KPI sụt giảm, thời gian dài chưa tăng lương.
+                        </p>
+                    </div>
+                </div>
+                <span class="tag bad" style="font-size:12px">
+                    ● {{ flight_risks|length }} nhân sự cần lưu ý
+                </span>
+            </div>
+            <div class="tw">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã NV</th>
+                            <th>Họ và tên</th>
+                            <th>Chức vụ</th>
+                            <th>Phòng ban</th>
+                            <th>Mức độ rủi ro</th>
+                            <th>Dấu hiệu nhận biết</th>
+                            <th>Lương hiện tại</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in flight_risks %}
+                            <tr>
+                                <td><b>{{ r.MaNV }}</b></td>
+                                <td><b>{{ r.HoTen }}</b></td>
+                                <td>{{ r.TenCV }}</td>
+                                <td>{{ r.TenPB }}</td>
+                                <td>
+                                    <span class="tag {{ r.Tone }}">
+                                        ● Nguy cơ {{ r.Level }} ({{ r.RiskScore }}/100)
+                                    </span>
+                                </td>
+                                <td>
+                                    <ul style="margin:0; padding-left:16px; font-size:12px; line-height:1.5">
+                                        {% for s in r.Signals %}
+                                            <li>{{ s }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                                <td class="num"><b>{{ fmt(r.LuongCoBan) }} đ</b></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- 4. Cơ cấu nhân sự theo phòng ban -->
+    <div class="card flush" style="margin-bottom:28px">
+        <div style="padding:16px 20px 14px">
+            <h3 style="margin:0">
+                {{ icon('users') }}
+                Cơ cấu nhân sự theo phòng ban
+            </h3>
+        </div>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Phòng ban</th>
+                        <th class="num">Tổng nhân sự</th>
+                        <th class="num">Nam</th>
+                        <th class="num">Nữ</th>
+                        <th>Tỷ trọng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set total_staff = dept_stats|sum(attribute='SoLuong') %}
+                    {% for d in dept_stats %}
+                        <tr>
+                            <td><b>{{ d.TenPB }}</b></td>
+                            <td class="num"><b style="font-size:15px;color:var(--brand)">{{ d.SoLuong }}</b></td>
+                            <td class="num">{{ d.Nam }}</td>
+                            <td class="num">{{ d.Nu }}</td>
+                            <td>
+                                {% set pct = (d.SoLuong / total_staff * 100) if total_staff > 0 else 0 %}
+                                <div style="display:flex;align-items:center;gap:10px">
+                                    <div style="flex:1;height:8px;background:#e2e8f0;border-radius:99px;overflow:hidden">
+                                        <div style="height:100%;width:{{ pct }}%;background:var(--brand);border-radius:99px"></div>
+                                    </div>
+                                    <small style="font-weight:700;color:var(--mut)">{{ "%.1f"|format(pct) }}%</small>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 5. Chi phí lương theo phòng ban -->
+    <div class="card flush">
+        <div style="padding:16px 20px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+            <h3 style="margin:0">
+                {{ icon('wallet') }}
+                Phân bổ chi phí quỹ lương tháng {{ current_month }}
+            </h3>
+            <span class="tag ok" style="font-size:13px">
+                Tổng quỹ lương: <b>{{ fmt(total_payroll) }} VNĐ</b>
+            </span>
+        </div>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Phòng ban</th>
+                        <th class="num">Lương cơ bản</th>
+                        <th class="num">Thưởng & Phụ cấp</th>
+                        <th class="num">Bảo hiểm trích nộp</th>
+                        <th class="num">Tổng thực chi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in payroll_dept %}
+                        <tr>
+                            <td><b>{{ p.TenPB }}</b></td>
+                            <td class="num">{{ fmt(p.TongLuongCung) }}</td>
+                            <td class="num">{{ fmt(p.TongThuongPhuCap) }}</td>
+                            <td class="num" style="color:var(--mut)">{{ fmt(p.TongBaoHiem) }}</td>
+                            <td class="num">
+                                <b style="color:var(--brand);font-size:15px">{{ fmt(p.TongChiPhi) }}</b>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="empty">
+                                Chưa có số liệu bảng lương tháng {{ current_month }}.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function switchTrendTab(mode) {
+            var mBtn = document.getElementById('btnTrendMonth');
+            var qBtn = document.getElementById('btnTrendQuarter');
+            var mView = document.getElementById('trendMonthView');
+            var qView = document.getElementById('trendQuarterView');
+
+            if (mode === 'month') {
+                mBtn.style.background = 'var(--brand)';
+                mBtn.style.color = '#fff';
+                qBtn.style.background = 'transparent';
+                qBtn.style.color = 'inherit';
+                mView.style.display = 'block';
+                qView.style.display = 'none';
+            } else {
+                qBtn.style.background = '#7c3aed';
+                qBtn.style.color = '#fff';
+                mBtn.style.background = 'transparent';
+                mBtn.style.color = 'inherit';
+                mView.style.display = 'none';
+                qView.style.display = 'block';
+            }
+        }
+    </script>
+{% endblock %}

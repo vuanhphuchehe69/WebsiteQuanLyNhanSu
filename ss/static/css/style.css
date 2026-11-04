@@ -999,6 +999,20 @@ dd {
   box-shadow: 0 0 6px #ef4444;
   animation: badgePulse 1.8s infinite;
 }
+.bell-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 99px;
+  line-height: 1.2;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.45);
+  animation: badgePulse 2s infinite;
+}
 
 /* ================= COMMAND PALETTE & TOPBAR SHORTCUT ================= */
 .cmd-trigger-btn {

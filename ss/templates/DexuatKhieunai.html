@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                {{ icon('message-square') }}
+                Hộp thư Đề xuất & Khiếu nại
+            </h1>
+            <p>
+                Kênh tiếp nhận ý kiến đóng góp, đề xuất cải tiến môi trường làm việc và giải quyết khiếu nại của cán bộ nhân viên.
+            </p>
+        </div>
+    </div>
+
+    <!-- Form gửi ý kiến -->
+    <div class="card fm" style="margin-bottom:28px">
+        <h3>
+            {{ icon('send') }}
+            Gửi đề xuất hoặc khiếu nại mới
+        </h3>
+        <form method="post">
+            <input type="hidden" name="_csrf" value="{{ csrf }}">
+            <div class="fg">
+                <div>
+                    <label for="f_TieuDe">Tiêu đề ý kiến <span class="req">*</span></label>
+                    <input id="f_TieuDe" name="TieuDe" required placeholder="Ví dụ: Đề xuất trang bị thêm màn hình phụ, khiếu nại điều hòa khu B...">
+                </div>
+                <div>
+                    <label for="f_Loai">Phân loại <span class="req">*</span></label>
+                    <select id="f_Loai" name="Loai" required>
+                        <option value="Đề xuất cải tiến">Đề xuất cải tiến</option>
+                        <option value="Khiếu nại">Khiếu nại</option>
+                        <option value="Ý kiến đóng góp">Ý kiến đóng góp</option>
+                    </select>
+                </div>
+                <div class="full">
+                    <label for="f_NoiDung">Nội dung chi tiết <span class="req">*</span></label>
+                    <textarea id="f_NoiDung" name="NoiDung" rows="3" required placeholder="Mô tả cụ thể sự việc, đề xuất giải pháp hoặc mong muốn hỗ trợ..."></textarea>
+                </div>
+            </div>
+            <p style="margin:20px 0 0">
+                <button class="btn">
+                    {{ icon('send') }}
+                    Gửi đến Ban Quản lý / Phòng Nhân sự
+                </button>
+            </p>
+        </form>
+    </div>
+
+    <!-- Lịch sử ý kiến & phản hồi -->
+    <div class="card flush">
+        <div style="padding:16px 20px 14px">
+            <h3 style="margin:0">
+                {{ icon('list') }}
+                Danh sách ý kiến & Tiến độ giải quyết
+            </h3>
+        </div>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tiêu đề ý kiến</th>
+                        <th>Phân loại</th>
+                        <th>Người gửi</th>
+                        <th>Phòng ban</th>
+                        <th>Thời gian gửi</th>
+                        <th>Trạng thái</th>
+                        <th>Nội dung & Phản hồi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in feedbacks %}
+                        <tr>
+                            <td><b>{{ f.TieuDe }}</b></td>
+                            <td>
+                                <span class="tag {{ 'b' if f.Loai == 'Đề xuất cải tiến' else ('bad' if f.Loai == 'Khiếu nại' else 'n') }}">
+                                    {{ f.Loai }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="av">{{ f.HoTen|ini }}</span>
+                                <strong>{{ f.HoTen }}</strong>
+                            </td>
+                            <td>{{ f.TenPB }}</td>
+                            <td>{{ f.NgayGui }}</td>
+                            <td>
+                                <span class="tag {{ 'ok' if f.TrangThai == 'Đã giải quyết' else ('b' if f.TrangThai == 'Đang xử lý' else 'w') }}">
+                                    {{ f.TrangThai }}
+                                </span>
+                            </td>
+                            <td style="max-width:320px;white-space:normal">
+                                <div style="font-size:13px;color:var(--ink);margin-bottom:4px">{{ f.NoiDung }}</div>
+                                {% if f.PhanHoi %}
+                                    <div style="background:#f1f5f9;border-left:3px solid var(--brand);padding:6px 10px;border-radius:4px;font-size:12px;color:var(--brand-d)">
+                                        <b>Phản hồi:</b> {{ f.PhanHoi }} ({{ f.NguoiXuLy or 'HR' }})
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="empty">
+                                Chưa có đề xuất hoặc khiếu nại nào.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+

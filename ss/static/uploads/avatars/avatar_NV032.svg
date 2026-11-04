@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="120" height="160" viewBox="0 0 120 160">
-  <rect width="120" height="160" rx="8" fill="#0891b2"/>
-  <circle cx="60" cy="62" r="32" fill="#ffffff" opacity="0.25"/>
-  <text x="60" y="74" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="#ffffff" text-anchor="middle">C</text>
-  <path d="M20 148 C 20 108, 100 108, 100 148 Z" fill="#ffffff" opacity="0.25"/>
-  <rect x="0" y="142" width="120" height="18" fill="rgba(0,0,0,0.3)"/>
-  <text x="60" y="154" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">Ảnh 3x4 • NV032</text>
-</svg>

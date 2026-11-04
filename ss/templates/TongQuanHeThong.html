@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+{% block body %}
+    <div class="ph">
+        <div>
+            <h1>
+                {{ icon('bar-chart-2') }}
+                Tổng quan hệ thống
+            </h1>
+            <p>
+                Số liệu thời gian thực và các chức năng thao tác nhanh của hệ thống quản lý nhân sự.
+            </p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <a class="btn" href="{{ url_for('main.manager_approvals') }}">
+                {{ icon('check-square') }}
+                Trung tâm phê duyệt
+            </a>
+            {% if role == 'Admin' %}
+                <a class="btn g" href="{{ url_for('main.payroll_calc_view') }}">
+                    {{ icon('dollar-sign') }}
+                    Tính bảng lương tự động
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="grid">
+        {% for l,v,ic in stats %}
+            <div class="stat">
+                <div class="ic">
+                    {{ icon(ic) }}
+                </div>
+                <div>
+                    <b>
+                        {{ fmt(v) }}
+                    </b>
+                    <span>
+                        {{ l }}
+                    </span>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if flight_risks %}
+        <div class="card" style="border-left: 4px solid var(--bad); background: #fff; margin-bottom: 24px; box-shadow: 0 4px 18px rgba(239, 68, 68, 0.08);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px">
+                <div style="display:flex; align-items:center; gap:12px">
+                    <span style="display:grid; place-items:center; width:36px; height:36px; border-radius:8px; background:var(--badbg); color:var(--bad)">
+                        {{ icon('activity') }}
+                    </span>
+                    <div>
+                        <h3 style="margin:0; font-size:16px; color:var(--ink)">
+                            Cảnh báo nhân viên có dấu hiệu nghỉ việc (Flight Risk Detector)
+                        </h3>
+                        <p style="margin:2px 0 0; font-size:12.5px; color:var(--mut)">
+                            Phát hiện thông minh: tần suất đi muộn tăng, điểm KPI sụt giảm, thời gian dài chưa điều chỉnh lương.
+                        </p>
+                    </div>
+                </div>
+                <span class="tag bad" style="font-size:12.5px; padding:4px 10px">
+                    ● Phát hiện {{ flight_risks|length }} nhân sự cần lưu ý
+                </span>
+            </div>
+
+            <div class="tw">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã NV</th>
+                            <th>Họ và tên</th>
+                            <th>Chức vụ / Phòng ban</th>
+                            <th>Mức độ rủi ro</th>
+                            <th>Dấu hiệu nhận biết</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in flight_risks %}
+                            <tr>
+                                <td><b>{{ r.MaNV }}</b></td>
+                                <td><b>{{ r.HoTen }}</b></td>
+                                <td>{{ r.TenCV }} - {{ r.TenPB }}</td>
+                                <td>
+                                    <span class="tag {{ r.Tone }}">
+                                        ● Nguy cơ {{ r.Level }} ({{ r.RiskScore }}/100)
+                                    </span>
+                                </td>
+                                <td>
+                                    <ul style="margin:0; padding-left:16px; font-size:12px; color:var(--ink); line-height:1.5">
+                                        {% for s in r.Signals %}
+                                            <li>{{ s }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                                <td class="act">
+                                    <a class="btn g" style="padding:4px 9px; font-size:11px" href="{{ url_for('mlist', mod='nhanvien', q=r.MaNV) }}">
+                                        Hồ sơ
+                                    </a>
+                                    <a class="btn" style="padding:4px 9px; font-size:11px; background:var(--brand); border-color:var(--brand)" href="{{ url_for('main.announcements') }}">
+                                        Trao đổi
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="card">
+        <h3>
+            {{ icon('zap') }}
+            Chức năng thao tác nhanh
+        </h3>
+        <p style="color: var(--mut); margin: 0 0 18px; font-size: 13.5px;">
+            Truy cập nhanh các nghiệp vụ quản lý, tạo dữ liệu mới hoặc xem các phân hệ báo cáo.
+        </p>
+
+        <div class="action-grid">
+            <a class="action-card" href="{{ url_for('main.manager_approvals') }}">
+                <div class="ac-icon theme-emerald">
+                    {{ icon('check-square') }}
+                </div>
+                <div class="ac-body">
+                    <div class="ac-title">
+                        <span>Trung tâm phê duyệt</span>
+                        <span class="ac-arrow">→</span>
+                    </div>
+                    <div class="ac-desc">Duyệt nghỉ phép, OT, giải trình công & tạm ứng</div>
+                </div>
+            </a>
+
+            <a class="action-card" href="{{ url_for('main.manager_proposals') }}">
+                <div class="ac-icon theme-purple">
+                    {{ icon('layers') }}
+                </div>
+                <div class="ac-body">
+                    <div class="ac-title">
+                        <span>Đề xuất nhân sự</span>
+                        <span class="ac-arrow">→</span>
+                    </div>
+                    <div class="ac-desc">Tăng lương, thăng chức, điều động, khen thưởng</div>
+                </div>
+            </a>
+
+            <a class="action-card" href="{{ url_for('mnew', mod='nhanvien') }}">
+                <div class="ac-icon theme-blue">
+                    {{ icon('users') }}
+                </div>
+                <div class="ac-body">
+                    <div class="ac-title">
+                        <span>Thêm nhân viên</span>
+                        <span class="ac-arrow">→</span>
+                    </div>
+                    <div class="ac-desc">Tạo hồ sơ và thông tin nhân viên mới</div>
+                </div>
+            </a>
+
+            <a class="action-card" href="{{ url_for('mnew', mod='hopdong') }}">
+                <div class="ac-icon theme-indigo">
+                    {{ icon('file-text') }}
+                </div>
+                <div class="ac-body">
+                    <div class="ac-title">
+                        <span>Thêm hợp đồng</span>
+                        <span class="ac-arrow">→</span>
+                    </div>
+                    <div class="ac-desc">Soạn thảo và lưu trữ hợp đồng lao động</div>
+                </div>
+            </a>
+
+            <a class="action-card" href="{{ url_for('mnew', mod='chamcong') }}">
+                <div class="ac-icon theme-emerald">
+                    {{ icon('check-square') }}
+                </div>
+                <div class="ac-body">
+                    <div class="ac-title">
+                        <span>Ghi nhận chấm công</span>
+                        <span class="ac-arrow">→</span>
+                    </div>
+                    <div class="ac-desc">Theo dõi ngày công và giờ vào/ra</div>
+                </div>
+            </a>
+
+            <a class="action-card" href="{{ url_for('mnew', mod='nghiphep') }}">
+                <div class="ac-icon theme-amber">
+                    {{ icon('calendar') }}
+                </div>
+                <div class="ac-body">
+                    <div class="ac-title">
+                        <span>Thêm nghỉ phép</span>
+                        <span class="ac-arrow">→</span>
+                    </div>
+                    <div class="ac-desc">Đăng ký và duyệt đơn xin nghỉ phép</div>
+                </div>
+            </a>
+
+            <a class="action-card" href="{{ url_for('mnew', mod='tangca') }}">
+                <div class="ac-icon theme-purple">
+                    {{ icon('clock') }}
+                </div>
+                <div class="ac-body">
+                    <div class="ac-title">
+                        <span>Thêm tăng ca</span>
+                        <span class="ac-arrow">→</span>
+                    </div>
+                    <div class="ac-desc">Ghi nhận giờ làm thêm ngoài giờ (OT)</div>
+                </div>
+            </a>
+
+            <a class="action-card" href="{{ url_for('mnew', mod='danhgia') }}">
+                <div class="ac-icon theme-cyan">
+                    {{ icon('award') }}
+                </div>
+                <div class="ac-body">
+                    <div class="ac-title">
+                        <span>Đánh giá KPI</span>
+                        <span class="ac-arrow">→</span>
+                    </div>
+                    <div class="ac-desc">Chấm điểm hiệu suất và nhận xét công việc</div>
+                </div>
+            </a>
+
+
+
+            <a class="action-card" href="{{ url_for('main.feedback_view') }}">
+                <div class="ac-icon theme-blue">
+                    {{ icon('message-square') }}
+                </div>
+                <div class="ac-body">
+                    <div class="ac-title">
+                        <span>Đề xuất & Khiếu nại</span>
+                        <span class="ac-arrow">→</span>
+                    </div>
+                    <div class="ac-desc">Hộp thư đóng góp ý kiến & phản ánh</div>
+                </div>
+            </a>
+
+            <a class="action-card" href="{{ url_for('main.report_hr') }}">
+                <div class="ac-icon theme-emerald">
+                    {{ icon('pie-chart') }}
+                </div>
+                <div class="ac-body">
+                    <div class="ac-title">
+                        <span>Báo cáo nhân sự</span>
+                        <span class="ac-arrow">→</span>
+                    </div>
+                    <div class="ac-desc">Thống kê phòng ban, giới tính & chức vụ</div>
+                </div>
+            </a>
+
+            {% if role == 'Admin' %}
+                <a class="action-card" href="{{ url_for('main.payroll_calc_view') }}">
+                    <div class="ac-icon theme-rose">
+                        {{ icon('dollar-sign') }}
+                    </div>
+                    <div class="ac-body">
+                        <div class="ac-title">
+                            <span>Tính bảng lương tự động</span>
+                            <span class="ac-arrow">→</span>
+                        </div>
+                        <div class="ac-desc">Quét công, OT, bảo hiểm & tính lương</div>
+                    </div>
+                </a>
+
+                <a class="action-card" href="{{ url_for('main.analytics_view') }}">
+                    <div class="ac-icon theme-cyan">
+                        {{ icon('bar-chart-2') }}
+                    </div>
+                    <div class="ac-body">
+                        <div class="ac-title">
+                            <span>Thống kê chi phí lương</span>
+                            <span class="ac-arrow">→</span>
+                        </div>
+                        <div class="ac-desc">Phân tích biến động & ngân sách theo PB</div>
+                    </div>
+                </a>
+
+                <a class="action-card" href="{{ url_for('main.audit_log_view') }}">
+                    <div class="ac-icon theme-indigo">
+                        {{ icon('activity') }}
+                    </div>
+                    <div class="ac-body">
+                        <div class="ac-title">
+                            <span>Nhật ký hoạt động</span>
+                            <span class="ac-arrow">→</span>
+                        </div>
+                        <div class="ac-desc">Theo dõi audit log & bảo mật hệ thống</div>
+                    </div>
+                </a>
+
+                <a class="action-card" href="{{ url_for('mnew', mod='taikhoan') }}">
+                    <div class="ac-icon theme-slate">
+                        {{ icon('key') }}
+                    </div>
+                    <div class="ac-body">
+                        <div class="ac-title">
+                            <span>Thêm tài khoản</span>
+                            <span class="ac-arrow">→</span>
+                        </div>
+                        <div class="ac-desc">Cấp quyền truy cập hệ thống theo vai trò</div>
+                    </div>
+                </a>
+
+                <a class="action-card" href="{{ url_for('main.backup_view') }}">
+                    <div class="ac-icon theme-slate">
+                        {{ icon('database') }}
+                    </div>
+                    <div class="ac-body">
+                        <div class="ac-title">
+                            <span>Sao lưu dữ liệu</span>
+                            <span class="ac-arrow">→</span>
+                        </div>
+                        <div class="ac-desc">Tạo bản backup SQL Server an toàn</div>
+                    </div>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

@@ -64,15 +64,12 @@
                     </div>
 
                     <div style="display:flex;align-items:center;gap:12px">
-                        <!-- Chuyển Dark / Light Mode -->
-                        <button type="button" id="themeToggleBtn" class="ib theme-btn" onclick="toggleTheme()" title="Chuyển chế độ Giao diện Sáng / Tối">
-                            <span id="themeIcon">🌙</span>
-                        </button>
-
-                        <!-- Chuông Thông báo có chấm đỏ -->
+                        <!-- Chuông Thông báo có số badge chưa đọc -->
                         <a href="{{ url_for('main.announcements') }}" class="ib notif-bell" title="Thông báo hệ thống">
                             {{ icon('bell') }}
-                            {% if total_badge_count and total_badge_count > 0 %}
+                            {% if badges and badges.get('Thông báo') and badges.get('Thông báo') > 0 %}
+                                <span class="bell-badge">{{ badges.get('Thông báo') }}</span>
+                            {% elif total_badge_count and total_badge_count > 0 %}
                                 <span class="bell-dot-pulse"></span>
                             {% endif %}
                         </a>
@@ -328,25 +325,11 @@
                 return html;
             }
 
-            // ================= DARK / LIGHT THEME CONTROLLER =================
-            (function initTheme() {
-                var savedTheme = localStorage.getItem('hrm_theme');
-                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                var theme = savedTheme || (prefersDark ? 'dark' : 'light');
-                if (theme === 'dark') {
-                    document.documentElement.classList.add('dark');
-                    var icon = document.getElementById('themeIcon');
-                    if (icon) icon.textContent = '☀️';
-                }
-            })();
-
-            function toggleTheme() {
-                var isDark = document.documentElement.classList.toggle('dark');
-                var newTheme = isDark ? 'dark' : 'light';
-                localStorage.setItem('hrm_theme', newTheme);
-                var icon = document.getElementById('themeIcon');
-                if (icon) icon.textContent = isDark ? '☀️' : '🌙';
-            }
+            // Đảm bảo luôn sử dụng giao diện chuẩn (Light Mode)
+            try {
+                document.documentElement.classList.remove('dark');
+                localStorage.removeItem('hrm_theme');
+            } catch(e) {}
 
             // ================= DASHBOARD COUNT-UP ANIMATION =================
             (function initCountUp() {
@@ -452,9 +435,6 @@
                     </a>
                     <a href="{{ url_for('main.announcements') }}" class="cmd-item" data-cmd="thong bao noi bo">
                         <span>📢</span> <span>Thông báo nội bộ</span>
-                    </a>
-                    <a href="{{ url_for('main.training_view') }}" class="cmd-item" data-cmd="khoa dao tao hoc tap">
-                        <span>🎓</span> <span>Khóa đào tạo</span>
                     </a>
                     <a href="{{ url_for('auth.change_pw') }}" class="cmd-item" data-cmd="doi mat khau bao mat">
                         <span>🔒</span> <span>Đổi mật khẩu</span>

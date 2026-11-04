@@ -19,15 +19,15 @@ def login():
 
         auth_table = None
         if role == AD:
-            row = db_conn.execute("SELECT * FROM TaiKhoan WHERE TenDN=? AND LoaiTK='Admin'", (user,)).fetchone()
+            row = db_conn.execute("SELECT * FROM TaiKhoan WHERE (TenDN=? OR LOWER(TenDN)=LOWER(?)) AND LoaiTK='Admin'", (user, user)).fetchone()
             if row:
                 auth_table = 'TaiKhoan'
             else:
-                row = db_conn.execute('SELECT * FROM TaiKhoanAdmin WHERE TenDN=?', (user,)).fetchone()
+                row = db_conn.execute('SELECT * FROM TaiKhoanAdmin WHERE TenDN=? OR LOWER(TenDN)=LOWER(?)', (user, user)).fetchone()
                 if row:
                     auth_table = 'TaiKhoanAdmin'
         elif role in (NV, QL):
-            row = db_conn.execute('SELECT * FROM TaiKhoan WHERE TenDN=? AND LoaiTK=?', (user, role)).fetchone()
+            row = db_conn.execute('SELECT * FROM TaiKhoan WHERE (TenDN=? OR LOWER(TenDN)=LOWER(?)) AND LoaiTK=?', (user, user, role)).fetchone()
             auth_table = 'TaiKhoan'
         else:
             row = None
@@ -47,6 +47,7 @@ def login():
                 uid=row['MaTK'],
                 role=role,
                 mnv=row['MaNV'] if role != AD else None,
+                user=user,
                 name=user,
                 username=user,
                 auth_table=auth_table

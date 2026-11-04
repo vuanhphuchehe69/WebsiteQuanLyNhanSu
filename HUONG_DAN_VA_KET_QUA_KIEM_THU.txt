@@ -45,7 +45,7 @@ PHẦN I: TỔNG QUAN VỀ CHIẾN LƯỢC VÀ PHƯƠNG PHÁP KIỂM THỬ
 - Ngôn ngữ & Framework: Python 3.10+ / Flask Test Client (Werkzeug).
 - Cơ sở dữ liệu: Microsoft SQL Server (`.\SQLEXPRESS`), Database: `QLNhanSu_Nhom9` (kết nối qua thư viện `pyodbc`).
 - Tự động hóa: File kịch bản kiểm thử độc lập `ss/test_app.py`.
-- Khối dữ liệu kiểm thử: 50 nhân viên (`NV001` - `NV050`), 8 phòng ban (`PB01` - `PB08`), 16 chức vụ, 50 hợp đồng, 100 kỳ lương, 62 bản ghi chấm công.
+- Khối dữ liệu kiểm thử: 13 nhân viên (`NV001` - `NV013`), 4 phòng ban (`PB01` - `PB04`), 13 chức vụ, 13 hợp đồng, 15 tài khoản đăng nhập, dữ liệu chấm công chi tiết.
 
 1.3. CÁC CẤP ĐỘ VÀ PHƯƠNG PHÁP KIỂM THỬ
 1. Unit Testing / Integration Testing (Kiểm thử tích hợp tự động):
@@ -177,7 +177,7 @@ Vai trò: Toàn quyền Hệ thống
 
 [Test AD-01] Tổng quan Điều hành & Cảnh báo Nguy cơ Nghỉ việc (Flight Risk):
   1. Đăng nhập với tài khoản admin.
-  2. Trang chủ hiển thị: Tổng nhân sự (50), Quỹ lương tháng, Tỷ lệ chuyên cần.
+  2. Trang chủ hiển thị: Tổng nhân sự (13), Quỹ lương tháng, Tỷ lệ chuyên cần.
   3. Kiểm tra thẻ "Cảnh báo Nguy cơ Nghỉ việc (Flight Risk)": Hệ thống tự động liệt kê các nhân sự có dấu hiệu đi muộn tăng cao, điểm KPI giảm hoặc lâu không tăng lương.
 
 [Test AD-02] Biểu đồ Phân tích Nâng cao (Analytics Dashboard):
@@ -189,7 +189,7 @@ Vai trò: Toàn quyền Hệ thống
 
 [Test AD-03] Quản lý Tài khoản & Phân quyền (Không bị lỗi 500):
   1. Truy cập menu "Tài khoản" (/m/taikhoan).
-  2. Kiểm tra hiển thị danh sách 51 tài khoản người dùng, vai trò tương ứng.
+  2. Kiểm tra hiển thị danh sách 15 tài khoản người dùng, vai trò tương ứng.
   3. Thử tạo tài khoản mới, phân quyền và khóa/mở khóa tài khoản.
 
 [Test AD-04] Duyệt Đề xuất Khen thưởng & Tăng lương:
@@ -199,7 +199,7 @@ Vai trò: Toàn quyền Hệ thống
 [Test AD-05] Chốt công Tháng & Tính Lương Tự động:
   1. Truy cập "Chốt công tháng" (/admin/attendance/close) -> Chọn tháng hiện tại -> Bấm "Chốt công".
   2. Truy cập "Tính lương tự động" (/admin/payroll/calculate) -> Bấm "Thực hiện tính lương".
-  3. Kiểm tra kết quả: Hệ thống tự động tính lương cho toàn bộ 50 nhân viên dựa trên:
+  3. Kiểm tra kết quả: Hệ thống tự động tính lương cho toàn bộ 13 nhân sự dựa trên:
      Lương thực lĩnh = Lương cơ bản + Phụ cấp + Thưởng - Khấu trừ - Tạm ứng.
   4. Đảm bảo lương cứng (LuongCung) giữ nguyên số tròn, không bị lỗi số thập phân.
 
@@ -332,7 +332,7 @@ PHẦN V: KẾT LUẬN & ĐÁNH GIÁ CHẤT LƯỢNG HỆ THỐNG
 1. Đánh giá chung:
    - Hệ thống Quản lý Nhân sự Doanh nghiệp (HRM Enterprise) phiên bản 2.5 đã hoàn thành toàn diện 100% các yêu cầu nghiệp vụ theo 3 Actor.
    - Bộ mã nguồn đã vượt qua toàn bộ 54/54 kịch bản kiểm thử tự động, không ghi nhận bất kỳ cảnh báo lỗi nghiêm trọng nào.
-   - Cơ sở dữ liệu hoạt động ổn định với 50 nhân viên trải dài trên 8 phòng ban chức năng, dữ liệu lương và chấm công thực tế.
+   - Cơ sở dữ liệu hoạt động ổn định với 13 nhân viên trải dài trên 4 phòng ban chức năng, dữ liệu lương và chấm công thực tế.
 
 2. Tiêu chí sẵn sàng bàn giao (Readiness for Production):
    - Tính tương thích: Chạy mượt mà trên nền tảng Windows và Microsoft SQL Server.

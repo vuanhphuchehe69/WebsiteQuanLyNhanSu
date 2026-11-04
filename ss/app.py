@@ -1,4 +1,4 @@
-"""Phần mềm quản lý nhân sự - Nhóm 9 (Flask + SQLite).
+"""Phần mềm quản lý nhân sự - Nhóm 2(Flask + SQLite).
 Khởi chạy ứng dụng: python app.py -> http://127.0.0.1:5000
 """
 import sys
@@ -99,37 +99,115 @@ def create_app():
             from database import get_db
             try:
                 db_conn = get_db()
-                # 1. Thông báo nội bộ
-                tb_count = db_conn.execute("SELECT COUNT(*) FROM ThongBao").fetchone()[0]
-                if tb_count > 0:
-                    badges['Thông báo'] = tb_count
-                    total_badge_count += 1
+                user = session.get('username') or session.get('user', '')
+                mnv = session.get('mnv', '')
+
+                # Đảm bảo bảng ThongBaoDaDoc tồn tại
+                try:
+                    is_mssql = getattr(db_conn, 'is_mssql', False)
+                    if is_mssql:
+                        db_conn.execute("""
+                            IF OBJECT_ID(N'ThongBaoDaDoc', N'U') IS NULL
+                            CREATE TABLE ThongBaoDaDoc(
+                                MaTB INT NOT NULL,
+                                TenDN NVARCHAR(100) NOT NULL,
+                                ThoiGianDoc NVARCHAR(25) NOT NULL,
+                                CONSTRAINT PK_ThongBaoDaDoc PRIMARY KEY (MaTB, TenDN)
+                            );
+                        """)
+                    else:
+                        db_conn.execute("""
+                            CREATE TABLE IF NOT EXISTS ThongBaoDaDoc(
+                                MaTB INTEGER NOT NULL,
+                                TenDN TEXT NOT NULL,
+                                ThoiGianDoc TEXT NOT NULL,
+                                PRIMARY KEY (MaTB, TenDN)
+                            );
+                        """)
+                    db_conn.commit()
+                except Exception:
+                    pass
+
+                # 1. Thông báo nội bộ: Đếm chính xác số thông báo CHƯA ĐỌC của tài khoản hiện tại
+                mapb = None
+                if mnv:
+                    emp_pb = db_conn.execute(
+                        "SELECT c.MaPB FROM NhanVien n LEFT JOIN ChucVu c ON n.MaCV=c.MaCV WHERE n.MaNV=?",
+                        (mnv,)
+                    ).fetchone()
+                    mapb = emp_pb['MaPB'] if emp_pb else None
+
+                if role == 'Admin':
+                    unread_tb = db_conn.execute("""
+                        SELECT COUNT(*) FROM ThongBao x
+                        WHERE x.MaTB NOT IN (SELECT d.MaTB FROM ThongBaoDaDoc d WHERE d.TenDN=?)
+                    """, (user,)).fetchone()[0]
+                else:
+                    unread_tb = db_conn.execute("""
+                        SELECT COUNT(*) FROM ThongBao x
+                        WHERE (x.PhamVi=N'Toàn công ty' OR (x.PhamVi=N'Theo phòng ban' AND x.MaPB=?))
+                          AND x.MaTB NOT IN (SELECT d.MaTB FROM ThongBaoDaDoc d WHERE d.TenDN=?)
+                    """, (mapb, user)).fetchone()[0]
+
+                if unread_tb > 0:
+                    badges['Thông báo'] = unread_tb
+                    total_badge_count += unread_tb
 
                 # 2. Đơn từ chờ duyệt cho Quản lý & Admin
-                if role in ('QuanLy', 'Admin'):
+                if role == 'QuanLy' and mapb:
+                    # Quản lý: Chỉ đếm các đơn của nhân viên thuộc đúng phòng ban mình quản lý
+                    np_pend = db_conn.execute("""
+                        SELECT COUNT(*) FROM NghiPhep x
+                        JOIN NhanVien n ON x.MaNV=n.MaNV
+                        JOIN ChucVu c ON n.MaCV=c.MaCV
+                        WHERE c.MaPB=? AND x.TrangThai=N'Chờ duyệt'
+                    """, (mapb,)).fetchone()[0]
+
+                    ot_pend = db_conn.execute("""
+                        SELECT COUNT(*) FROM TangCa x
+                        JOIN NhanVien n ON x.MaNV=n.MaNV
+                        JOIN ChucVu c ON n.MaCV=c.MaCV
+                        WHERE c.MaPB=? AND x.TrangThai=N'Chờ duyệt'
+                    """, (mapb,)).fetchone()[0]
+
+                    tu_pend = db_conn.execute("""
+                        SELECT COUNT(*) FROM TamUng x
+                        JOIN NhanVien n ON x.MaNV=n.MaNV
+                        JOIN ChucVu c ON n.MaCV=c.MaCV
+                        WHERE c.MaPB=? AND x.TrangThai=N'Chờ duyệt'
+                    """, (mapb,)).fetchone()[0]
+
+                    dx_pend = db_conn.execute("""
+                        SELECT COUNT(*) FROM DeXuatKhieuNai x
+                        JOIN NhanVien n ON x.MaNV=n.MaNV
+                        JOIN ChucVu c ON n.MaCV=c.MaCV
+                        WHERE c.MaPB=? AND x.TrangThai=N'Chờ xử lý'
+                    """, (mapb,)).fetchone()[0]
+                elif role == 'Admin':
+                    # Admin: Đếm toàn bộ đơn chờ duyệt của toàn công ty
                     np_pend = db_conn.execute("SELECT COUNT(*) FROM NghiPhep WHERE TrangThai=N'Chờ duyệt'").fetchone()[0]
-                    if np_pend > 0:
-                        badges['Nghỉ phép'] = np_pend
-                        total_badge_count += np_pend
-
                     ot_pend = db_conn.execute("SELECT COUNT(*) FROM TangCa WHERE TrangThai=N'Chờ duyệt'").fetchone()[0]
-                    if ot_pend > 0:
-                        badges['Tăng ca'] = ot_pend
-                        total_badge_count += ot_pend
-
                     tu_pend = db_conn.execute("SELECT COUNT(*) FROM TamUng WHERE TrangThai=N'Chờ duyệt'").fetchone()[0]
-                    if tu_pend > 0:
-                        badges['Tạm ứng lương'] = tu_pend
-                        total_badge_count += tu_pend
-
                     dx_pend = db_conn.execute("SELECT COUNT(*) FROM DeXuatKhieuNai WHERE TrangThai=N'Chờ xử lý'").fetchone()[0]
-                    if dx_pend > 0:
-                        badges['Quản lý đề xuất & khiếu nại'] = dx_pend
-                        total_badge_count += dx_pend
-                elif role == 'NhanVien':
-                    kdt_open = db_conn.execute("SELECT COUNT(*) FROM KhoaDaoTao WHERE TrangThai=N'Sắp diễn ra'").fetchone()[0]
-                    if kdt_open > 0:
-                        badges['Khóa đào tạo'] = kdt_open
+                else:
+                    np_pend = ot_pend = tu_pend = dx_pend = 0
+
+                if np_pend > 0:
+                    badges['Nghỉ phép'] = np_pend
+                    total_badge_count += np_pend
+
+                if ot_pend > 0:
+                    badges['Tăng ca'] = ot_pend
+                    total_badge_count += ot_pend
+
+                if tu_pend > 0:
+                    badges['Tạm ứng lương'] = tu_pend
+                    total_badge_count += tu_pend
+
+                if dx_pend > 0:
+                    badges['Quản lý đề xuất & khiếu nại'] = dx_pend
+                    total_badge_count += dx_pend
+
             except Exception:
                 pass
 
@@ -186,6 +264,15 @@ def create_app():
 
     # Register blueprints
     register_blueprints(app)
+
+    # Ensure all department heads and staff accounts exist on app startup
+    with app.app_context():
+        try:
+            from database import get_db, ensure_department_heads_and_staff
+            db_conn = get_db()
+            ensure_department_heads_and_staff(db_conn)
+        except Exception:
+            pass
 
     return app
 

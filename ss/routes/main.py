@@ -2185,7 +2185,7 @@ def backup_export():
     backup_data = {
         'database': MSSQL_DATABASE,
         'exported_at': datetime.now().isoformat(),
-        'system': 'Quản lý nhân sự - Nhóm 9',
+        'system': 'Quản lý nhân sự - Nhóm 2',
         'tables': {}
     }
 

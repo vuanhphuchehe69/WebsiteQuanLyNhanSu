@@ -1,6 +1,3 @@
-"""Phần mềm quản lý nhân sự - Nhóm 2(Flask + SQLite).
-Khởi chạy ứng dụng: python app.py -> http://127.0.0.1:5000
-"""
 import sys
 import secrets
 from flask import Flask, session, render_template, url_for

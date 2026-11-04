@@ -1,7 +1,7 @@
 ========================================================================================
     HƯỚNG DẪN ĐẨY GIT, CẤU TRÚC THƯ MỤC & VẬN HÀNH HỆ THỐNG QUẢN LÝ NHÂN SỰ
 ========================================================================================
-Đơn vị phát triển : Nhóm 9 - Dự án Website Quản Lý Nhân Sự (HRM System)
+Đơn vị phát triển : Nhóm 2 - Dự án Website Quản Lý Nhân Sự (HRM System)
 Phiên bản         : 2.5 SaaS Enterprise
 Nền tảng          : Python 3.13, Flask 3.1, Microsoft SQL Server (MSSQL), SQLite
 Ngày hoàn thiện   : 31/10/2026

@@ -35,7 +35,7 @@ def create_document():
         # Footer
         footer_para = section.footer.paragraphs[0]
         footer_para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-        f_run = footer_para.add_run("Tài liệu Bàn giao HRM System - Nhóm 9 • Trang ")
+        f_run = footer_para.add_run("Tài liệu Bàn giao HRM System - Nhóm 2 • Trang ")
         f_run.font.name = "Arial"
         f_run.font.size = Pt(9)
         f_run.font.color.rgb = RGBColor(148, 163, 184)
@@ -86,7 +86,7 @@ def create_document():
     meta_tbl = doc.add_table(rows=4, cols=2)
     meta_tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
     meta_data = [
-        ("Đơn vị thực hiện:", "Nhóm 9 - Dự án Phát triển Ứng dụng Web Quản lý Nhân sự"),
+        ("Đơn vị thực hiện:", "Nhóm 2 - Dự án Phát triển Ứng dụng Web Quản lý Nhân sự"),
         ("Nền tảng công nghệ:", "Python 3.13, Flask Framework, Microsoft SQL Server (MSSQL), SQLite"),
         ("Ngày lập tài liệu:", "31/10/2026 (Phiên bản nghiệm thu & hoàn thiện)"),
         ("Trạng thái kiểm thử:", "Đạt 54/54 Kịch bản Kiểm thử Tự động (100% Pass Test Suite)")
@@ -488,7 +488,7 @@ def create_document():
 
     p_s2 = sign_c2.paragraphs[0]
     p_s2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = p_s2.add_run("ĐẠI DIỆN ĐỘI NGŨ PHÁT TRIỂN (NHÓM 9)\n")
+    r = p_s2.add_run("ĐẠI DIỆN ĐỘI NGŨ PHÁT TRIỂN (NHÓM 2)\n")
     r.font.bold = True
     r.font.size = Pt(11)
     p_s2.add_run("(Ký, ghi rõ họ tên)").italic = True

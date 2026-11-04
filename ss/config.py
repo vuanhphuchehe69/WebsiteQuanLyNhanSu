@@ -1,4 +1,3 @@
-"""Configuration and constants for the Human Resource Management application."""
 import os
 import secrets
 

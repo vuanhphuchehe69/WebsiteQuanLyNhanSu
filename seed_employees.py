@@ -5,7 +5,6 @@
 - 13 Nhân viên chuẩn (NV001 - NV013) gồm 4 Trưởng phòng và các chuyên viên phòng ban
 - 15 Tài khoản đăng nhập: tên đăng nhập là mã nhân viên (nv001, nv006, nv007, nv008,...) mật khẩu 123456
 - Toàn bộ nghiệp vụ: Hợp đồng, Bảng lương, Chấm công, Nghỉ phép, Tăng ca, Tạm ứng, KPI, Bằng cấp, Đề xuất, Tuyển dụng, Thông báo
-- Tương thích 100% với cả SQLite và Microsoft SQL Server (SSMS).
 """
 import os
 import sys

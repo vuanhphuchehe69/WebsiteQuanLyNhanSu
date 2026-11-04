@@ -1,4 +1,3 @@
-"""Database management supporting Microsoft SQL Server (MSSQL) with SQLite fallback."""
 import sqlite3
 from datetime import date, datetime
 from flask import g

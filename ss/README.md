@@ -1,4 +1,4 @@
-# Phần mềm quản lý nhân sự – Nhóm 9
+# Phần mềm quản lý nhân sự – Nhóm 2
 
 Flask + Microsoft SQL Server (MSSQL), xây dựng theo phân tích nghiệp vụ và phân quyền đầy đủ cho 3 actors: **Nhân viên**, **Quản lý**, và **Admin**.
 
@@ -45,6 +45,7 @@ ss/
 ## Các tính năng hệ thống theo 3 Actors
 
 ### 1. Actor Nhân viên
+
 - **Cập nhật thông tin cá nhân**: Cập nhật số điện thoại, email, địa chỉ liên hệ, ngày sinh, giới tính tại `/me/profile/edit`.
 - **Xem thông tin công việc**: Xem chi tiết chức vụ, phòng ban trực thuộc, người quản lý trực tiếp, ngày vào công ty, loại hợp đồng và mức lương cơ bản hiện tại.
 - **Xem lịch sử chấm công & ngày công**: Theo dõi chi tiết giờ vào, giờ ra, trạng thái chấm công (Đúng giờ, Đi muộn, Về sớm) và tổng số ngày công tích lũy trong tháng.
@@ -54,6 +55,7 @@ ss/
 - **Xem bảng lương, hợp đồng, tăng ca**: Lịch sử chi tiết bảng lương thực lĩnh, tăng ca và hợp đồng lao động.
 
 ### 2. Actor Quản lý
+
 - **Theo dõi chấm công & tình hình đi làm**: Xem danh sách chấm công nhân viên phòng ban, tìm kiếm, lọc theo ngày/tháng, trạng thái đi làm tại `/m/chamcong`.
 - **Chấm công nhanh hôm nay**: Nút thao tác nhanh tự động ghi nhận chấm công đúng giờ cho nhân viên chưa chấm công trong ngày.
 - **Đánh giá hiệu suất làm việc (KPI)**: Đánh giá nhân viên theo tháng với thang điểm KPI (0 - 100), xếp loại (*Xuất sắc, Tốt, Khá, Trung bình, Yếu*) và ghi nhận xét tại `/m/danhgia`.
@@ -62,6 +64,7 @@ ss/
 - **Duyệt đơn nghỉ phép**: Phê duyệt hoặc từ chối đơn nghỉ phép của nhân viên trực tiếp trên danh sách `/m/nghiphep`.
 
 ### 3. Actor Admin
+
 - **Quản lý chấm công toàn diện**: Xem, tạo mới, chỉnh sửa, xóa bản ghi chấm công và chấm công nhanh cho toàn thể nhân viên.
 - **Thống kê & Báo cáo nhân sự**: Báo cáo tổng thể toàn công ty hoặc lọc chi tiết theo từng phòng ban, xuất file Excel/CSV.
 - **Quản lý thông báo**: Quản lý toàn bộ thông báo hệ thống, tạo thông báo mới, chỉnh sửa hoặc xóa thông báo.
@@ -74,7 +77,9 @@ ss/
 ---
 
 ## Cấu hình Cơ sở dữ liệu thật (Microsoft SQL Server)
+
 Mặc định hệ thống kết nối tới SQL Server cục bộ trên máy tính của bạn:
+
 - **Server:** `.\SQLEXPRESS` (hoặc `localhost\SQLEXPRESS`)
 - **Database:** `QLNhanSuNhom2` (tự động tạo database, bảng và di chuyển cột nếu chưa có)
 - **Xác thực:** Windows Authentication (`Trusted_Connection=yes`)
@@ -83,19 +88,22 @@ Mặc định hệ thống kết nối tới SQL Server cục bộ trên máy t�
 *(Bạn có thể tùy chỉnh các thông số này trong file `config.py` nếu sử dụng tài khoản SQL Server hoặc máy chủ khác).*
 
 ## Chạy ứng dụng
+
 ```bash
 pip install -r requirements.txt
 py app.py          # mở http://127.0.0.1:5000
 ```
 
 Chạy kiểm thử tự động toàn bộ 26 kịch bản:
+
 ```bash
 py test_app.py
 ```
 
 ## Tài khoản mẫu
-| Actor | Đăng nhập với tư cách | Tên đăng nhập | Mật khẩu |
-|---|---|---|---|
-| Admin | Admin | admin | admin123 |
-| Quản lý | Quản lý | ql001 | 123456 |
-| Nhân viên | Nhân viên | nv002 … nv005 | 123456 |
+
+| Actor       | Đăng nhập với tư cách | Tên đăng nhập | Mật khẩu |
+| ----------- | --------------------------- | ----------------- | ---------- |
+| Admin       | Admin                       | admin             | admin123   |
+| Quản lý   | Quản lý                   | ql001             | 123456     |
+| Nhân viên | Nhân viên                 | nv002 … nv005    | 123456     |

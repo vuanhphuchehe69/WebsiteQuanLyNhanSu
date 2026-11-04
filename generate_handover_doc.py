@@ -229,7 +229,7 @@ def create_document():
     steps = [
         ("Bước 1: Mở Terminal / PowerShell", "Điều hướng vào thư mục dự án: cd d:\\Ghost\\WebsiteQuanLyNhanSu"),
         ("Bước 2: Cài đặt các thư viện cần thiết", "Chạy lệnh: pip install -r requirements.txt (hoặc: pip install flask pyodbc python-docx)"),
-        ("Bước 3: Cấu hình Cơ sở dữ liệu", "Hệ thống mặc định kết nối .\\SQLEXPRESS, database QLNhanSu_Nhom9. Nếu muốn đổi máy chủ, cấu hình biến môi trường MSSQL_SERVER hoặc ứng dụng sẽ tự động fallback sang SQLite nếu không có MSSQL."),
+        ("Bước 3: Cấu hình Cơ sở dữ liệu", "Hệ thống mặc định kết nối .\\SQLEXPRESS, database QLNhanSuNhom2. Nếu muốn đổi máy chủ, cấu hình biến môi trường MSSQL_SERVER hoặc ứng dụng sẽ tự động fallback sang SQLite nếu không có MSSQL."),
         ("Bước 4: Khởi động ứng dụng", "Chạy lệnh: python ss/app.py\nHệ thống sẽ hiển thị: Khởi động hệ thống Quản lý nhân sự tại: http://127.0.0.1:5000"),
         ("Bước 5: Truy cập hệ thống", "Mở trình duyệt web và truy cập địa chỉ: http://127.0.0.1:5000")
     ]

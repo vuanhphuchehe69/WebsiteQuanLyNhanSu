@@ -735,7 +735,7 @@ def init_db():
     db = None
     if DB_TYPE == 'mssql' and PYODBC_AVAILABLE and not _mssql_failed:
         try:
-            # Step 1: Ensure QLNhanSu_Nhom9 database exists on MSSQL server
+            # Step 1: Ensure QLNhanSuNhom2 database exists on MSSQL server
             master_conn = pyodbc.connect(build_mssql_connection_string(database='master'), autocommit=True, timeout=2)
             master_cur = master_conn.cursor()
             master_cur.execute(f"IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'{MSSQL_DATABASE}') CREATE DATABASE [{MSSQL_DATABASE}]")

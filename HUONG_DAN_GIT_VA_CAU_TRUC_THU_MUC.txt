@@ -27,7 +27,7 @@ bạn thực hiện tuần tự theo các bước dưới đây:
 BƯỚC 1: TẠO REPOSITORY TRÊN GITHUB / GITLAB
 1. Đăng nhập vào tài khoản GitHub (https://github.com) hoặc GitLab (https://gitlab.com).
 2. Bấm vào nút "New" (hoặc dấu "+") để tạo một Repository mới.
-3. Đặt tên Repository, ví dụ: "WebsiteQuanLyNhanSu" hoặc "HRM_Nhom9".
+3. Đặt tên Repository, ví dụ: "WebsiteQuanLyNhanSu" hoặc "HRM_Nhom2".
 4. Chọn chế độ Public hoặc Private tùy nhu cầu.
 5. LƯU Ý QUAN TRỌNG: KHÔNG tích chọn "Add a README file", "Add .gitignore" hay "Choose a license"
    (vì dự án trên máy bạn đã có sẵn mã nguồn đầy đủ, nếu tích chọn sẽ gây xung đột lịch sử commit).

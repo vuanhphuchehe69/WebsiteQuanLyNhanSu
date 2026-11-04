@@ -43,7 +43,7 @@ PHẦN I: TỔNG QUAN VỀ CHIẾN LƯỢC VÀ PHƯƠNG PHÁP KIỂM THỬ
 1.2. MÔI TRƯỜNG VÀ CÔNG CỤ KIỂM THỬ
 - Môi trường chạy: Hệ điều hành Windows (PowerShell / Command Prompt).
 - Ngôn ngữ & Framework: Python 3.10+ / Flask Test Client (Werkzeug).
-- Cơ sở dữ liệu: Microsoft SQL Server (`.\SQLEXPRESS`), Database: `QLNhanSu_Nhom9` (kết nối qua thư viện `pyodbc`).
+- Cơ sở dữ liệu: Microsoft SQL Server (`.\SQLEXPRESS`), Database: `QLNhanSuNhom2` (kết nối qua thư viện `pyodbc`).
 - Tự động hóa: File kịch bản kiểm thử độc lập `ss/test_app.py`.
 - Khối dữ liệu kiểm thử: 13 nhân viên (`NV001` - `NV013`), 4 phòng ban (`PB01` - `PB04`), 13 chức vụ, 13 hợp đồng, 15 tài khoản đăng nhập, dữ liệu chấm công chi tiết.
 

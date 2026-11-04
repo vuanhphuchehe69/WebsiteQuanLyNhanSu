@@ -26,7 +26,7 @@ Cấu hình Cơ sở dữ liệu thật (Microsoft SQL Server)
 Mặc định hệ thống kết nối tới SQL Server cục bộ trên máy tính của bạn:
 
 Server: .\SQLEXPRESS (hoặc localhost\SQLEXPRESS)
-Database: QLNhanSu_Nhom9 (tự động tạo database, bảng và di chuyển cột nếu chưa có)
+Database: QLNhanSuNhom2 (tự động tạo database, bảng và di chuyển cột nếu chưa có)
 Xác thực: Windows Authentication (Trusted_Connection=yes)
 Driver: ODBC Driver 18 for SQL Server
 (Bạn có thể tùy chỉnh các thông số này trong file config.py nếu sử dụng tài khoản SQL Server hoặc máy chủ khác).

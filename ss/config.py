@@ -4,8 +4,8 @@ import secrets
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Database Configuration (Mặc định SQLite theo đồ án Nhóm 2, có hỗ trợ MSSQL qua biến môi trường)
-DB_TYPE = os.environ.get('DB_TYPE', 'sqlite')
+# Database Configuration (Mặc định kết nối MSSQL / SSMS, tự động tạo CSDL QLNhanSuNhom2)
+DB_TYPE = os.environ.get('DB_TYPE', 'mssql')
 MSSQL_SERVER = os.environ.get('MSSQL_SERVER', r'.\SQLEXPRESS')
 MSSQL_DATABASE = os.environ.get('MSSQL_DATABASE', 'QLNhanSuNhom2')
 MSSQL_DRIVER = os.environ.get('MSSQL_DRIVER', 'ODBC Driver 18 for SQL Server')

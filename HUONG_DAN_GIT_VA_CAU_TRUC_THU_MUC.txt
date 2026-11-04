@@ -130,9 +130,8 @@ WebsiteQuanLyNhanSu/
 │           ├── avatars/                 # Ảnh thẻ chân dung 3x4 của nhân viên (avatar_NV001.svg...)
 │           └── documents/               # File scan bằng cấp, chứng chỉ, hợp đồng đính kèm
 │
-├── seed_employees.py                    # [Kịch bản khởi tạo chuẩn] Script tự động tạo 13 nhân viên, 4 phòng ban,
-│                                        # 13 chức vụ, 13 hợp đồng, bảng lương, chấm công và khen thưởng
-├── seed_all_employee_records.py         # [Kịch bản nạp giao dịch] Nạp chấm công, nghỉ phép, tăng ca, KPI...
+├── seed_employees.py                    # [Kịch bản khởi tạo duy nhất] Khởi tạo trọn vẹn 13 nhân viên, 4 phòng ban,
+│                                        # 13 chức vụ, 15 tài khoản, hợp đồng, chấm công, bảng lương, KPI và đơn từ
 │
 ├── generate_handover_doc.py             # Script tạo file Word bàn giao chính thức (.docx)
 ├── TAI_LIEU_BAN_GIAO_HE_THONG_QUAN_LY_NHAN_SU.docx # Tài liệu Bàn giao Kỹ thuật Word hoàn chỉnh (~48KB)

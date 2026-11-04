@@ -132,7 +132,6 @@ WebsiteQuanLyNhanSu/
 │
 ├── seed_employees.py                    # [Kịch bản khởi tạo chuẩn] Script tự động tạo 13 nhân viên, 4 phòng ban,
 │                                        # 13 chức vụ, 13 hợp đồng, bảng lương, chấm công và khen thưởng
-├── seed_50_employees.py                 # Wrapper tương thích ngược chuyển tiếp tới seed_employees.py
 ├── seed_all_employee_records.py         # [Kịch bản nạp giao dịch] Nạp chấm công, nghỉ phép, tăng ca, KPI...
 │
 ├── generate_handover_doc.py             # Script tạo file Word bàn giao chính thức (.docx)

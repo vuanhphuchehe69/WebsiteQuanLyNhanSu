@@ -1,136 +1,67 @@
 {% extends 'base.html' %}
 {% block body %}
-    <div class="login-wrapper">
-    
-        <section class="login-hero">
-            <div class="hero-mesh"></div>
-            
-            <div class="hero-top">
-                <div class="hero-brand">
-                    <span class="hero-logo-box">
-                        <svg class="i" viewBox="0 0 24 24" style="width:24px;height:24px;stroke:#fff"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    </span>
-                    <div>
-                        <span class="hero-brand-title">Nhóm 2</span>
-                        <span class="hero-brand-sub">Hệ thống Quản lý Nhân sự </span>
-                    </div>
+    <div class="login-container-clean">
+        <div class="login-card-antd">
+            <!-- Header Brand -->
+            <div class="login-card-header">
+                <div class="brand-logo-antd">
+                    <svg class="i" viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#fff"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                 </div>
-                <div class="hero-tag">
-                    <span class="pulse-dot"></span> Đại học Công Nghiệp Hà Nội
+                <div>
+                    <h2 class="login-title-antd">Quản lý nhân sự</h2>
+                    <p class="login-sub-antd">Đăng nhập hệ thống quản lý nội bộ</p>
                 </div>
             </div>
 
-            <div class="hero-center">
-                <h1 class="hero-headline">
-                   <span class="hero-gradient-text">Quản trị nhân lực thông minh,tối ưu & bứt phá hiệu suất.</span>
-                </h1>
-                <p class="hero-description">
-                    Nền tảng quản lý nhân sự chấm công thời gian thực, tự động hóa bảng lương và phân tích dữ liệu chuyên sâu.
-                </p>
+            <!-- Form -->
+            <form method="post" id="loginForm" autocomplete="on">
+                <input type="hidden" name="_csrf" value="{{ csrf }}">
 
-                <div class="hero-feature-grid">
-                    <div class="hero-feat-card">
-                        <div class="feat-icon theme-indigo">
-                            {{ icon('users') }}
-                        </div>
-                        <div>
-                            
-                            <p>Quản lý hợp đồng, bằng cấp và định danh ảnh thẻ chuẩn</p>
-                        </div>
-                    </div>
-                    <div class="hero-feat-card">
-                        <div class="feat-icon theme-emerald">
-                            {{ icon('check-square') }}
-                        </div>
-                        <div>
-                            <b>Chấm công & Điểm danh</b>
-                            <p>Điểm danh vào/ra tức thì, giải trình công và theo dõi OT</p>
-                        </div>
-                    </div>
-                    <div class="hero-feat-card">
-                        <div class="feat-icon theme-cyan">
-                            {{ icon('pie-chart') }}
-                        </div>
-                        <div>
-                            <b>Báo cáo & Thống kê</b>
-                            <p>Biểu đồ cơ cấu phòng ban, chấm công và biến động nhân sự</p>
-                        </div>
-                    </div>
-                    <div class="hero-feat-card">
-                        <div class="feat-icon theme-purple">
-                            {{ icon('zap') }}
-                        </div>
-                        <div>
-                            <b>Trợ lý AI & Cảnh báo nghỉ việc</b>
-                            <p>Hỏi đáp phép năm 24/7 và phát hiện rủi ro thôi việc sớm</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="hero-footer">
-                <span>Nhóm 2 • Đại học Công Nghiệp Hà Nội - ThS: Nguyễn Thái Cường • </span>
-            </div>
-        </section>
-
-        <!-- Cột phải: Form Đăng nhập Glassmorphism -->
-        <section class="login-panel">
-            <div class="login-box glass-panel">
-                <div class="login-header">
-                    <h2>Đăng nhập hệ thống</h2>
-                    <p>Chọn vai trò tài khoản để đăng nhập </p>
+                <!-- Role Selector -->
+                <div class="role-selector-antd">
+                    {% for k, v, ic in [('NhanVien','Nhân viên','user'), ('QuanLy','Quản lý','briefcase'), ('Admin','Admin','shield')] %}
+                        <label class="role-chip-antd">
+                            <input type="radio" name="role" value="{{ k }}" {{ 'checked' if k == sel }}>
+                            <span class="role-content-antd">
+                                {{ icon(ic) }}
+                                <span>{{ v }}</span>
+                            </span>
+                        </label>
+                    {% endfor %}
                 </div>
 
-                <form method="post" id="loginForm" autocomplete="on">
-                    <input type="hidden" name="_csrf" value="{{ csrf }}">
-
-                    <!-- Role Selector Segment -->
-                    <div class="role-selector">
-                        {% for k, v, ic in [('NhanVien','Nhân viên','user'), ('QuanLy','Quản lý','briefcase'), ('Admin','Admin','shield')] %}
-                            <label class="role-chip">
-                                <input type="radio" name="role" value="{{ k }}" {{ 'checked' if k == sel }} onchange="updateRoleHint('{{ k }}')">
-                                <span class="role-content">
-                                    {{ icon(ic) }}
-                                    <span>{{ v }}</span>
-                                </span>
-                            </label>
-                        {% endfor %}
+                <!-- Input Tên đăng nhập -->
+                <div class="form-item-antd">
+                    <label for="u">Tên đăng nhập hoặc Mã nhân viên</label>
+                    <div class="input-wrap-antd">
+                        <span class="input-icon-antd">{{ icon('user') }}</span>
+                        <input id="u" name="user" required autofocus autocomplete="username" placeholder="Nhập tên tài khoản hoặc mã NV">
                     </div>
+                </div>
 
-                    <!-- Input Tên đăng nhập -->
-                    <div class="form-group-modern">
-                        <label for="u">Tên đăng nhập hoặc Mã nhân viên</label>
-                        <div class="input-wrap">
-                            <span class="input-icon">{{ icon('user') }}</span>
-                            <input id="u" name="user" required autofocus autocomplete="username">
-                        </div>
+                <!-- Input Mật khẩu -->
+                <div class="form-item-antd">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                        <label for="p" style="margin:0">Mật khẩu</label>
+                        <span style="font-size:12px;color:var(--brand);cursor:pointer" onclick="alert('Vui lòng liên hệ Quản trị viên nhân sự để được hỗ trợ cấp lại mật khẩu.')">Quên mật khẩu?</span>
                     </div>
-
-                    <!-- Input Mật khẩu -->
-                    <div class="form-group-modern">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                            <label for="p" style="margin:0">Mật khẩu</label>
-                            <span style="font-size:12px;color:var(--brand);cursor:pointer" onclick="alert('Vui lòng liên hệ Quản trị viên nhân sự để được hỗ trợ cấp lại mật khẩu.')">Quên mật khẩu?</span>
-                        </div>
-                        <div class="input-wrap">
-                            <span class="input-icon">{{ icon('lock') }}</span>
-                            <input id="p" type="password" name="pw" required autocomplete="current-password">
-                            <button type="button" class="pw-toggle-btn" onclick="togglePasswordVisibility()" title="Ẩn/Hiện mật khẩu">👁</button>
-                        </div>
+                    <div class="input-wrap-antd">
+                        <span class="input-icon-antd">{{ icon('lock') }}</span>
+                        <input id="p" type="password" name="pw" required autocomplete="current-password" placeholder="Nhập mật khẩu">
+                        <button type="button" class="pw-toggle-btn" onclick="togglePasswordVisibility()" title="Ẩn/Hiện mật khẩu">👁</button>
                     </div>
+                </div>
 
-                    <button type="submit" class="btn btn-primary-gradient" style="width:100%;margin-top:24px;padding:12px;font-size:14px;font-weight:700">
-                        {{ icon('log-in') }}
-                        Xác nhận
-                    </button>
+                <button type="submit" class="btn" style="width:100%;height:38px;margin-top:24px;font-size:14px;font-weight:600">
+                    {{ icon('log-in') }}
+                    Đăng nhập
+                </button>
+            </form>
 
-                    <!-- Box Gợi ý tài khoản nhanh -->
-                    <div id="roleHintBox" style="margin-top:16px;padding:12px 14px;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.2);border-radius:10px;font-size:12px;line-height:1.6;color:var(--ink)">
-                        <div id="roleHintContent"></div>
-                    </div>
-                </form>
+            <div class="login-footer-antd">
+                <span>Nhóm 2 • Hệ thống Quản trị Doanh nghiệp</span>
             </div>
-        </section>
+        </div>
     </div>
 
     <script>
@@ -138,51 +69,5 @@
             var p = document.getElementById('p');
             p.type = p.type === 'password' ? 'text' : 'password';
         }
-
-        var roleHints = {
-            'QuanLy': '<div style="font-weight:700;color:var(--brand);margin-bottom:4px">👔 Tài khoản Trưởng phòng (Quản lý) - Mật khẩu: 123456</div>' +
-                      '<div style="display:flex;flex-direction:column;gap:3px">' +
-                      '<span>• PB Nhân sự: <a href="javascript:void(0)" onclick="quickFill(\'nv001\',\'123456\',\'QuanLy\')" style="font-weight:700;color:var(--brand)">nv001</a> (Nguyễn Văn An)</span>' +
-                      '<span>• PB Kế toán: <a href="javascript:void(0)" onclick="quickFill(\'nv006\',\'123456\',\'QuanLy\')" style="font-weight:700;color:var(--brand)">nv006</a> (Vũ Thị Hoa)</span>' +
-                      '<span>• PB Kinh doanh: <a href="javascript:void(0)" onclick="quickFill(\'nv007\',\'123456\',\'QuanLy\')" style="font-weight:700;color:var(--brand)">nv007</a> (Bùi Quang Huy)</span>' +
-                      '<span>• PB Kỹ thuật: <a href="javascript:void(0)" onclick="quickFill(\'nv008\',\'123456\',\'QuanLy\')" style="font-weight:700;color:var(--brand)">nv008</a> (Đỗ Hoàng Long)</span>' +
-                      '</div>',
-            'NhanVien': '<div style="font-weight:700;color:var(--brand);margin-bottom:4px">👤 Tài khoản Nhân viên các phòng ban - Mật khẩu: 123456</div>' +
-                        '<div style="display:flex;flex-direction:column;gap:3px">' +
-                        '<span>• Nhân sự: <a href="javascript:void(0)" onclick="quickFill(\'nv002\',\'123456\',\'NhanVien\')" style="font-weight:700;color:var(--brand)">nv002</a>, <a href="javascript:void(0)" onclick="quickFill(\'nv013\',\'123456\',\'NhanVien\')" style="font-weight:700;color:var(--brand)">nv013</a></span>' +
-                        '<span>• Kế toán: <a href="javascript:void(0)" onclick="quickFill(\'nv003\',\'123456\',\'NhanVien\')" style="font-weight:700;color:var(--brand)">nv003</a>, <a href="javascript:void(0)" onclick="quickFill(\'nv009\',\'123456\',\'NhanVien\')" style="font-weight:700;color:var(--brand)">nv009</a></span>' +
-                        '<span>• Kinh doanh: <a href="javascript:void(0)" onclick="quickFill(\'nv004\',\'123456\',\'NhanVien\')" style="font-weight:700;color:var(--brand)">nv004</a>, <a href="javascript:void(0)" onclick="quickFill(\'nv010\',\'123456\',\'NhanVien\')" style="font-weight:700;color:var(--brand)">nv010</a></span>' +
-                        '<span>• Kỹ thuật: <a href="javascript:void(0)" onclick="quickFill(\'nv005\',\'123456\',\'NhanVien\')" style="font-weight:700;color:var(--brand)">nv005</a>, <a href="javascript:void(0)" onclick="quickFill(\'nv011\',\'123456\',\'NhanVien\')" style="font-weight:700;color:var(--brand)">nv011</a>, <a href="javascript:void(0)" onclick="quickFill(\'nv012\',\'123456\',\'NhanVien\')" style="font-weight:700;color:var(--brand)">nv012</a></span>' +
-                        '</div>',
-            'Admin': '<div style="font-weight:700;color:var(--brand);margin-bottom:4px">🛡️ Tài khoản Quản trị viên (Admin)</div>' +
-                     '<span>• Tên đăng nhập: <a href="javascript:void(0)" onclick="quickFill(\'admin\',\'admin123\',\'Admin\')" style="font-weight:700;color:var(--brand)">admin</a> • Mật khẩu: <b>admin123</b></span>'
-        };
-
-        function updateRoleHint(role) {
-            var content = document.getElementById('roleHintContent');
-            if (content) {
-                content.innerHTML = roleHints[role] || '';
-            }
-        }
-
-        function quickFill(user, pw, role) {
-            document.getElementById('u').value = user;
-            document.getElementById('p').value = pw;
-            var radios = document.getElementsByName('role');
-            for (var i = 0; i < radios.length; i++) {
-                if (radios[i].value === role) {
-                    radios[i].checked = true;
-                    break;
-                }
-            }
-            updateRoleHint(role);
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            var checkedRole = document.querySelector('input[name="role"]:checked');
-            if (checkedRole) {
-                updateRoleHint(checkedRole.value);
-            }
-        });
     </script>
 {% endblock %}

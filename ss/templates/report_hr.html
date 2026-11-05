@@ -7,7 +7,7 @@
                 Báo cáo nhân sự & Cơ cấu tổ chức
             </h1>
             <p>
-                Thống kê số lượng nhân sự, chấm công, tăng ca, nghỉ phép và chỉ số hiệu suất KPI theo phòng ban.
+                Thống kê số lượng nhân sự, chấm công, tăng ca, nghỉ phép và tỷ lệ đi làm đúng giờ theo phòng ban.
             </p>
         </div>
         <form style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
@@ -81,11 +81,11 @@
         </div>
         <div class="stat">
             <div class="ic">
-                {{ icon('award') }}
+                {{ icon('check-circle') }}
             </div>
             <div>
-                <b style="color:var(--brand)">{{ "%.1f"|format(avg_kpi) }}</b>
-                <span>Điểm KPI trung bình</span>
+                <b style="color:var(--ok)">{{ "%.1f"|format(on_time_rate) }}%</b>
+                <span>Tỷ lệ đi làm đúng giờ</span>
             </div>
         </div>
     </div>

@@ -130,8 +130,8 @@ Vai trò: Nhân viên
   2. Bấm "Đăng ký OT" -> Chọn số giờ làm thêm (3.0 giờ), ngày làm -> Gửi.
   3. Kỳ vọng: Cả 2 yêu cầu đều được chuyển đến Quản lý phòng ban.
 
-[Test NV-07] Tự đánh giá Hiệu suất KPI & Đăng ký Đào tạo:
-  1. Bấm "Tự đánh giá KPI" -> Nhập điểm tự chấm (VD: 95) và bản tự nhận xét -> Nộp.
+[Test NV-07] Kiểm tra tính năng đã được lược bỏ:
+  1. Xác nhận tính năng đánh giá hiệu suất & Khóa đào tạo đã được tinh gọn và lược bỏ theo yêu cầu.
   2. Truy cập menu "Đào tạo" (/training) -> Xem danh mục khóa học -> Bấm "Đăng ký".
   3. Kỳ vọng: Ghi nhận thành công vào hồ sơ đào tạo nội bộ.
 
@@ -178,7 +178,7 @@ Vai trò: Toàn quyền Hệ thống
 [Test AD-01] Tổng quan Điều hành & Cảnh báo Nguy cơ Nghỉ việc (Flight Risk):
   1. Đăng nhập với tài khoản admin.
   2. Trang chủ hiển thị: Tổng nhân sự (13), Quỹ lương tháng, Tỷ lệ chuyên cần.
-  3. Kiểm tra thẻ "Cảnh báo Nguy cơ Nghỉ việc (Flight Risk)": Hệ thống tự động liệt kê các nhân sự có dấu hiệu đi muộn tăng cao, điểm KPI giảm hoặc lâu không tăng lương.
+  3. Kiểm tra thẻ "Cảnh báo Nguy cơ Nghỉ việc (Flight Risk)": Hệ thống tự động liệt kê các nhân sự có dấu hiệu đi muộn tăng cao, tần suất đi muộn tăng hoặc lâu không tăng lương.
 
 [Test AD-02] Biểu đồ Phân tích Nâng cao (Analytics Dashboard):
   1. Truy cập menu "Báo cáo & Phân tích" (/reports/analytics).
@@ -258,7 +258,7 @@ PASS 13 | Quản lý xem danh sách đơn chờ duyệt kèm nút Phê duyệt /
 PASS 14 | Quản lý phê duyệt đơn nghỉ phép của nhân viên thành công          | ĐẠT
 PASS 15 | Quản lý từ chối đơn nghỉ phép thành công                          | ĐẠT
 PASS 16 | Nhân viên cập nhật thông tin liên hệ, địa chỉ cá nhân             | ĐẠT
-PASS 17 | Nhân viên xem thông tin công việc, lịch sử công và KPI trong /me  | ĐẠT
+PASS 17 | Nhân viên xem thông tin công việc, lịch sử công và hồ sơ trong /me  | ĐẠT
 PASS 18 | Nhân viên xem danh sách thông báo nội bộ toàn công ty             | ĐẠT
 PASS 19 | Quản lý giám sát chấm công & thực hiện chấm công nhanh            | ĐẠT
 PASS 20 | Quản lý xem báo cáo nhân sự theo phòng ban của mình               | ĐẠT
@@ -274,7 +274,7 @@ PASS 29 | Nhân viên tải lên chứng chỉ/bằng cấp chuyên môn vào h�
 PASS 30 | Nhân viên gửi đơn giải trình chấm công khi quên quẹt thẻ          | ĐẠT
 PASS 31 | Nhân viên đăng ký làm thêm giờ (OT) ngoài giờ làm việc            | ĐẠT
 PASS 32 | Nhân viên gửi yêu cầu tạm ứng tiền lương hàng tháng               | ĐẠT
-PASS 33 | Nhân viên thực hiện tự đánh giá hiệu suất KPI cá nhân             | ĐẠT
+PASS 33 | Tính năng đánh giá được lược bỏ tinh gọn chuẩn nghiệp vụ             | ĐẠT
 PASS 34 | Nhân viên duyệt danh mục khóa học & đăng ký tham gia đào tạo      | ĐẠT
 PASS 35 | Nhân viên gửi đề xuất cải tiến và khiếu nại tới Ban Quản lý       | ĐẠT
 PASS 36 | Quản lý truy cập Trung tâm Phê duyệt Tập trung (Approval Hub)     | ĐẠT
@@ -295,7 +295,7 @@ PASS 50 | Trang chủ hiển thị widget Cảnh báo Nguy cơ Nghỉ việc (Fl
 PASS 51 | Báo cáo hiển thị Biểu đồ Donut Tỷ lệ nghỉ việc & Xu hướng Chi phí | ĐẠT
 PASS 52 | Trợ lý Chatbot AI tính toán và giải đáp số ngày phép chính xác    | ĐẠT
 PASS 53 | Trợ lý Chatbot AI hướng dẫn chi tiết quy trình 4 bước xin tạm ứng | ĐẠT
-PASS 54 | Trợ lý Chatbot AI tóm tắt CV ứng viên & gợi ý tiêu chí đánh giá KPI| ĐẠT
+PASS 54 | Trợ lý Chatbot AI tóm tắt CV ứng viên & gợi ý tiêu chí đánh giá hiệu quả| ĐẠT
 ---------------------------------------------------------------------------------
 TỔNG KẾT: 54/54 TEST CASES ĐẠT CHUẨN (PASS TỶ LỆ 100%)
 

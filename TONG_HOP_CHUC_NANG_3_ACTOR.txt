@@ -20,13 +20,13 @@ Control) chặt chẽ, phục vụ 3 nhóm đối tượng người dùng chính
 2. CẤP QUẢN LÝ PHÒNG BAN (QUẢN LÝ / MANAGER)
    - Đại diện cho Trưởng phòng, Quản lý bộ phận (Kỹ thuật, Kinh doanh, Vận hành...).
    - Quản lý nhân viên trực thuộc phòng ban, phê duyệt đơn từ (nghỉ phép, OT, giải trình công),
-     đánh giá KPI kỳ, chấm công nhanh và đề xuất nhân sự xuất sắc lên Admin.
+     chấm công nhanh và đề xuất nhân sự xuất sắc lên Admin.
 
 3. CÁN BỘ NHÂN VIÊN (NHÂN VIÊN / EMPLOYEE)
    - Đại diện cho toàn thể nhân sự trong công ty.
    - Sử dụng cổng thông tin tự phục vụ (Self-Service): Check-in/Check-out trực tuyến, xem
      phiếu lương chi tiết, xin nghỉ phép, đăng ký tăng ca, đề nghị tạm ứng, nộp giải trình,
-     tải chứng chỉ bằng cấp, tự đánh giá KPI và tương tác với Trợ lý AI 24/7.
+     tải chứng chỉ bằng cấp và tương tác với Trợ lý AI 24/7.
 
 ========================================================================================
 II. MA TRẬN PHÂN QUYỀN CHỨC NĂNG (RBAC PERMISSION MATRIX)
@@ -71,14 +71,10 @@ Ký hiệu: [X] Có quyền sử dụng  |  [-] Không có quyền
 |    - Tự cập nhật SĐT, Email, Địa chỉ, CCCD cá nhân   |  [-]  |   [X]   |   [X]    |
 |    - Tải lên văn bằng, chứng chỉ, scan giấy tờ       |  [-]  |   [X]   |   [X]    |
 |                                                      |       |         |          |
-| 6. ĐÁNH GIÁ HIỆU SUẤT & PHÁT TRIỂN                   |       |         |          |
-|    - Tự đánh giá KPI cá nhân hàng tháng              |  [-]  |   [X]   |   [X]    |
-|    - Chấm điểm KPI chính thức & Ghi nhận xét quản lý |  [X]  |   [X]   |   [-]    |
+| 6. KHEN THƯỞNG & ĐỀ XUẤT NHÂN SỰ                      |       |         |          |
 |    - Đề xuất nhân sự xuất sắc (Khen thưởng/Tăng lương|  [-]  |   [X]   |   [-]    |
 |    - Phê duyệt đề xuất nhân sự & Ban hành quyết định |  [X]  |   [-]   |   [-]    |
 |    - Quản lý Khen thưởng & Kỷ luật (/m/khenthuong)   |  [X]  |   [X]   |   [-]    |
-|    - Cổng đăng ký khóa đào tạo nội bộ                |  [X]  |   [X]   |   [X]    |
-|    - Quản lý chương trình đào tạo (/m/daotao)        |  [X]  |   [X]   |   [-]    |
 |                                                      |       |         |          |
 | 7. TUYỂN DỤNG & ĐỀ XUẤT                              |       |         |          |
 |    - Gửi đề xuất, kiến nghị, phản ánh nội bộ         |  [X]  |   [X]   |   [X]    |
@@ -123,7 +119,7 @@ Route chính: / hoặc /dash
        Vận hành (18%), Nhân sự - Hành chính (12%), Khác (8%).
   4. Trí tuệ cảnh báo nhân sự (Flight Risk Warning):
      - Tự động quét và phát hiện các nhân viên có nguy cơ nghỉ việc dựa trên số ngày nghỉ phép
-       đột biến hoặc điểm KPI suy giảm liên tiếp.
+       đột biến hoặc nghỉ phép bất thường.
   5. Bảng nhân viên mới gia nhập & Thao tác phê duyệt nhanh đơn từ cấp công ty.
 
 [B] Quản Trị Nghiệp Vụ Nhân Sự Toàn Diện:
@@ -172,13 +168,10 @@ Route chính: / hoặc /dash
      - Tổng nhân sự thuộc phòng (42 nhân sự, bao gồm người thử việc).
      - Tỷ lệ có mặt hôm nay (38/42 nhân sự - Đạt 91% quân số).
      - Số đơn chờ quản lý phê duyệt trong ngày (5 đơn).
-     - Tiến độ hoàn thành đánh giá KPI kỳ này (28/42 nhân sự).
   2. Biểu đồ chấm công tuần:
      - Biểu đồ cột phân tích lượng nhân sự đi làm từ Thứ 2 đến Thứ 6.
-  3. Thước đo tiến độ đánh giá KPI (Circular Gauge 67%):
-     - Thể hiện trực quan tỉ lệ nhân sự đã hoàn tất quy trình đánh giá hiệu suất.
-  4. Danh sách nhân viên trong phòng:
-     - Hiển thị họ tên, chức vụ, tình trạng đánh giá và thanh đo KPI theo %.
+  3. Danh sách nhân viên trong phòng:
+     - Hiển thị họ tên, chức vụ và trạng thái chấm công hôm nay (Đúng giờ / Đi muộn).
 
 [B] Phê Duyệt & Quản Trị Nhân Sự Trực Thuộc:
   1. Trung tâm phê duyệt tập trung (/approvals):
@@ -187,12 +180,9 @@ Route chính: / hoặc /dash
      - Phê duyệt giải trình chấm công khi nhân viên quên quẹt thẻ hoặc máy chấm công lỗi.
   2. Đề xuất nhân sự lên cấp Admin (/proposals):
      - Gửi tờ trình đề xuất khen thưởng, vinh danh cá nhân xuất sắc hoặc nâng lương định kỳ.
-  3. Đánh giá hiệu suất nhân viên (/m/danhgia):
-     - Xem điểm tự chấm của nhân viên, chấm điểm KPI chính thức của cấp trên,
-       nhận xét ưu/nhược điểm và xếp loại thi đua (Xuất sắc, Tốt, Khá, Trung bình).
-  4. Chấm công nhanh cả phòng ban:
+  3. Chấm công nhanh cả phòng ban:
      - Nút "Chấm công nhanh hôm nay" hỗ trợ điểm danh hàng loạt cho các nhân viên có mặt.
-  5. Báo cáo nhân sự phòng ban (/report/hr):
+  4. Báo cáo nhân sự phòng ban (/report/hr):
      - Xem thống kê số lượng nam/nữ, tổng ngày công làm việc, tổng số giờ tăng ca.
      - Xuất báo cáo phòng ban ra file Excel/CSV gửi Ban Giám Đốc.
 
@@ -244,13 +234,9 @@ Route chính: /me (Trang thông tin & Dashboard cá nhân hóa)
        ngoài văn phòng sáng sớm; đề xuất bổ sung giờ vào/ra thực tế.
   6. Đề nghị tạm ứng tiền lương (/me/advance/request):
      - Gửi yêu cầu ứng trước tiền lương phục vụ việc cá nhân đột xuất.
-  7. Tự đánh giá KPI (/me/kpi/self-eval):
-     - Tự chấm điểm hiệu suất cá nhân và ghi nhận xét đóng góp trong tháng.
-  8. Cổng đào tạo nội bộ doanh nghiệp (/training):
-     - Xem danh mục khóa đào tạo kỹ năng chuyên môn, thời gian, giảng viên và bấm đăng ký.
-  9. Hộp thư đề xuất & Khiếu nại (/feedback):
+  7. Hộp thư đề xuất & Khiếu nại (/feedback):
      - Gửi ý kiến phản ánh, đóng góp sáng kiến cải tiến quy trình công việc lên cấp lãnh đạo.
- 10. Bảng thông báo nội bộ (/announcements):
+  8. Bảng thông báo nội bộ (/announcements):
      - Theo dõi các thông báo chính sách mới, lịch nghỉ lễ và tin tức doanh nghiệp.
 
 ========================================================================================
@@ -262,7 +248,7 @@ IV. CÁC TIỆN ÍCH THÔNG MINH DÙNG CHUNG TOÀN HỆ THỐNG
      a) Tra cứu số ngày nghỉ phép còn lại của người dùng theo thời gian thực.
      b) Hướng dẫn quy trình 4 bước thủ tục xin tạm ứng tiền lương chuẩn quy chế.
      c) Tự động tóm tắt hồ sơ CV ứng viên tuyển dụng, nêu bật điểm mạnh/kinh nghiệm.
-     d) Gợi ý nhận xét, đánh giá KPI cho cấp quản lý theo tiêu chuẩn khách quan.
+     d) Gợi ý nhận xét, đánh giá kết quả công việc theo tiêu chuẩn khách quan.
 
 2. COMMAND PALETTE TÌM KIẾM NHANH (PHÍM TẮT CTRL + K):
    - Cho phép người dùng bấm tổ hợp phím Ctrl + K từ bất kỳ trang nào để gõ tên chức năng,

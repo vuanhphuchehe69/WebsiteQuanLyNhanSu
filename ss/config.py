@@ -311,7 +311,7 @@ MODS = {
         ]
     },
     'danhgia': {
-        'title': 'Đánh giá KPI',
+        'title': 'Đánh giá thi đua',
         'icon': 'award',
         'table': 'DanhGia',
         'pk': 'MaDG',
@@ -326,7 +326,7 @@ MODS = {
             ('TenPB', 'Phòng ban'),
             ('ThangNam', 'Tháng/Năm'),
             ('DiemTuDanhGia', 'Tự chấm'),
-            ('DiemKPI', 'Điểm KPI'),
+            ('DiemKPI', 'Điểm đánh giá'),
             ('XepLoai', 'Xếp loại'),
             ('NguoiDanhGia', 'Người đánh giá'),
         ],
@@ -337,7 +337,7 @@ MODS = {
             ('ThangNam', 'Tháng/năm đánh giá', 'month', 1, None),
             ('DiemTuDanhGia', 'Điểm nhân viên tự chấm (0-100)', 'number', 0, None),
             ('NhanXetCaNhan', 'Nhân viên tự nhận xét', 'textarea', 0, None),
-            ('DiemKPI', 'Điểm KPI chính thức (0-100)', 'number', 1, None),
+            ('DiemKPI', 'Điểm đánh giá (0-100)', 'number', 1, None),
             ('XepLoai', 'Xếp loại', 'select', 1, 'loai_xl'),
             ('NhanXet', 'Nhận xét của quản lý', 'textarea', 0, None),
             ('NguoiDanhGia', 'Người đánh giá', 'text', 1, None),
@@ -798,7 +798,6 @@ NAV = [
     ('Tạm ứng lương', 'mlist', 'tamung', (QL, AD)),
 
     # Nhóm Hiệu suất & Phát triển
-    ('Đánh giá KPI', 'mlist', 'danhgia', (QL, AD)),
     ('Khen thưởng & Kỷ luật', 'mlist', 'khenthuong', (QL, AD)),
     ('Quản lý đề xuất & khiếu nại', 'mlist', 'dexuat', (QL, AD)),
 
@@ -832,7 +831,6 @@ NAV_ICON = {
     'Báo cáo nhân sự': 'pie-chart',
     'Thống kê biến động & Chi phí': 'bar-chart-2',
     'Tăng ca': 'clock',
-    'Đánh giá KPI': 'award',
     'Khen thưởng & Kỷ luật': 'award',
     'Quản lý đề xuất & khiếu nại': 'message-square',
     'Yêu cầu tuyển dụng': 'user-plus',
@@ -865,7 +863,6 @@ NAV_GROUP = {
     'Lương': 'Nghiệp vụ',
     'Tạm ứng lương': 'Nghiệp vụ',
 
-    'Đánh giá KPI': 'Hiệu suất & Phát triển',
     'Khen thưởng & Kỷ luật': 'Hiệu suất & Phát triển',
     'Quản lý đề xuất & khiếu nại': 'Hiệu suất & Phát triển',
 

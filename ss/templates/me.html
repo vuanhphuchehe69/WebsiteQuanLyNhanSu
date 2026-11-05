@@ -531,58 +531,6 @@
         </div>
     {% endif %}
 
-    <!-- Đánh giá hiệu suất công việc & KPI -->
-    <div class="card flush">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 14px">
-            <h3 style="margin:0">
-                {{ icon('award') }}
-                Đánh giá hiệu suất công việc & KPI
-            </h3>
-            <a class="btn" style="padding:5px 12px;font-size:12px" href="{{ url_for('main.self_eval_kpi') }}">
-                {{ icon('edit') }}
-                Tự đánh giá KPI
-            </a>
-        </div>
-        <div class="tw">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Tháng</th>
-                        <th class="num">Điểm tự chấm</th>
-                        <th>Nhận xét cá nhân</th>
-                        <th class="num">Điểm chính thức</th>
-                        <th>Xếp loại</th>
-                        <th>Nhận xét của quản lý</th>
-                        <th>Người đánh giá</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for r in DG %}
-                        <tr>
-                            <td><b>{{ r.ThangNam }}</b></td>
-                            <td class="num"><b>{{ r.DiemTuDanhGia or '-' }}</b></td>
-                            <td style="max-width:200px;font-size:12.5px">{{ r.NhanXetCaNhan or '-' }}</td>
-                            <td class="num"><b style="font-size:15px;color:var(--brand)">{{ r.DiemKPI }}</b></td>
-                            <td>
-                                <span class="tag {{ TONE.get(r.XepLoai, 'n') }}">
-                                    {{ r.XepLoai }}
-                                </span>
-                            </td>
-                            <td>{{ r.NhanXet or '-' }}</td>
-                            <td><strong>{{ r.NguoiDanhGia }}</strong></td>
-                        </tr>
-                    {% else %}
-                        <tr>
-                            <td colspan="7" class="empty">
-                                Chưa có kỳ đánh giá hiệu suất nào.
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
     <!-- Khen thưởng & Kỷ luật của bản thân -->
     {% if KT %}
         <div class="card flush">

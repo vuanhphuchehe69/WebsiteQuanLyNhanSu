@@ -208,8 +208,8 @@ with app.test_client() as client:
     assert 'Thông tin công việc' in res.text
     assert '0901888999' in res.text
     assert 'Lịch sử chấm công & Ngày công' in res.text
-    assert 'Đánh giá hiệu suất công việc & KPI' in res.text
-    print('PASS 17: Employee views Job Info, Attendance history, and KPI evaluations in /me')
+    assert 'Bằng cấp & Giấy tờ lưu trữ' in res.text
+    print('PASS 17: Employee views Job Info, Attendance history, and personal documents in /me')
 
     res = client.get('/announcements')
     assert res.status_code == 200
@@ -351,17 +351,17 @@ with app.test_client() as client:
     assert 'Đã gửi yêu cầu tạm ứng' in res.text
     print('PASS 32: Employee requests salary advance')
 
-    # Test 33: Employee KPI self-assessment
+    # Test 33: Employee evaluation feature is disabled per requirements
     with client.session_transaction() as sess:
         csrf_token = sess.get('_csrf')
     res = client.post('/me/kpi/self-eval', data={
         'DiemTuDanhGia': '95',
-        'NhanXetCaNhan': 'Hoàn thành 100% mục tiêu sprint và không có bug phát sinh',
+        'NhanXetCaNhan': 'Hoàn thành 100% mục tiêu',
         '_csrf': csrf_token
     }, follow_redirects=True)
     assert res.status_code == 200
-    assert 'Tự đánh giá KPI' in res.text
-    print('PASS 33: Employee KPI self-assessment succeeds')
+    assert 'đã được lược bỏ khỏi phạm vi hệ thống' in res.text
+    print('PASS 33: Employee evaluation feature is properly removed per requirements')
 
     # Test 34: Training Catalog browsing disabled
     res = client.get('/training', follow_redirects=True)
@@ -556,7 +556,7 @@ with app.test_client() as client:
     assert 'Bước' in ai_data['reply']
     print('PASS 53: AI Chatbot explains 4-step salary advance procedure clearly')
 
-    # AI Chatbot Assistant: Candidate resume summary & KPI review suggestion
+    # AI Chatbot Assistant: Candidate resume summary & review suggestion
     res = client.post('/api/ai-chat', json={'message': 'Tóm tắt hồ sơ ứng viên', '_csrf': csrf_token})
     assert res.status_code == 200
     ai_data = res.get_json()
@@ -566,7 +566,7 @@ with app.test_client() as client:
     assert res.status_code == 200
     ai_data = res.get_json()
     assert 'Xuất sắc' in ai_data['reply']
-    print('PASS 54: AI Chatbot summarizes candidate resume and generates KPI review suggestions')
+    print('PASS 54: AI Chatbot summarizes candidate resume and generates review suggestions')
 
     # ---------------- 13. Department Heads & Staff Accounts Verification ----------------
     # Verify all Trưởng phòng logins (nv001, nv006, nv007, nv008)

@@ -187,7 +187,7 @@ def seed_transaction_records(db):
     # 6. Đánh giá KPI
     print("[6/11] Nạp dữ liệu Đánh giá KPI (DanhGia)...")
     kpi_evals = [
-        ('NV001', '2026-10', 95.0, 'Xuất sắc', 'Lãnh đạo xuất sắc hoàn thành kế hoạch nhân sự toàn công ty.', 'Ban Giám Đốc', 95.0, 'Đạt 100% KPI phòng.'),
+        ('NV001', '2026-10', 95.0, 'Xuất sắc', 'Lãnh đạo xuất sắc hoàn thành kế hoạch nhân sự toàn công ty.', 'Ban Giám Đốc', 95.0, 'Đạt 100% chỉ tiêu phòng.'),
         ('NV002', '2026-10', 92.0, 'Xuất sắc', 'Hoàn thành xuất sắc kế hoạch tuyển dụng và quản lý hồ sơ.', 'Nguyễn Văn An', 90.0, 'Nỗ lực hoàn thành công việc đúng tiến độ.'),
         ('NV003', '2026-10', 85.0, 'Tốt', 'Thực hiện đối soát số liệu kế toán chính xác, kịp thời.', 'Vũ Thị Hoa', 85.0, 'Hoàn thành tốt các báo cáo được giao.'),
         ('NV004', '2026-10', 88.0, 'Tốt', 'Chủ động phát triển tệp khách hàng mới, vượt chỉ tiêu doanh số.', 'Bùi Quang Huy', 90.0, 'Đạt chỉ tiêu doanh thu tháng.'),
@@ -253,7 +253,7 @@ def seed_transaction_records(db):
     print("[9/11] Nạp Đề xuất nhân sự từ Quản lý gửi Admin (DeXuatNhanSu)...")
     proposals = [
         ('NV008', 'NV005', 'Tăng lương', 'Tăng mức lương lên 25.000.000đ', 'Đảm nhiệm vai trò Fullstack Lead kiến trúc hệ thống ổn định cao', 'Đã duyệt', 'Đã phê duyệt điều chỉnh hợp đồng lao động mới.'),
-        ('NV007', 'NV004', 'Khen thưởng', 'Thưởng nóng 5.000.000đ', 'Dẫn dắt chiến dịch ra mắt dịch vụ mới đạt 140% KPI doanh số', 'Đã duyệt', 'Khen thưởng và tuyên dương toàn công ty.'),
+        ('NV007', 'NV004', 'Khen thưởng', 'Thưởng nóng 5.000.000đ', 'Dẫn dắt chiến dịch ra mắt dịch vụ mới đạt 140% chỉ tiêu doanh số', 'Đã duyệt', 'Khen thưởng và tuyên dương toàn công ty.'),
         ('NV006', 'NV009', 'Tăng lương', 'Tăng 15% lương cơ sở', 'Nhân viên có năng lực vượt trội, đảm nhiệm xuất sắc cả phần báo cáo thuế và quản trị dòng tiền', 'Đang xử lý', 'Đang thẩm định hồ sơ cùng Ban Giám đốc.'),
         ('NV001', 'NV002', 'Khen thưởng', 'Danh hiệu Nhân viên Nhân sự xuất sắc', 'Đạt chỉ tiêu hoàn thành rà soát hồ sơ toàn công ty', 'Đã duyệt', 'Trao bằng khen và phần thưởng 3.000.000đ.')
     ]
@@ -314,8 +314,8 @@ def seed_transaction_records(db):
         ('Thông báo về lịch làm việc và đăng ký nghỉ phép trực tuyến',
          'Đề nghị cán bộ nhân viên thực hiện đúng quy định nộp đơn xin nghỉ phép, giải trình công và đăng ký tăng ca trực tuyến trên hệ thống quản lý nhân sự.',
          '2026-10-15', 'Phòng Nhân sự', 'Toàn công ty', None),
-        ('Kế hoạch đánh giá hiệu suất công việc KPI định kỳ tháng',
-         'Thông báo tới các nhân sự thuộc phòng ban về việc hoàn thành tự đánh giá KPI tháng đúng thời hạn quy định trên cổng thông tin.',
+        ('Kế hoạch đánh giá hiệu quả công việc định kỳ tháng',
+         'Thông báo tới các nhân sự thuộc phòng ban về việc hoàn thành tự đánh giá kết quả công việc tháng đúng thời hạn quy định trên cổng thông tin.',
          '2026-10-10', 'Trưởng phòng Nhân sự', 'Theo phòng ban', 'PB01')
     ]
     for td, nd, ng, nguoi, pv, mpb in announcements:
@@ -434,7 +434,7 @@ def seed_database():
             if not cc_row:
                 db.execute("""
                     INSERT INTO ChamCong(MaNV, Ngay, GioVao, GioRa, TrangThai, GhiChu)
-                    VALUES(?, ?, '08:00', '17:30', 'Đúng giờ', 'Chấm công máy vân tay')
+                    VALUES(?, ?, '08:00', '17:30', N'Đúng giờ', N'Chấm công máy vân tay')
                 """, (mnv, today_str))
 
         # 7. Tài khoản đăng nhập (TaiKhoan)

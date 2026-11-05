@@ -3,14 +3,14 @@ Cập nhật thông tin cá nhân: Cập nhật số điện thoại, email, đ�
 Xem thông tin công việc: Xem chi tiết chức vụ, phòng ban trực thuộc, người quản lý trực tiếp, ngày vào công ty, loại hợp đồng và mức lương cơ bản hiện tại.
 Xem lịch sử chấm công & ngày công: Theo dõi chi tiết giờ vào, giờ ra, trạng thái chấm công (Đúng giờ, Đi muộn, Về sớm) và tổng số ngày công tích lũy trong tháng.
 Xem thông báo nội bộ: Đọc các thông báo từ Ban Giám Đốc, Phòng Nhân sự hoặc thông báo riêng của phòng ban tại /announcements.
-Xem đánh giá hiệu suất & KPI: Xem điểm số KPI, xếp loại và nhận xét đánh giá của quản lý theo từng tháng.
+Xem hồ sơ & Thông tin nhân sự: Xem thông tin phòng ban, hợp đồng và quá trình công tác.
 Quy trình xin nghỉ phép: Tạo đơn xin nghỉ phép, tự động kiểm tra trùng lịch nghỉ, xem trạng thái (Chờ duyệt, Đã duyệt, Từ chối) và hủy đơn khi đang chờ duyệt.
 Xem bảng lương, hợp đồng, tăng ca: Lịch sử chi tiết bảng lương thực lĩnh, tăng ca và hợp đồng lao động.
 2. Actor Quản lý
 Theo dõi chấm công & tình hình đi làm: Xem danh sách chấm công nhân viên phòng ban, tìm kiếm, lọc theo ngày/tháng, trạng thái đi làm tại /m/chamcong.
 Chấm công nhanh hôm nay: Nút thao tác nhanh tự động ghi nhận chấm công đúng giờ cho nhân viên chưa chấm công trong ngày.
-Đánh giá hiệu suất làm việc (KPI): Đánh giá nhân viên theo tháng với thang điểm KPI (0 - 100), xếp loại (Xuất sắc, Tốt, Khá, Trung bình, Yếu) và ghi nhận xét tại /m/danhgia.
-Lập báo cáo nhân sự phòng ban: Xem và xuất file Excel/CSV báo cáo nhân sự phòng ban tại /report/hr gồm: tổng số lượng nhân sự, cơ cấu giới tính Nam/Nữ, tổng ngày công, giờ tăng ca, số ngày nghỉ phép và điểm KPI trung bình.
+Báo cáo cơ cấu nhân sự phòng ban: Quản lý và theo dõi nhân sự thuộc phạm vi quản lý.
+Lập báo cáo nhân sự phòng ban: Xem và xuất file Excel/CSV báo cáo nhân sự phòng ban tại /report/hr gồm: tổng số lượng nhân sự, cơ cấu giới tính Nam/Nữ, tổng ngày công, giờ tăng ca, số ngày nghỉ phép và tỷ lệ đi làm đúng giờ.
 Gửi thông báo cho nhân viên: Đăng thông báo áp dụng cho toàn công ty hoặc theo phòng ban tại /m/thongbao.
 Duyệt đơn nghỉ phép: Phê duyệt hoặc từ chối đơn nghỉ phép của nhân viên trực tiếp trên danh sách /m/nghiphep.
 3. Actor Admin

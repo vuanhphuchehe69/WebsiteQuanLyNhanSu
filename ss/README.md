@@ -59,7 +59,7 @@ ss/
 - **Theo dõi chấm công & tình hình đi làm**: Xem danh sách chấm công nhân viên phòng ban, tìm kiếm, lọc theo ngày/tháng, trạng thái đi làm tại `/m/chamcong`.
 - **Chấm công nhanh hôm nay**: Nút thao tác nhanh tự động ghi nhận chấm công đúng giờ cho nhân viên chưa chấm công trong ngày.
 - **Đánh giá hiệu suất làm việc (KPI)**: Đánh giá nhân viên theo tháng với thang điểm KPI (0 - 100), xếp loại (*Xuất sắc, Tốt, Khá, Trung bình, Yếu*) và ghi nhận xét tại `/m/danhgia`.
-- **Lập báo cáo nhân sự phòng ban**: Xem và xuất file Excel/CSV báo cáo nhân sự phòng ban tại `/report/hr` gồm: tổng số lượng nhân sự, cơ cấu giới tính Nam/Nữ, tổng ngày công, giờ tăng ca, số ngày nghỉ phép và điểm KPI trung bình.
+- **Lập báo cáo nhân sự phòng ban**: Xem và xuất file Excel/CSV báo cáo nhân sự phòng ban tại `/report/hr` gồm: tổng số lượng nhân sự, cơ cấu giới tính Nam/Nữ, tổng ngày công, giờ tăng ca, số ngày nghỉ phép và tỷ lệ đi làm đúng giờ.
 - **Gửi thông báo cho nhân viên**: Đăng thông báo áp dụng cho toàn công ty hoặc theo phòng ban tại `/m/thongbao`.
 - **Duyệt đơn nghỉ phép**: Phê duyệt hoặc từ chối đơn nghỉ phép của nhân viên trực tiếp trên danh sách `/m/nghiphep`.
 

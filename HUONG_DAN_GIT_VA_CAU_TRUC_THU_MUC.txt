@@ -131,7 +131,7 @@ WebsiteQuanLyNhanSu/
 │           └── documents/               # File scan bằng cấp, chứng chỉ, hợp đồng đính kèm
 │
 ├── seed_employees.py                    # [Kịch bản khởi tạo duy nhất] Khởi tạo trọn vẹn 13 nhân viên, 4 phòng ban,
-│                                        # 13 chức vụ, 15 tài khoản, hợp đồng, chấm công, bảng lương, KPI và đơn từ
+│                                        # 13 chức vụ, 15 tài khoản, hợp đồng, chấm công, bảng lương và đơn từ
 │
 ├── generate_handover_doc.py             # Script tạo file Word bàn giao chính thức (.docx)
 ├── TAI_LIEU_BAN_GIAO_HE_THONG_QUAN_LY_NHAN_SU.docx # Tài liệu Bàn giao Kỹ thuật Word hoàn chỉnh (~48KB)
@@ -249,7 +249,7 @@ C. TÀI KHOẢN NHÂN VIÊN (NHANVIEN - ĐIỂM DANH, XEM LƯƠNG, NỘP ĐƠN T
 
 10. TRỢ LÝ AI NHÂN SỰ NỘI BỘ (AI ASSISTANT CHATBOT):
     - Cửa sổ chat AI nổi ở góc phải màn hình sẵn sàng trả lời tự động số ngày phép còn lại,
-      hướng dẫn 4 bước xin tạm ứng lương, tóm tắt hồ sơ ứng viên và gợi ý nhận xét KPI.
+      hướng dẫn 4 bước xin tạm ứng lương, tóm tắt hồ sơ ứng viên và gợi ý nhận xét công việc.
 
 ========================================================================================
 6. HƯỚNG DẪN CHẠY KIỂM THỬ TỰ ĐỘNG (TEST SUITE)

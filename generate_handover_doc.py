@@ -353,9 +353,7 @@ def create_document():
         ("Giải trình công & Đăng ký OT", "Nhân viên, Quản lý", "Gửi giải trình bổ sung công khi quên quẹt thẻ. Đăng ký làm thêm ngoài giờ (OT thường, cuối tuần, ngày lễ) để quản lý phê duyệt và tính vào bảng lương."),
         ("Xin tạm ứng lương", "Nhân viên, Quản lý", "Nộp phiếu yêu cầu tạm ứng tiền lương hàng tháng kèm lý do chính đáng để quản lý xét duyệt trước khi chốt công."),
         ("Tải lên Bằng cấp & Giấy tờ scan", "Nhân viên, Quản lý, Admin", "Upload ảnh chụp / file scan chứng chỉ, bằng tốt nghiệp, CCCD scan vào hồ sơ cá nhân. Quản lý và HR có thể xem và tải về."),
-        ("Đánh giá KPI cá nhân", "Nhân viên, Quản lý", "Nhân viên tự chấm điểm hiệu suất công việc theo kỳ đánh giá, viết tự nhận xét để quản lý xem xét chấm điểm chính thức."),
-        ("Đăng ký Khóa đào tạo", "Tất cả các vai trò", "Xem danh sách các khóa đào tạo nội bộ do công ty tổ chức, nắm bắt chỉ tiêu, giảng viên, thời gian và bấm đăng ký tham gia."),
-        ("Trợ lý AI Nhân sự nội bộ", "Tất cả các vai trò", "Chatbot AI hỗ trợ 24/7 giải đáp số ngày phép còn lại, hướng dẫn quy trình xin tạm ứng lương 4 bước, tóm tắt hồ sơ ứng viên tuyển dụng và gợi ý nhận xét KPI."),
+        ("Trợ lý AI Nhân sự nội bộ", "Tất cả các vai trò", "Chatbot AI hỗ trợ 24/7 giải đáp số ngày phép còn lại, hướng dẫn quy trình xin tạm ứng lương 4 bước, tóm tắt hồ sơ ứng viên tuyển dụng và gợi ý nhận xét đánh giá công việc."),
         ("Dashboard Phòng ban & Biểu đồ", "Quản lý bộ phận", "Xem số liệu nhân sự trong phòng ban, tỷ lệ đi làm hôm nay, biểu đồ hình tròn cơ cấu chức vụ phòng và tình trạng điểm danh trong ngày."),
         ("Theo dõi & Chấm công nhanh", "Quản lý bộ phận", "Giám sát bảng công nhân viên trong phòng hôm nay, thực hiện nút 'Chấm công nhanh' tự động ghi nhận đúng giờ cho các nhân viên chưa quẹt thẻ."),
         ("Phê duyệt đơn từ phòng ban", "Quản lý bộ phận, Admin", "Duyệt hoặc từ chối các đơn nghỉ phép, đơn tăng ca OT, giải trình công và đơn xin tạm ứng lương của nhân viên cấp dưới trực tiếp."),
@@ -414,7 +412,7 @@ def create_document():
          "Toàn bộ con số thống kê trên Dashboard (tổng nhân viên, hợp đồng, phòng ban, chấm công) được tích hợp hiệu ứng số đếm chạy mượt mà theo hàm gia tốc easing tự nhiên, mang lại cảm giác sống động và chuyên nghiệp."),
 
         ("10. Trợ lý AI Hỏi đáp & Phân tích Nhân sự Thông minh",
-         "Cửa sổ Trợ lý AI nổi ở góc phải màn hình sẵn sàng trả lời tự động các câu hỏi thường gặp: tra cứu số ngày phép còn lại, hướng dẫn quy trình xin tạm ứng lương 4 bước, phân tích hồ sơ ứng viên và gợi ý nội dung nhận xét KPI chuẩn chỉnh.")
+         "Cửa sổ Trợ lý AI nổi ở góc phải màn hình sẵn sàng trả lời tự động các câu hỏi thường gặp: tra cứu số ngày phép còn lại, hướng dẫn quy trình xin tạm ứng lương 4 bước, phân tích hồ sơ ứng viên và gợi ý nội dung nhận xét đánh giá công việc.")
     ]
 
     for title_inno, desc_inno in innovations:

@@ -190,7 +190,7 @@ def get_db():
     if 'db' not in g:
         if DB_TYPE == 'mssql' and PYODBC_AVAILABLE and not _mssql_failed:
             try:
-                raw_conn = pyodbc.connect(build_mssql_connection_string(), timeout=2)
+                raw_conn = pyodbc.connect(build_mssql_connection_string(), timeout=2, autocommit=True)
                 g.db = ConnectionWrapper(raw_conn, is_mssql=True)
                 return g.db
             except Exception as e:

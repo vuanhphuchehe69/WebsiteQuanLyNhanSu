@@ -651,6 +651,10 @@ def seed_database():
         hd_cnt = db.execute("SELECT COUNT(*) FROM HopDong").fetchone()[0]
         l_cnt = db.execute("SELECT COUNT(*) FROM Luong").fetchone()[0]
         cc_cnt = db.execute("SELECT COUNT(*) FROM ChamCong").fetchone()[0]
+        dg_cnt = db.execute("SELECT COUNT(*) FROM DanhGia").fetchone()[0]
+        kdt_cnt = db.execute("SELECT COUNT(*) FROM KhoaDaoTao").fetchone()[0]
+        dk_cnt = db.execute("SELECT COUNT(*) FROM DangKyDaoTao").fetchone()[0]
+        pc_cnt = db.execute("SELECT COUNT(*) FROM PhanCa").fetchone()[0]
         kt_cnt = db.execute("SELECT COUNT(*) FROM KhenThuongKyLuat").fetchone()[0]
         tk_cnt = db.execute("SELECT COUNT(*) FROM TaiKhoan").fetchone()[0]
 
@@ -661,6 +665,10 @@ def seed_database():
         print(f"• Tổng số Hợp đồng: {hd_cnt}")
         print(f"• Tổng số Bảng lương: {l_cnt}")
         print(f"• Tổng số Bản ghi chấm công: {cc_cnt}")
+        print(f"• Tổng số Đánh giá KPI: {dg_cnt}")
+        print(f"• Tổng số Khóa đào tạo: {kdt_cnt}")
+        print(f"• Tổng số Lượt học viên đào tạo: {dk_cnt}")
+        print(f"• Tổng số Bản ghi phân ca làm việc: {pc_cnt}")
         print(f"• Tổng số Khen thưởng/Kỷ luật: {kt_cnt}")
         print(f"• Tổng số Tài khoản truy cập: {tk_cnt}")
 

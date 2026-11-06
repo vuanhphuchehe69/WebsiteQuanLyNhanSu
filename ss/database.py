@@ -726,6 +726,145 @@ def ensure_department_heads_and_staff(db):
         else:
             db.execute("UPDATE TaiKhoan SET MatKhau=?, MaNV=?, LoaiTK=? WHERE TenDN=?", (mk, mnv_acc, loai, tdn))
 
+    # 7. Ensure Corporate Training & Shifts
+    ensure_training_and_shifts(db)
+
+    db.commit()
+
+def ensure_training_and_shifts(db):
+    """Ensure sample courses, registrations, and shifts exist."""
+    courses = [
+        ('An toàn thông tin & Bảo mật dữ liệu doanh nghiệp (ISO 27001)', 'TS. Nguyễn Văn Hưng (Chuyên gia An ninh mạng)', 'Thứ 7 hàng tuần (08:30 - 11:30)', 'Hội trường Tầng 5 - Trụ sở chính', 50, 'Trang bị kiến thức phòng vệ mã độc, lừa đảo phishing, mã hóa dữ liệu khách hàng và tuân thủ tiêu chuẩn an ninh thông tin ISO 27001.', 'Đang diễn ra'),
+        ('Kỹ năng giao tiếp, lắng nghe & Đàm phán trong công sở', 'ThS. Lê Hoàng Yến (Chuyên gia Dale Carnegie)', '18:30 - 20:30 (Thứ 3 & Thứ 5)', 'Phòng Đào tạo A201', 40, 'Nâng cao năng lực kết nối đồng nghiệp, thấu hiểu khách hàng, giải quyết xung đột tích cực và nghệ thuật thuyết phục trong đàm phán hợp đồng.', 'Sắp diễn ra'),
+        ('Quản trị dự án Agile & Scrum thực chiến', 'Chuyên gia Scrum Master Trần Quốc Toản', 'Chủ nhật cả ngày (09:00 - 17:00)', 'Trung tâm Hội thảo Innovation Hub Tầng 3', 35, 'Ứng dụng thực tế Jira, Sprint Planning, Daily Scrum, Retrospective và User Story Mapping vào vận hành dự án công nghệ & kinh doanh.', 'Đang diễn ra'),
+        ('Ứng dụng Trí tuệ Nhân tạo (Generative AI) nâng cao hiệu suất làm việc', 'Kỹ sư AI Phan Thanh Hải (AI Research Lead)', 'Thứ 6 (14:00 - 17:00)', 'Phòng Lab Công nghệ Tầng 4', 45, 'Khai thác ChatGPT, Claude và GitHub Copilot để soạn thảo văn bản, phân tích dữ liệu, tự động hóa tác vụ lặp và tối ưu hóa quy trình làm việc.', 'Sắp diễn ra'),
+        ('Kỹ năng thuyết trình chuyên nghiệp và làm chủ cuộc họp', 'ThS. Đoàn Minh Tâm (Giảng viên Kỹ năng truyền thông)', 'Thứ 7 (13:30 - 17:00)', 'Hội trường Tầng 5', 40, 'Kỹ thuật diễn đạt gãy gọn, thiết kế slide trực quan ấn tượng và nghệ thuật điều phối tương tác trong các cuộc họp điều hành quan trọng.', 'Sắp diễn ra'),
+        ('Quản trị tài chính cá nhân & Lập kế hoạch ngân sách phòng ban', 'CPA Phạm Minh Tú (Giám đốc Tài chính CFO Club)', 'Chủ nhật (08:30 - 11:30)', 'Phòng Hội nghị B302', 30, 'Kiểm soát dòng tiền cá nhân và doanh nghiệp, dự toán ngân sách hoạt động, tối ưu chi phí và phân tích báo cáo tài chính quản trị.', 'Hoàn thành'),
+        ('Phân tích dữ liệu kinh doanh & Dashboard trực quan với Microsoft Power BI', 'ThS. Vũ Thành Đạt (Data Analytics Specialist)', 'Thứ 2 & Thứ 4 (18:30 - 21:00)', 'Phòng Lab Máy tính Tầng 3', 35, 'Thực hành xây dựng mô hình dữ liệu (Data Modeling), viết hàm DAX và thiết kế dashboard tương tác trực quan cho báo cáo kinh doanh & nhân sự.', 'Sắp diễn ra'),
+        ('Kỹ năng lãnh đạo & Phát triển năng lực nhân viên dành cho Quản lý', 'TS. Hoàng Thu Thảo (Cố vấn Quản trị Nhân sự VCCI)', 'Thứ 7 (09:00 - 16:30)', 'Phòng Hội thảo Executive B401', 25, 'Phát triển tư duy lãnh đạo dẫn dắt, kỹ năng giao việc & ủy quyền, coaching nhân viên và xây dựng văn hóa đội ngũ gắn kết vững mạnh.', 'Đang diễn ra')
+    ]
+
+    for ten_k, gv_k, tg_k, dd_k, sl_k, mt_k, tt_k in courses:
+        try:
+            row = db.execute("SELECT 1 FROM KhoaDaoTao WHERE TenKhoa = ?", (ten_k,)).fetchone()
+            if not row:
+                db.execute("""
+                    INSERT INTO KhoaDaoTao(TenKhoa, GiangVien, ThoiGian, DiaDiem, SoLuong, MoTa, TrangThai)
+                    VALUES(?, ?, ?, ?, ?, ?, ?)
+                """, (ten_k, gv_k, tg_k, dd_k, sl_k, mt_k, tt_k))
+        except Exception:
+            pass
+
+    # Ensure registrations
+    try:
+        cnt_dk = db.execute("SELECT COUNT(*) FROM DangKyDaoTao").fetchone()[0]
+    except Exception:
+        cnt_dk = 0
+
+    if cnt_dk < 20:
+        try:
+            kdt_rows = db.execute("SELECT MaKDT, TenKhoa FROM KhoaDaoTao ORDER BY MaKDT").fetchall()
+            kdt_map = {kr['TenKhoa']: kr['MaKDT'] for kr in kdt_rows}
+            sample_dk = [
+                (courses[0][0], 'NV001', '2026-10-15 08:30', 'Đang học'),
+                (courses[0][0], 'NV005', '2026-10-15 09:15', 'Đang học'),
+                (courses[0][0], 'NV008', '2026-10-15 10:20', 'Đang học'),
+                (courses[0][0], 'NV011', '2026-10-15 11:00', 'Đang học'),
+                (courses[0][0], 'NV012', '2026-10-15 14:10', 'Đang học'),
+                (courses[0][0], 'NV006', '2026-10-15 15:30', 'Đang học'),
+                (courses[1][0], 'NV002', '2026-10-16 10:00', 'Đã đăng ký'),
+                (courses[1][0], 'NV004', '2026-10-16 14:20', 'Đã đăng ký'),
+                (courses[1][0], 'NV007', '2026-10-16 15:00', 'Đã đăng ký'),
+                (courses[1][0], 'NV010', '2026-10-16 16:45', 'Đã đăng ký'),
+                (courses[1][0], 'NV013', '2026-10-16 17:10', 'Đã đăng ký'),
+                (courses[2][0], 'NV005', '2026-10-17 08:45', 'Đang học'),
+                (courses[2][0], 'NV008', '2026-10-17 09:30', 'Đang học'),
+                (courses[2][0], 'NV011', '2026-10-17 10:15', 'Đang học'),
+                (courses[2][0], 'NV012', '2026-10-17 11:40', 'Đang học'),
+                (courses[2][0], 'NV010', '2026-10-17 14:00', 'Đang học'),
+                (courses[3][0], 'NV001', '2026-10-18 09:00', 'Đã đăng ký'),
+                (courses[3][0], 'NV002', '2026-10-18 09:40', 'Đã đăng ký'),
+                (courses[3][0], 'NV004', '2026-10-18 10:25', 'Đã đăng ký'),
+                (courses[3][0], 'NV005', '2026-10-18 11:10', 'Đã đăng ký'),
+                (courses[3][0], 'NV007', '2026-10-18 14:15', 'Đã đăng ký'),
+                (courses[3][0], 'NV009', '2026-10-18 15:00', 'Đã đăng ký'),
+                (courses[3][0], 'NV010', '2026-10-18 15:45', 'Đã đăng ký'),
+                (courses[3][0], 'NV012', '2026-10-18 16:30', 'Đã đăng ký'),
+                (courses[4][0], 'NV002', '2026-10-19 09:30', 'Đã đăng ký'),
+                (courses[4][0], 'NV004', '2026-10-19 10:15', 'Đã đăng ký'),
+                (courses[4][0], 'NV007', '2026-10-19 11:00', 'Đã đăng ký'),
+                (courses[4][0], 'NV013', '2026-10-19 14:30', 'Đã đăng ký'),
+                (courses[5][0], 'NV003', '2026-09-05 08:30', 'Hoàn thành'),
+                (courses[5][0], 'NV006', '2026-09-05 09:15', 'Hoàn thành'),
+                (courses[5][0], 'NV009', '2026-09-05 10:00', 'Hoàn thành'),
+                (courses[5][0], 'NV007', '2026-09-05 14:00', 'Hoàn thành'),
+                (courses[5][0], 'NV001', '2026-09-05 15:30', 'Hoàn thành'),
+                (courses[6][0], 'NV003', '2026-10-20 09:10', 'Đã đăng ký'),
+                (courses[6][0], 'NV004', '2026-10-20 10:00', 'Đã đăng ký'),
+                (courses[6][0], 'NV009', '2026-10-20 11:30', 'Đã đăng ký'),
+                (courses[6][0], 'NV010', '2026-10-20 14:15', 'Đã đăng ký'),
+                (courses[6][0], 'NV002', '2026-10-20 16:00', 'Đã đăng ký'),
+                (courses[7][0], 'NV001', '2026-10-21 08:45', 'Đang học'),
+                (courses[7][0], 'NV006', '2026-10-21 09:30', 'Đang học'),
+                (courses[7][0], 'NV007', '2026-10-21 10:15', 'Đang học'),
+                (courses[7][0], 'NV008', '2026-10-21 11:00', 'Đang học'),
+            ]
+            for tk, mnv_d, ng_d, tt_d in sample_dk:
+                kid = kdt_map.get(tk)
+                if kid and not db.execute("SELECT 1 FROM DangKyDaoTao WHERE MaKDT=? AND MaNV=?", (kid, mnv_d)).fetchone():
+                    db.execute("INSERT INTO DangKyDaoTao(MaKDT, MaNV, NgayDangKy, TrangThai) VALUES(?, ?, ?, ?)", (kid, mnv_d, ng_d, tt_d))
+        except Exception:
+            pass
+
+    # Ensure shifts
+    try:
+        cnt_pc = db.execute("SELECT COUNT(*) FROM PhanCa").fetchone()[0]
+    except Exception:
+        cnt_pc = 0
+
+    if cnt_pc < 50:
+        try:
+            from datetime import timedelta
+            start_shift_date = date(2026, 11, 1)
+            shift_dates_14 = [(start_shift_date + timedelta(days=d)).strftime('%Y-%m-%d') for d in range(14)]
+            for d_idx, d_str in enumerate(shift_dates_14):
+                day_num = d_idx + 1
+                shifts_day = [
+                    ('NV001', 'Ca hành chính (08:00 - 17:30)', 'Quản lý và điều hành nhân sự toàn công ty'),
+                    ('NV002', 'Ca hành chính (08:00 - 17:30)', 'Trực tiếp nhận hồ sơ, BHXH và hợp đồng lao động'),
+                    ('NV013', 'Ca hành chính (08:00 - 17:30)', 'Tổ chức phỏng vấn và tiếp đón ứng viên mới'),
+                    ('NV006', 'Ca hành chính (08:00 - 17:30)', 'Phê duyệt chứng từ tài chính và dòng tiền'),
+                    ('NV003', 'Ca hành chính (08:00 - 17:30)', 'Đối soát hóa đơn và hạch toán sổ sách hàng ngày'),
+                    ('NV009', 'Ca hành chính (08:00 - 17:30)', 'Báo cáo thuế, tài sản cố định và chi phí vận hành'),
+                    ('NV007', 'Ca hành chính (08:00 - 17:30)', 'Chỉ đạo kinh doanh và đàm phán hợp đồng lớn'),
+                    ('NV004', 'Ca sáng (06:00 - 14:00)' if day_num % 2 == 1 else 'Ca chiều (14:00 - 22:00)',
+                     'Trực tổng đài tư vấn khách hàng ca sáng' if day_num % 2 == 1 else 'Chăm sóc khách hàng VIP và chốt hợp đồng'),
+                    ('NV010', 'Ca chiều (14:00 - 22:00)' if day_num in (6, 7, 13, 14) else 'Ca hành chính (08:00 - 17:30)',
+                     'Quản lý sự kiện hội thảo trực tuyến cuối tuần' if day_num in (6, 7, 13, 14) else 'Vận hành chiến dịch truyền thông đa kênh'),
+                    ('NV008', 'Ca hành chính (08:00 - 17:30)', 'Giám sát hạ tầng kỹ thuật và điều phối sprint'),
+                    ('NV005', [('Ca sáng (06:00 - 14:00)', 'Release mã nguồn và kiểm tra hiệu năng hệ thống'),
+                               ('Ca chiều (14:00 - 22:00)', 'Xử lý sự cố ứng dụng và hỗ trợ tích hợp API'),
+                               ('Ca hành chính (08:00 - 17:30)', 'Phát triển tính năng sprint mới theo Jira'),
+                               ('Ca đêm (22:00 - 06:00)', 'Trực giám sát vận hành hạ tầng máy chủ 24/7')][d_idx % 4][0],
+                              [('Ca sáng (06:00 - 14:00)', 'Release mã nguồn và kiểm tra hiệu năng hệ thống'),
+                               ('Ca chiều (14:00 - 22:00)', 'Xử lý sự cố ứng dụng và hỗ trợ tích hợp API'),
+                               ('Ca hành chính (08:00 - 17:30)', 'Phát triển tính năng sprint mới theo Jira'),
+                               ('Ca đêm (22:00 - 06:00)', 'Trực giám sát vận hành hạ tầng máy chủ 24/7')][d_idx % 4][1]),
+                    ('NV011', 'Ca sáng (06:00 - 14:00)' if day_num % 2 == 1 else 'Ca hành chính (08:00 - 17:30)',
+                     'Kiểm thử nghiệm thu sản phẩm trước giờ phát hành' if day_num % 2 == 1 else 'Thực hiện test case hồi quy tự động'),
+                    ('NV012', [('Ca chiều (14:00 - 22:00)', 'Giám sát hệ thống Cloud Kubernetes và container'),
+                               ('Ca đêm (22:00 - 06:00)', 'Sao lưu dữ liệu định kỳ và rà quét bảo mật máy chủ'),
+                               ('Ca hành chính (08:00 - 17:30)', 'Cấu hình tối ưu đường ống CI/CD GitLab/Docker')][d_idx % 3][0],
+                              [('Ca chiều (14:00 - 22:00)', 'Giám sát hệ thống Cloud Kubernetes và container'),
+                               ('Ca đêm (22:00 - 06:00)', 'Sao lưu dữ liệu định kỳ và rà quét bảo mật máy chủ'),
+                               ('Ca hành chính (08:00 - 17:30)', 'Cấu hình tối ưu đường ống CI/CD GitLab/Docker')][d_idx % 3][1]),
+                ]
+                for mnv_s, ca_s, gc_s in shifts_day:
+                    if not db.execute("SELECT 1 FROM PhanCa WHERE MaNV=? AND Ngay=?", (mnv_s, d_str)).fetchone():
+                        db.execute("INSERT INTO PhanCa(MaNV, Ngay, CaLam, GhiChu) VALUES(?, ?, ?, ?)", (mnv_s, d_str, ca_s, gc_s))
+        except Exception:
+            pass
+
     db.commit()
 
 def init_db():

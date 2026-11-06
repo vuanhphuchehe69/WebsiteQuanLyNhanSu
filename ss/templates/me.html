@@ -7,6 +7,12 @@
             <p>{{ today_vn }} • {{ emp_metrics.dept_role }}</p>
         </div>
         <div class="dash-greeting-actions">
+            <a class="btn g" href="{{ url_for('main.training_view') }}" style="border-radius:10px;font-size:13px">
+                {{ icon('book-open') }} Khóa đào tạo
+            </a>
+            <a class="btn g" href="{{ url_for('main.self_eval_kpi') }}" style="border-radius:10px;font-size:13px">
+                {{ icon('award') }} Tự đánh giá KPI
+            </a>
             <a class="btn g" href="{{ url_for('main.edit_profile') }}" style="border-radius:10px;font-size:13px">
                 {{ icon('edit') }} Cập nhật hồ sơ
             </a>
@@ -487,6 +493,42 @@
         </div>
     </div>
 
+    <!-- Lịch phân ca làm việc -->
+    {% if CA %}
+        <div class="card flush">
+            <div style="padding:16px 20px 14px">
+                <h3 style="margin:0">
+                    {{ icon('calendar') }}
+                    Lịch phân ca làm việc ({{ CA|length }})
+                </h3>
+            </div>
+            <div class="tw">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ngày làm việc</th>
+                            <th>Ca phân công</th>
+                            <th>Ghi chú ca làm việc</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in CA %}
+                            <tr>
+                                <td><b>{{ c.Ngay }}</b></td>
+                                <td>
+                                    <span class="tag info">
+                                        {{ c.CaLam }}
+                                    </span>
+                                </td>
+                                <td>{{ c.GhiChu or '-' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
     <!-- Lịch sử giải trình công -->
     {% if GT %}
         <div class="card flush">
@@ -530,6 +572,108 @@
             </div>
         </div>
     {% endif %}
+
+    <!-- Đánh giá hiệu suất công việc & KPI -->
+    <div class="card flush">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 14px">
+            <h3 style="margin:0">
+                {{ icon('award') }}
+                Đánh giá hiệu suất công việc & KPI
+            </h3>
+            <a class="btn" style="padding:5px 12px;font-size:12px" href="{{ url_for('main.self_eval_kpi') }}">
+                {{ icon('edit') }}
+                Tự đánh giá KPI
+            </a>
+        </div>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tháng</th>
+                        <th class="num">Điểm tự chấm</th>
+                        <th>Nhận xét cá nhân</th>
+                        <th class="num">Điểm chính thức</th>
+                        <th>Xếp loại</th>
+                        <th>Nhận xét của quản lý</th>
+                        <th>Người đánh giá</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in DG %}
+                        <tr>
+                            <td><b>{{ r.ThangNam }}</b></td>
+                            <td class="num"><b>{{ r.DiemTuDanhGia or '-' }}</b></td>
+                            <td style="max-width:200px;font-size:12.5px">{{ r.NhanXetCaNhan or '-' }}</td>
+                            <td class="num"><b style="font-size:15px;color:var(--brand)">{{ r.DiemKPI }}</b></td>
+                            <td>
+                                <span class="tag {{ TONE.get(r.XepLoai, 'n') }}">
+                                    {{ r.XepLoai }}
+                                </span>
+                            </td>
+                            <td>{{ r.NhanXet or '-' }}</td>
+                            <td><strong>{{ r.NguoiDanhGia }}</strong></td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="empty">
+                                Chưa có kỳ đánh giá hiệu suất nào.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Khóa đào tạo đã đăng ký -->
+    <div class="card flush">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 14px">
+            <h3 style="margin:0">
+                {{ icon('book-open') }}
+                Khóa đào tạo đã đăng ký
+            </h3>
+            <a class="btn" style="padding:5px 12px;font-size:12px" href="{{ url_for('main.training_view') }}">
+                {{ icon('plus') }}
+                Xem cổng đào tạo
+            </a>
+        </div>
+        <div class="tw">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tên khóa đào tạo</th>
+                        <th>Giảng viên</th>
+                        <th>Thời gian</th>
+                        <th>Địa điểm</th>
+                        <th>Ngày đăng ký</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in DK_DT %}
+                        <tr>
+                            <td><b>{{ d.TenKhoa }}</b></td>
+                            <td>{{ d.GiangVien }}</td>
+                            <td>{{ d.ThoiGian }}</td>
+                            <td>{{ d.DiaDiem }}</td>
+                            <td>{{ d.NgayDangKy }}</td>
+                            <td>
+                                <span class="tag ok">
+                                    {{ d.TrangThai }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="empty">
+                                Chưa đăng ký khóa đào tạo nào. <a href="{{ url_for('main.training_view') }}">Khám phá các khóa học ngay</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 
     <!-- Khen thưởng & Kỷ luật của bản thân -->
     {% if KT %}

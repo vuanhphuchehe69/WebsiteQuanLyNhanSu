@@ -234,7 +234,7 @@ def seed_transaction_records(db):
     db.commit()
 
     # 8. Đề xuất & Khiếu nại
-    print("[8/11] Nạp Đề xuất & Khiếu nại (DeXuatKhieuNai)...")
+    print("[8/13] Nạp Đề xuất & Khiếu nại (DeXuatKhieuNai)...")
     feedbacks = [
         ('NV005', 'Đề xuất trang bị màn hình máy tính phụ cho đội Lập trình & QA', 'Đề xuất cơ sở vật chất', 'Giúp nhân viên đối chiếu mã nguồn và tài liệu thiết kế nhanh hơn, tăng 30% hiệu suất.', '2026-10-05', 'Đã xử lý', 'Phòng Hành chính đã bàn giao màn hình phụ Dell 24 inch.'),
         ('NV004', 'Đề xuất tài trợ chi phí thi chứng chỉ quốc tế cho nhân viên đạt loại Tốt', 'Đề xuất chế độ', 'Khuyến khích nhân viên tự học và nâng cao năng lực chuyên môn đạt chuẩn quốc tế.', '2026-10-12', 'Đã xử lý', 'Ban Giám đốc đồng ý hỗ trợ 70% lệ phí thi cho nhân viên đạt kết quả.'),
@@ -250,7 +250,7 @@ def seed_transaction_records(db):
     db.commit()
 
     # 9. Đề xuất nhân sự
-    print("[9/11] Nạp Đề xuất nhân sự từ Quản lý gửi Admin (DeXuatNhanSu)...")
+    print("[9/13] Nạp Đề xuất nhân sự từ Quản lý gửi Admin (DeXuatNhanSu)...")
     proposals = [
         ('NV008', 'NV005', 'Tăng lương', 'Tăng mức lương lên 25.000.000đ', 'Đảm nhiệm vai trò Fullstack Lead kiến trúc hệ thống ổn định cao', 'Đã duyệt', 'Đã phê duyệt điều chỉnh hợp đồng lao động mới.'),
         ('NV007', 'NV004', 'Khen thưởng', 'Thưởng nóng 5.000.000đ', 'Dẫn dắt chiến dịch ra mắt dịch vụ mới đạt 140% chỉ tiêu doanh số', 'Đã duyệt', 'Khen thưởng và tuyên dương toàn công ty.'),
@@ -266,8 +266,161 @@ def seed_transaction_records(db):
             """, (mnv_tgt, n_dx, loai_p, muc_p, lydo_p, tt_p, yk_p))
     db.commit()
 
-    # 10. Tuyển dụng & Ứng viên
-    print("[10/11] Nạp Yêu cầu tuyển dụng & Hồ sơ ứng viên...")
+    # 10. Khóa đào tạo & Đăng ký tham gia
+    print("[10/13] Nạp Khóa đào tạo (KhoaDaoTao) & Đăng ký tham gia (DangKyDaoTao)...")
+    courses = [
+        ('An toàn thông tin & Bảo mật dữ liệu doanh nghiệp (ISO 27001)', 'TS. Nguyễn Văn Hưng (Chuyên gia An ninh mạng)', 'Thứ 7 hàng tuần (08:30 - 11:30)', 'Hội trường Tầng 5 - Trụ sở chính', 50, 'Trang bị kiến thức phòng vệ mã độc, lừa đảo phishing, mã hóa dữ liệu khách hàng và tuân thủ tiêu chuẩn an ninh thông tin ISO 27001.', 'Đang diễn ra'),
+        ('Kỹ năng giao tiếp, lắng nghe & Đàm phán trong công sở', 'ThS. Lê Hoàng Yến (Chuyên gia Dale Carnegie)', '18:30 - 20:30 (Thứ 3 & Thứ 5)', 'Phòng Đào tạo A201', 40, 'Nâng cao năng lực kết nối đồng nghiệp, thấu hiểu khách hàng, giải quyết xung đột tích cực và nghệ thuật thuyết phục trong đàm phán hợp đồng.', 'Sắp diễn ra'),
+        ('Quản trị dự án Agile & Scrum thực chiến', 'Chuyên gia Scrum Master Trần Quốc Toản', 'Chủ nhật cả ngày (09:00 - 17:00)', 'Trung tâm Hội thảo Innovation Hub Tầng 3', 35, 'Ứng dụng thực tế Jira, Sprint Planning, Daily Scrum, Retrospective và User Story Mapping vào vận hành dự án công nghệ & kinh doanh.', 'Đang diễn ra'),
+        ('Ứng dụng Trí tuệ Nhân tạo (Generative AI) nâng cao hiệu suất làm việc', 'Kỹ sư AI Phan Thanh Hải (AI Research Lead)', 'Thứ 6 (14:00 - 17:00)', 'Phòng Lab Công nghệ Tầng 4', 45, 'Khai thác ChatGPT, Claude và GitHub Copilot để soạn thảo văn bản, phân tích dữ liệu, tự động hóa tác vụ lặp và tối ưu hóa quy trình làm việc.', 'Sắp diễn ra'),
+        ('Kỹ năng thuyết trình chuyên nghiệp và làm chủ cuộc họp', 'ThS. Đoàn Minh Tâm (Giảng viên Kỹ năng truyền thông)', 'Thứ 7 (13:30 - 17:00)', 'Hội trường Tầng 5', 40, 'Kỹ thuật diễn đạt gãy gọn, thiết kế slide trực quan ấn tượng và nghệ thuật điều phối tương tác trong các cuộc họp điều hành quan trọng.', 'Sắp diễn ra'),
+        ('Quản trị tài chính cá nhân & Lập kế hoạch ngân sách phòng ban', 'CPA Phạm Minh Tú (Giám đốc Tài chính CFO Club)', 'Chủ nhật (08:30 - 11:30)', 'Phòng Hội nghị B302', 30, 'Kiểm soát dòng tiền cá nhân và doanh nghiệp, dự toán ngân sách hoạt động, tối ưu chi phí và phân tích báo cáo tài chính quản trị.', 'Hoàn thành'),
+        ('Phân tích dữ liệu kinh doanh & Dashboard trực quan với Microsoft Power BI', 'ThS. Vũ Thành Đạt (Data Analytics Specialist)', 'Thứ 2 & Thứ 4 (18:30 - 21:00)', 'Phòng Lab Máy tính Tầng 3', 35, 'Thực hành xây dựng mô hình dữ liệu (Data Modeling), viết hàm DAX và thiết kế dashboard tương tác trực quan cho báo cáo kinh doanh & nhân sự.', 'Sắp diễn ra'),
+        ('Kỹ năng lãnh đạo & Phát triển năng lực nhân viên dành cho Quản lý', 'TS. Hoàng Thu Thảo (Cố vấn Quản trị Nhân sự VCCI)', 'Thứ 7 (09:00 - 16:30)', 'Phòng Hội thảo Executive B401', 25, 'Phát triển tư duy lãnh đạo dẫn dắt, kỹ năng giao việc & ủy quyền, coaching nhân viên và xây dựng văn hóa đội ngũ gắn kết vững mạnh.', 'Đang diễn ra')
+    ]
+    for ten_k, gv_k, tg_k, dd_k, sl_k, mt_k, tt_k in courses:
+        row = db.execute("SELECT 1 FROM KhoaDaoTao WHERE TenKhoa = ?", (ten_k,)).fetchone()
+        if not row:
+            db.execute("""
+                INSERT INTO KhoaDaoTao(TenKhoa, GiangVien, ThoiGian, DiaDiem, SoLuong, MoTa, TrangThai)
+                VALUES(?, ?, ?, ?, ?, ?, ?)
+            """, (ten_k, gv_k, tg_k, dd_k, sl_k, mt_k, tt_k))
+        else:
+            db.execute("""
+                UPDATE KhoaDaoTao SET GiangVien = ?, ThoiGian = ?, DiaDiem = ?, SoLuong = ?, MoTa = ?, TrangThai = ? WHERE TenKhoa = ?
+            """, (gv_k, tg_k, dd_k, sl_k, mt_k, tt_k, ten_k))
+    db.commit()
+
+    # Đăng ký khóa học cho nhân viên
+    kdt_rows = db.execute("SELECT MaKDT, TenKhoa FROM KhoaDaoTao ORDER BY MaKDT").fetchall()
+    kdt_map = {c[0]: None for c in courses}
+    for kr in kdt_rows:
+        if kr['TenKhoa'] in kdt_map:
+            kdt_map[kr['TenKhoa']] = kr['MaKDT']
+
+    sample_dk = [
+        # Course 0: An toàn thông tin ISO 27001
+        (courses[0][0], 'NV001', '2026-10-15 08:30', 'Đang học'),
+        (courses[0][0], 'NV005', '2026-10-15 09:15', 'Đang học'),
+        (courses[0][0], 'NV008', '2026-10-15 10:20', 'Đang học'),
+        (courses[0][0], 'NV011', '2026-10-15 11:00', 'Đang học'),
+        (courses[0][0], 'NV012', '2026-10-15 14:10', 'Đang học'),
+        (courses[0][0], 'NV006', '2026-10-15 15:30', 'Đang học'),
+        # Course 1: Giao tiếp & Đàm phán
+        (courses[1][0], 'NV002', '2026-10-16 10:00', 'Đã đăng ký'),
+        (courses[1][0], 'NV004', '2026-10-16 14:20', 'Đã đăng ký'),
+        (courses[1][0], 'NV007', '2026-10-16 15:00', 'Đã đăng ký'),
+        (courses[1][0], 'NV010', '2026-10-16 16:45', 'Đã đăng ký'),
+        (courses[1][0], 'NV013', '2026-10-16 17:10', 'Đã đăng ký'),
+        # Course 2: Agile & Scrum
+        (courses[2][0], 'NV005', '2026-10-17 08:45', 'Đang học'),
+        (courses[2][0], 'NV008', '2026-10-17 09:30', 'Đang học'),
+        (courses[2][0], 'NV011', '2026-10-17 10:15', 'Đang học'),
+        (courses[2][0], 'NV012', '2026-10-17 11:40', 'Đang học'),
+        (courses[2][0], 'NV010', '2026-10-17 14:00', 'Đang học'),
+        # Course 3: Generative AI
+        (courses[3][0], 'NV001', '2026-10-18 09:00', 'Đã đăng ký'),
+        (courses[3][0], 'NV002', '2026-10-18 09:40', 'Đã đăng ký'),
+        (courses[3][0], 'NV004', '2026-10-18 10:25', 'Đã đăng ký'),
+        (courses[3][0], 'NV005', '2026-10-18 11:10', 'Đã đăng ký'),
+        (courses[3][0], 'NV007', '2026-10-18 14:15', 'Đã đăng ký'),
+        (courses[3][0], 'NV009', '2026-10-18 15:00', 'Đã đăng ký'),
+        (courses[3][0], 'NV010', '2026-10-18 15:45', 'Đã đăng ký'),
+        (courses[3][0], 'NV012', '2026-10-18 16:30', 'Đã đăng ký'),
+        # Course 4: Kỹ năng thuyết trình
+        (courses[4][0], 'NV002', '2026-10-19 09:30', 'Đã đăng ký'),
+        (courses[4][0], 'NV004', '2026-10-19 10:15', 'Đã đăng ký'),
+        (courses[4][0], 'NV007', '2026-10-19 11:00', 'Đã đăng ký'),
+        (courses[4][0], 'NV013', '2026-10-19 14:30', 'Đã đăng ký'),
+        # Course 5: Quản trị tài chính
+        (courses[5][0], 'NV003', '2026-09-05 08:30', 'Hoàn thành'),
+        (courses[5][0], 'NV006', '2026-09-05 09:15', 'Hoàn thành'),
+        (courses[5][0], 'NV009', '2026-09-05 10:00', 'Hoàn thành'),
+        (courses[5][0], 'NV007', '2026-09-05 14:00', 'Hoàn thành'),
+        (courses[5][0], 'NV001', '2026-09-05 15:30', 'Hoàn thành'),
+        # Course 6: Power BI
+        (courses[6][0], 'NV003', '2026-10-20 09:10', 'Đã đăng ký'),
+        (courses[6][0], 'NV004', '2026-10-20 10:00', 'Đã đăng ký'),
+        (courses[6][0], 'NV009', '2026-10-20 11:30', 'Đã đăng ký'),
+        (courses[6][0], 'NV010', '2026-10-20 14:15', 'Đã đăng ký'),
+        (courses[6][0], 'NV002', '2026-10-20 16:00', 'Đã đăng ký'),
+        # Course 7: Lãnh đạo cho Quản lý
+        (courses[7][0], 'NV001', '2026-10-21 08:45', 'Đang học'),
+        (courses[7][0], 'NV006', '2026-10-21 09:30', 'Đang học'),
+        (courses[7][0], 'NV007', '2026-10-21 10:15', 'Đang học'),
+        (courses[7][0], 'NV008', '2026-10-21 11:00', 'Đang học'),
+    ]
+    for ten_khoa, mnv_d, ng_d, tt_d in sample_dk:
+        mkdt_d = kdt_map.get(ten_khoa)
+        if mkdt_d:
+            row = db.execute("SELECT 1 FROM DangKyDaoTao WHERE MaKDT = ? AND MaNV = ?", (mkdt_d, mnv_d)).fetchone()
+            if not row:
+                db.execute("""
+                    INSERT INTO DangKyDaoTao(MaKDT, MaNV, NgayDangKy, TrangThai)
+                    VALUES(?, ?, ?, ?)
+                """, (mkdt_d, mnv_d, ng_d, tt_d))
+    db.commit()
+
+    # 11. Phân ca làm việc
+    print("[11/13] Nạp Phân ca làm việc chi tiết (PhanCa)...")
+    start_shift_date = date(2026, 11, 1)
+    shift_dates_14 = [(start_shift_date + timedelta(days=d)).strftime('%Y-%m-%d') for d in range(14)]
+    if date.today().strftime('%Y-%m-%d') not in shift_dates_14:
+        shift_dates_14.append(date.today().strftime('%Y-%m-%d'))
+
+    for d_idx, d_str in enumerate(shift_dates_14):
+        day_num = d_idx + 1
+
+        # PB01 - Nhân sự
+        shifts_for_day = [
+            ('NV001', 'Ca hành chính (08:00 - 17:30)', 'Quản lý và điều hành nhân sự toàn công ty'),
+            ('NV002', 'Ca hành chính (08:00 - 17:30)', 'Trực tiếp nhận hồ sơ, BHXH và hợp đồng lao động'),
+            ('NV013', 'Ca hành chính (08:00 - 17:30)', 'Tổ chức phỏng vấn và tiếp đón ứng viên mới'),
+            # PB02 - Kế toán
+            ('NV006', 'Ca hành chính (08:00 - 17:30)', 'Phê duyệt chứng từ tài chính và dòng tiền'),
+            ('NV003', 'Ca hành chính (08:00 - 17:30)', 'Đối soát hóa đơn và hạch toán sổ sách hàng ngày'),
+            ('NV009', 'Ca hành chính (08:00 - 17:30)', 'Báo cáo thuế, tài sản cố định và chi phí vận hành'),
+            # PB03 - Kinh doanh
+            ('NV007', 'Ca hành chính (08:00 - 17:30)', 'Chỉ đạo kinh doanh và đàm phán hợp đồng lớn'),
+            ('NV004', 'Ca sáng (06:00 - 14:00)' if day_num % 2 == 1 else 'Ca chiều (14:00 - 22:00)',
+             'Trực tổng đài tư vấn khách hàng ca sáng' if day_num % 2 == 1 else 'Chăm sóc khách hàng VIP và chốt hợp đồng'),
+            ('NV010', 'Ca chiều (14:00 - 22:00)' if day_num in (6, 7, 13, 14) else 'Ca hành chính (08:00 - 17:30)',
+             'Quản lý sự kiện hội thảo trực tuyến cuối tuần' if day_num in (6, 7, 13, 14) else 'Vận hành chiến dịch truyền thông đa kênh'),
+            # PB04 - Kỹ thuật
+            ('NV008', 'Ca hành chính (08:00 - 17:30)', 'Giám sát hạ tầng kỹ thuật và điều phối sprint'),
+            ('NV005', [('Ca sáng (06:00 - 14:00)', 'Release mã nguồn và kiểm tra hiệu năng hệ thống'),
+                       ('Ca chiều (14:00 - 22:00)', 'Xử lý sự cố ứng dụng và hỗ trợ tích hợp API'),
+                       ('Ca hành chính (08:00 - 17:30)', 'Phát triển tính năng sprint mới theo Jira'),
+                       ('Ca đêm (22:00 - 06:00)', 'Trực giám sát vận hành hạ tầng máy chủ 24/7')][d_idx % 4][0],
+                      [('Ca sáng (06:00 - 14:00)', 'Release mã nguồn và kiểm tra hiệu năng hệ thống'),
+                       ('Ca chiều (14:00 - 22:00)', 'Xử lý sự cố ứng dụng và hỗ trợ tích hợp API'),
+                       ('Ca hành chính (08:00 - 17:30)', 'Phát triển tính năng sprint mới theo Jira'),
+                       ('Ca đêm (22:00 - 06:00)', 'Trực giám sát vận hành hạ tầng máy chủ 24/7')][d_idx % 4][1]),
+            ('NV011', 'Ca sáng (06:00 - 14:00)' if day_num % 2 == 1 else 'Ca hành chính (08:00 - 17:30)',
+             'Kiểm thử nghiệm thu sản phẩm trước giờ phát hành' if day_num % 2 == 1 else 'Thực hiện test case hồi quy tự động'),
+            ('NV012', [('Ca chiều (14:00 - 22:00)', 'Giám sát hệ thống Cloud Kubernetes và container'),
+                       ('Ca đêm (22:00 - 06:00)', 'Sao lưu dữ liệu định kỳ và rà quét bảo mật máy chủ'),
+                       ('Ca hành chính (08:00 - 17:30)', 'Cấu hình tối ưu đường ống CI/CD GitLab/Docker')][d_idx % 3][0],
+                      [('Ca chiều (14:00 - 22:00)', 'Giám sát hệ thống Cloud Kubernetes và container'),
+                       ('Ca đêm (22:00 - 06:00)', 'Sao lưu dữ liệu định kỳ và rà quét bảo mật máy chủ'),
+                       ('Ca hành chính (08:00 - 17:30)', 'Cấu hình tối ưu đường ống CI/CD GitLab/Docker')][d_idx % 3][1]),
+        ]
+
+        for mnv_s, ca_s, gc_s in shifts_for_day:
+            row = db.execute("SELECT 1 FROM PhanCa WHERE MaNV = ? AND Ngay = ?", (mnv_s, d_str)).fetchone()
+            if not row:
+                db.execute("""
+                    INSERT INTO PhanCa(MaNV, Ngay, CaLam, GhiChu)
+                    VALUES(?, ?, ?, ?)
+                """, (mnv_s, d_str, ca_s, gc_s))
+            else:
+                db.execute("""
+                    UPDATE PhanCa SET CaLam = ?, GhiChu = ? WHERE MaNV = ? AND Ngay = ?
+                """, (ca_s, gc_s, mnv_s, d_str))
+    db.commit()
+
+    # 12. Tuyển dụng & Ứng viên
+    print("[12/13] Nạp Yêu cầu tuyển dụng & Hồ sơ ứng viên...")
     recruit_reqs = [
         ('PB04', 'Kỹ sư Lập trình Backend (Python/Flask/SQL)', 2, 'Kinh nghiệm với Python, RESTful API, SQL Server/SQLite, Docker.', 'Mở rộng đội ngũ phát triển sản phẩm HRM thế hệ mới.', '2026-11-30', 'Đang tuyển'),
         ('PB03', 'Chuyên viên Kinh doanh B2B', 2, 'Giao tiếp tốt, có kinh nghiệm đàm phán giải pháp phần mềm doanh nghiệp.', 'Đẩy mạnh phát triển thị trường khách hàng doanh nghiệp.', '2026-11-25', 'Đang tuyển'),
@@ -302,8 +455,8 @@ def seed_transaction_records(db):
             """, (myc, hoten, em, sdt, vt, mpb, ngay_pv, npv, kq, nx))
     db.commit()
 
-    # 11. Thông báo nội bộ & chốt công
-    print("[11/11] Nạp Thông báo nội bộ công ty (ThongBao)...")
+    # 13. Thông báo nội bộ & chốt công
+    print("[13/13] Nạp Thông báo nội bộ công ty (ThongBao)...")
     announcements = [
         ('Kế hoạch nghỉ lễ và kế hoạch công tác dịp Tết Dương Lịch 2027',
          'Ban Giám đốc thông báo toàn thể cán bộ nhân viên lịch nghỉ Tết Dương Lịch từ ngày 01/01/2027 đến hết ngày 03/01/2027. Bộ phận Kỹ thuật bố trí nhân sự trực online đảm bảo hệ thống vận hành liên tục 24/7.',
@@ -314,8 +467,8 @@ def seed_transaction_records(db):
         ('Thông báo về lịch làm việc và đăng ký nghỉ phép trực tuyến',
          'Đề nghị cán bộ nhân viên thực hiện đúng quy định nộp đơn xin nghỉ phép, giải trình công và đăng ký tăng ca trực tuyến trên hệ thống quản lý nhân sự.',
          '2026-10-15', 'Phòng Nhân sự', 'Toàn công ty', None),
-        ('Kế hoạch đánh giá hiệu quả công việc định kỳ tháng',
-         'Thông báo tới các nhân sự thuộc phòng ban về việc hoàn thành tự đánh giá kết quả công việc tháng đúng thời hạn quy định trên cổng thông tin.',
+        ('Kế hoạch đánh giá hiệu suất công việc KPI định kỳ tháng',
+         'Thông báo tới các nhân sự thuộc phòng ban về việc hoàn thành tự đánh giá KPI tháng đúng thời hạn quy định trên cổng thông tin.',
          '2026-10-10', 'Trưởng phòng Nhân sự', 'Theo phòng ban', 'PB01')
     ]
     for td, nd, ng, nguoi, pv, mpb in announcements:

@@ -6,8 +6,13 @@ Xem thông báo nội bộ: Đọc các thông báo từ Ban Giám Đốc, Phòn
 Xem hồ sơ & Thông tin nhân sự: Xem thông tin phòng ban, hợp đồng và quá trình công tác.
 Quy trình xin nghỉ phép: Tạo đơn xin nghỉ phép, tự động kiểm tra trùng lịch nghỉ, xem trạng thái (Chờ duyệt, Đã duyệt, Từ chối) và hủy đơn khi đang chờ duyệt.
 Xem bảng lương, hợp đồng, tăng ca: Lịch sử chi tiết bảng lương thực lĩnh, tăng ca và hợp đồng lao động.
+Tự đánh giá KPI cá nhân: Thực hiện tự chấm điểm KPI và ghi nhận xét cá nhân định kỳ tại /me/kpi/self-eval.
+Lịch phân ca & Cổng đào tạo: Xem lịch phân ca làm việc theo ngày và danh sách khóa đào tạo tại /me, đăng ký tham gia khóa học nội bộ tại /training.
 2. Actor Quản lý
 Theo dõi chấm công & tình hình đi làm: Xem danh sách chấm công nhân viên phòng ban, tìm kiếm, lọc theo ngày/tháng, trạng thái đi làm tại /m/chamcong.
+Phân ca làm việc: Thiết lập và phân công ca làm việc (Ca sáng, Ca chiều, Ca đêm, Ca hành chính) cho nhân sự tại /m/phanca.
+Quản lý đào tạo & Học viên: Quản lý khóa đào tạo tại /m/daotao và theo dõi danh sách học viên đăng ký tại /m/dangky_daotao.
+Đánh giá KPI nhân viên: Chấm điểm KPI chính thức, xếp loại và nhận xét đánh giá hiệu suất nhân viên tại /m/danhgia.
 Chấm công nhanh hôm nay: Nút thao tác nhanh tự động ghi nhận chấm công đúng giờ cho nhân viên chưa chấm công trong ngày.
 Báo cáo cơ cấu nhân sự phòng ban: Quản lý và theo dõi nhân sự thuộc phạm vi quản lý.
 Lập báo cáo nhân sự phòng ban: Xem và xuất file Excel/CSV báo cáo nhân sự phòng ban tại /report/hr gồm: tổng số lượng nhân sự, cơ cấu giới tính Nam/Nữ, tổng ngày công, giờ tăng ca, số ngày nghỉ phép và tỷ lệ đi làm đúng giờ.

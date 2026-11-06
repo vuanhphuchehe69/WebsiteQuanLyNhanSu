@@ -210,9 +210,44 @@
                 </div>
             </a>
 
+            <a class="action-card" href="{{ url_for('modules.mlist', mod='danhgia') }}">
+                <div class="ac-icon theme-cyan">
+                    {{ icon('award') }}
+                </div>
+                <div class="ac-body">
+                    <div class="ac-title">
+                        <span>Đánh giá KPI</span>
+                        <span class="ac-arrow">→</span>
+                    </div>
+                    <div class="ac-desc">Chấm điểm hiệu suất và nhận xét công việc</div>
+                </div>
+            </a>
 
+            <a class="action-card" href="{{ url_for('modules.mlist', mod='phanca') }}">
+                <div class="ac-icon theme-purple">
+                    {{ icon('calendar') }}
+                </div>
+                <div class="ac-body">
+                    <div class="ac-title">
+                        <span>Phân ca làm việc</span>
+                        <span class="ac-arrow">→</span>
+                    </div>
+                    <div class="ac-desc">Xếp lịch và phân ca trực nhật phòng ban</div>
+                </div>
+            </a>
 
-
+            <a class="action-card" href="{{ url_for('main.training_view') }}">
+                <div class="ac-icon theme-amber">
+                    {{ icon('book-open') }}
+                </div>
+                <div class="ac-body">
+                    <div class="ac-title">
+                        <span>Khóa đào tạo</span>
+                        <span class="ac-arrow">→</span>
+                    </div>
+                    <div class="ac-desc">Chương trình nâng cao chuyên môn nội bộ</div>
+                </div>
+            </a>
 
             <a class="action-card" href="{{ url_for('main.feedback_view') }}">
                 <div class="ac-icon theme-blue">

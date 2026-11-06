@@ -351,23 +351,33 @@ with app.test_client() as client:
     assert 'Đã gửi yêu cầu tạm ứng' in res.text
     print('PASS 32: Employee requests salary advance')
 
-    # Test 33: Employee evaluation feature is disabled per requirements
+    # Test 33: Employee KPI self-assessment
     with client.session_transaction() as sess:
         csrf_token = sess.get('_csrf')
     res = client.post('/me/kpi/self-eval', data={
         'DiemTuDanhGia': '95',
-        'NhanXetCaNhan': 'Hoàn thành 100% mục tiêu',
+        'NhanXetCaNhan': 'Hoàn thành 100% mục tiêu sprint và không có bug phát sinh',
         '_csrf': csrf_token
     }, follow_redirects=True)
     assert res.status_code == 200
-    assert 'đã được lược bỏ khỏi phạm vi hệ thống' in res.text
-    print('PASS 33: Employee evaluation feature is properly removed per requirements')
+    assert 'Tự đánh giá KPI' in res.text
+    print('PASS 33: Employee KPI self-assessment succeeds')
 
-    # Test 34: Training Catalog browsing disabled
-    res = client.get('/training', follow_redirects=True)
+    # Test 34: Training Catalog browsing and course enrollment
+    res = client.get('/training')
     assert res.status_code == 200
-    assert 'Tính năng Khóa đào tạo đã được tắt' in res.text
-    print('PASS 34: Training catalog is properly disabled per requirements')
+    assert 'Khóa đào tạo nội bộ' in res.text
+
+    with app.app_context():
+        db = get_db()
+        course = db.execute("SELECT TOP 1 MaKDT FROM KhoaDaoTao").fetchone()
+        course_id = course['MaKDT'] if course else 1
+
+    with client.session_transaction() as sess:
+        csrf_token = sess.get('_csrf')
+    res = client.post(f'/training/register/{course_id}', data={'_csrf': csrf_token}, follow_redirects=True)
+    assert res.status_code == 200
+    print('PASS 34: Employee enrolls in corporate training course')
 
     # Test 35: Employee submits proposal / complaint
     with client.session_transaction() as sess:

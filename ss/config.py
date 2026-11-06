@@ -311,7 +311,7 @@ MODS = {
         ]
     },
     'danhgia': {
-        'title': 'Đánh giá thi đua',
+        'title': 'Đánh giá KPI',
         'icon': 'award',
         'table': 'DanhGia',
         'pk': 'MaDG',
@@ -326,7 +326,7 @@ MODS = {
             ('TenPB', 'Phòng ban'),
             ('ThangNam', 'Tháng/Năm'),
             ('DiemTuDanhGia', 'Tự chấm'),
-            ('DiemKPI', 'Điểm đánh giá'),
+            ('DiemKPI', 'Điểm KPI'),
             ('XepLoai', 'Xếp loại'),
             ('NguoiDanhGia', 'Người đánh giá'),
         ],
@@ -337,10 +337,93 @@ MODS = {
             ('ThangNam', 'Tháng/năm đánh giá', 'month', 1, None),
             ('DiemTuDanhGia', 'Điểm nhân viên tự chấm (0-100)', 'number', 0, None),
             ('NhanXetCaNhan', 'Nhân viên tự nhận xét', 'textarea', 0, None),
-            ('DiemKPI', 'Điểm đánh giá (0-100)', 'number', 1, None),
+            ('DiemKPI', 'Điểm KPI chính thức (0-100)', 'number', 1, None),
             ('XepLoai', 'Xếp loại', 'select', 1, 'loai_xl'),
             ('NhanXet', 'Nhận xét của quản lý', 'textarea', 0, None),
             ('NguoiDanhGia', 'Người đánh giá', 'text', 1, None),
+        ]
+    },
+    'daotao': {
+        'title': 'Khóa đào tạo',
+        'icon': 'book-open',
+        'table': 'KhoaDaoTao',
+        'pk': 'MaKDT',
+        'auto': True,
+        'roles': (QL, AD),
+        'sel': "SELECT x.*, (SELECT COUNT(*) FROM DangKyDaoTao d WHERE d.MaKDT=x.MaKDT) AS SoHocVien FROM KhoaDaoTao x",
+        'cols': [
+            ('MaKDT', 'Mã khóa'),
+            ('TenKhoa', 'Tên khóa đào tạo'),
+            ('GiangVien', 'Giảng viên'),
+            ('ThoiGian', 'Thời gian'),
+            ('DiaDiem', 'Địa điểm'),
+            ('SoLuong', 'Chỉ tiêu'),
+            ('SoHocVien', 'Đã đăng ký'),
+            ('TrangThai', 'Trạng thái'),
+        ],
+        'search': ['x.TenKhoa', 'x.GiangVien', 'x.DiaDiem', 'x.TrangThai'],
+        'order': 'MaKDT DESC',
+        'fields': [
+            ('TenKhoa', 'Tên khóa đào tạo', 'text', 1, None),
+            ('GiangVien', 'Giảng viên / Đơn vị đào tạo', 'text', 1, None),
+            ('ThoiGian', 'Thời gian diễn ra', 'text', 1, None),
+            ('DiaDiem', 'Địa điểm học tập', 'text', 1, None),
+            ('SoLuong', 'Số lượng học viên tối đa', 'number', 1, None),
+            ('MoTa', 'Mô tả nội dung & Mục tiêu', 'textarea', 0, None),
+            ('TrangThai', 'Trạng thái khóa học', 'select', 1, 'tt_kdt'),
+        ]
+    },
+    'dangky_daotao': {
+        'title': 'Học viên đào tạo',
+        'icon': 'users',
+        'table': 'DangKyDaoTao',
+        'pk': 'MaDK',
+        'auto': True,
+        'roles': (QL, AD),
+        'sel': "SELECT x.*, k.TenKhoa, n.HoTen, c.TenCV, p.TenPB FROM DangKyDaoTao x JOIN KhoaDaoTao k ON x.MaKDT=k.MaKDT JOIN NhanVien n ON x.MaNV=n.MaNV LEFT JOIN ChucVu c ON n.MaCV=c.MaCV LEFT JOIN PhongBan p ON c.MaPB=p.MaPB",
+        'cols': [
+            ('MaDK', 'Mã ĐK'),
+            ('TenKhoa', 'Khóa đào tạo'),
+            ('MaNV', 'Mã NV'),
+            ('HoTen', 'Học viên'),
+            ('TenPB', 'Phòng ban'),
+            ('NgayDangKy', 'Ngày đăng ký'),
+            ('TrangThai', 'Trạng thái'),
+        ],
+        'search': ['k.TenKhoa', 'x.MaNV', 'n.HoTen', 'x.TrangThai'],
+        'order': 'NgayDangKy DESC, MaDK DESC',
+        'fields': [
+            ('MaKDT', 'Khóa đào tạo', 'select', 1, 'kdt'),
+            ('MaNV', 'Nhân viên tham gia', 'select', 1, 'nv'),
+            ('NgayDangKy', 'Thời gian đăng ký', 'text', 1, None),
+            ('TrangThai', 'Trạng thái tham gia', 'select', 1, 'tt_dk_kdt'),
+        ]
+    },
+    'phanca': {
+        'title': 'Phân ca làm việc',
+        'icon': 'calendar',
+        'table': 'PhanCa',
+        'pk': 'MaPC',
+        'auto': True,
+        'roles': (QL, AD),
+        'date': 'x.Ngay',
+        'sel': "SELECT x.*, n.HoTen, c.TenCV, p.TenPB FROM PhanCa x" + EMP_JOIN,
+        'cols': [
+            ('MaPC', 'Mã PC'),
+            ('MaNV', 'Mã NV'),
+            ('HoTen', 'Họ tên'),
+            ('TenPB', 'Phòng ban'),
+            ('Ngay', 'Ngày làm việc'),
+            ('CaLam', 'Ca phân công'),
+            ('GhiChu', 'Ghi chú'),
+        ],
+        'search': ['x.MaNV', 'n.HoTen', 'x.CaLam', 'p.TenPB'],
+        'order': 'Ngay DESC, MaNV',
+        'fields': [
+            ('MaNV', 'Nhân viên', 'select', 1, 'nv'),
+            ('Ngay', 'Ngày phân ca', 'date', 1, None),
+            ('CaLam', 'Ca làm việc', 'select', 1, 'ca_lam'),
+            ('GhiChu', 'Ghi chú phân ca', 'text', 0, None),
         ]
     },
     'thongbao': {
@@ -713,6 +796,12 @@ STATIC_OPT = {
         ('Đang diễn ra', 'Đang diễn ra'),
         ('Hoàn thành', 'Hoàn thành')
     ],
+    'tt_dk_kdt': [
+        ('Đã đăng ký', 'Đã đăng ký'),
+        ('Đang học', 'Đang học'),
+        ('Hoàn thành', 'Hoàn thành'),
+        ('Hủy đăng ký', 'Hủy đăng ký')
+    ],
     'loai_dxkn': [
         ('Đề xuất cải tiến', 'Đề xuất cải tiến'),
         ('Khiếu nại', 'Khiếu nại'),
@@ -773,7 +862,8 @@ DB_OPT = {
     'nv': "SELECT MaNV, CONCAT(MaNV, ' - ', HoTen) FROM NhanVien ORDER BY MaNV",
     'cv': "SELECT c.MaCV, CONCAT(c.MaCV, ' - ', c.TenCV, ' (', COALESCE(p.TenPB, ''), ')') FROM ChucVu c LEFT JOIN PhongBan p ON c.MaPB=p.MaPB ORDER BY c.MaCV",
     'pb': "SELECT MaPB, CONCAT(MaPB, ' - ', TenPB) FROM PhongBan ORDER BY MaPB",
-    'yc_td': "SELECT MaYC, CONCAT('YC', MaYC, ' - ', ViTri) FROM YeuCauTuyenDung ORDER BY MaYC DESC"
+    'yc_td': "SELECT MaYC, CONCAT('YC', MaYC, ' - ', ViTri) FROM YeuCauTuyenDung ORDER BY MaYC DESC",
+    'kdt': "SELECT MaKDT, CONCAT('KDT', MaKDT, ' - ', TenKhoa) FROM KhoaDaoTao ORDER BY MaKDT DESC"
 }
 
 NAV = [
@@ -792,13 +882,17 @@ NAV = [
     ('Nhân viên', 'mlist', 'nhanvien', (QL, AD)),
     ('Hợp đồng', 'mlist', 'hopdong', (QL, AD)),
     ('Chấm công', 'mlist', 'chamcong', (QL, AD)),
+    ('Phân ca làm việc', 'mlist', 'phanca', (QL, AD)),
     ('Nghỉ phép', 'mlist', 'nghiphep', (QL, AD)),
     ('Tăng ca', 'mlist', 'tangca', (QL, AD)),
     ('Lương', 'mlist', 'luong', (QL, AD)),
     ('Tạm ứng lương', 'mlist', 'tamung', (QL, AD)),
 
     # Nhóm Hiệu suất & Phát triển
+    ('Đánh giá KPI', 'mlist', 'danhgia', (QL, AD)),
     ('Khen thưởng & Kỷ luật', 'mlist', 'khenthuong', (QL, AD)),
+    ('Khóa đào tạo', 'mlist', 'daotao', (QL, AD)),
+    ('Quản lý đào tạo (Học viên)', 'mlist', 'dangky_daotao', (QL, AD)),
     ('Quản lý đề xuất & khiếu nại', 'mlist', 'dexuat', (QL, AD)),
 
     # Nhóm Tuyển dụng
@@ -823,6 +917,7 @@ NAV_ICON = {
     'Đề xuất & Khiếu nại': 'message-square',
     'Nhân viên': 'users',
     'Chấm công': 'check-square',
+    'Phân ca làm việc': 'calendar',
     'Hợp đồng': 'file-text',
     'Lương': 'wallet',
     'Tạm ứng lương': 'dollar-sign',
@@ -831,7 +926,11 @@ NAV_ICON = {
     'Báo cáo nhân sự': 'pie-chart',
     'Thống kê biến động & Chi phí': 'bar-chart-2',
     'Tăng ca': 'clock',
+    'Đánh giá KPI': 'award',
     'Khen thưởng & Kỷ luật': 'award',
+    'Khóa đào tạo': 'book-open',
+    'Quản lý đào tạo (Học viên)': 'users',
+    'Quản lý đào tạo': 'book-open',
     'Quản lý đề xuất & khiếu nại': 'message-square',
     'Yêu cầu tuyển dụng': 'user-plus',
     'Ứng viên phỏng vấn': 'user-check',
@@ -858,12 +957,17 @@ NAV_GROUP = {
     'Nhân viên': 'Nghiệp vụ',
     'Hợp đồng': 'Nghiệp vụ',
     'Chấm công': 'Nghiệp vụ',
+    'Phân ca làm việc': 'Nghiệp vụ',
     'Nghỉ phép': 'Nghiệp vụ',
     'Tăng ca': 'Nghiệp vụ',
     'Lương': 'Nghiệp vụ',
     'Tạm ứng lương': 'Nghiệp vụ',
 
+    'Đánh giá KPI': 'Hiệu suất & Phát triển',
     'Khen thưởng & Kỷ luật': 'Hiệu suất & Phát triển',
+    'Khóa đào tạo': 'Hiệu suất & Phát triển',
+    'Quản lý đào tạo (Học viên)': 'Hiệu suất & Phát triển',
+    'Quản lý đào tạo': 'Hiệu suất & Phát triển',
     'Quản lý đề xuất & khiếu nại': 'Hiệu suất & Phát triển',
 
     'Yêu cầu tuyển dụng': 'Tuyển dụng',

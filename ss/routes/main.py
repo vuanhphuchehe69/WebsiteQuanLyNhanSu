@@ -14,7 +14,7 @@ from utils import login_required, roles_required, log_activity
 main_bp = Blueprint('main', __name__)
 
 def get_flight_risk_employees(db_conn, mapb=None):
-    """Detect employees with flight risk signals: tardiness, drop in evaluation score, stagnant salary."""
+    """Detect employees with flight risk signals: tardiness, drop in KPI, stagnant salary."""
     today = date.today()
     current_month = today.strftime('%Y-%m')
 
@@ -49,17 +49,17 @@ def get_flight_risk_employees(db_conn, mapb=None):
             signals.append("Có 1 lần đi muộn/về sớm")
             score += 15
 
-        # Signal 2: Evaluation score
-        diem_dg = emp['DiemDanhGia']
-        if diem_dg is not None:
-            if diem_dg < 70:
-                signals.append(f"Điểm đánh giá thấp ({diem_dg:.0f}/100)")
+        # Signal 2: KPI evaluation score
+        kpi = emp['DiemDanhGia']
+        if kpi is not None:
+            if kpi < 70:
+                signals.append(f"Điểm KPI thấp ({kpi:.0f}/100)")
                 score += 35
-            elif diem_dg < 80:
-                signals.append(f"Điểm đánh giá trung bình ({diem_dg:.0f}/100)")
+            elif kpi < 80:
+                signals.append(f"Điểm KPI trung bình ({kpi:.0f}/100)")
                 score += 20
         else:
-            signals.append("Chưa có đánh giá gần đây")
+            signals.append("Chưa có đánh giá KPI gần đây")
             score += 15
 
         # Signal 3: Long time without contract review / salary increase
@@ -131,6 +131,7 @@ def dash():
             ('Đăng ký OT chờ duyệt', query_scalar("SELECT COUNT(*) FROM TangCa x JOIN NhanVien n ON x.MaNV=n.MaNV JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=? AND x.TrangThai=N'Chờ duyệt'", (mapb,)), 'clock'),
             ('Giải trình công chờ duyệt', query_scalar("SELECT COUNT(*) FROM GiaiTrinhCong x JOIN NhanVien n ON x.MaNV=n.MaNV JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=? AND x.TrangThai=N'Chờ duyệt'", (mapb,)), 'activity'),
             ('Tạm ứng chờ duyệt', query_scalar("SELECT COUNT(*) FROM TamUng x JOIN NhanVien n ON x.MaNV=n.MaNV JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=? AND x.TrangThai=N'Chờ duyệt'", (mapb,)), 'dollar-sign'),
+            ('Đánh giá KPI phòng', query_scalar("SELECT COUNT(*) FROM DanhGia x JOIN NhanVien n ON x.MaNV=n.MaNV JOIN ChucVu c ON n.MaCV=c.MaCV WHERE c.MaPB=?", (mapb,)), 'award'),
         ]
     else:
         stats = [
@@ -140,6 +141,7 @@ def dash():
             ('Chức vụ', query_scalar('SELECT COUNT(*) FROM ChucVu'), 'briefcase'),
             ('Chấm công hôm nay', query_scalar("SELECT COUNT(*) FROM ChamCong WHERE Ngay=?", (today_str,)), 'check-square'),
             ('Đơn chờ duyệt (Toàn bộ)', query_scalar("SELECT (SELECT COUNT(*) FROM NghiPhep WHERE TrangThai=N'Chờ duyệt') + (SELECT COUNT(*) FROM TangCa WHERE TrangThai=N'Chờ duyệt') + (SELECT COUNT(*) FROM GiaiTrinhCong WHERE TrangThai=N'Chờ duyệt') + (SELECT COUNT(*) FROM TamUng WHERE TrangThai=N'Chờ duyệt')"), 'bell'),
+            ('Đánh giá KPI', query_scalar('SELECT COUNT(*) FROM DanhGia'), 'award'),
             ('Yêu cầu tuyển dụng', query_scalar("SELECT COUNT(*) FROM YeuCauTuyenDung WHERE TrangThai=N'Đang tuyển'"), 'user-plus'),
             ('Tài khoản hệ thống', query_scalar('SELECT COUNT(*) FROM TaiKhoan'), 'key'),
         ]
@@ -404,7 +406,8 @@ def dash():
     if mapb:
         dept_staff_list = db_conn.execute("""
             SELECT TOP 10 n.MaNV, n.HoTen, c.TenCV,
-                   COALESCE((SELECT TOP 1 TrangThai FROM ChamCong WHERE MaNV=n.MaNV AND Ngay=?), N'Chưa chấm') AS TrangThaiHomNay
+                   COALESCE((SELECT TOP 1 TrangThai FROM ChamCong WHERE MaNV=n.MaNV AND Ngay=?), N'Chưa chấm') AS TrangThaiHomNay,
+                   COALESCE((SELECT TOP 1 CAST(DiemKPI AS INT) FROM DanhGia WHERE MaNV=n.MaNV ORDER BY ThangNam DESC), 85) AS KpiScore
             FROM NhanVien n
             JOIN ChucVu c ON n.MaCV=c.MaCV
             WHERE c.MaPB=?
@@ -480,8 +483,17 @@ def me():
     # Salary Advances
     advances = db_conn.execute('SELECT * FROM TamUng WHERE MaNV=? ORDER BY NgayYeuCau DESC', (mnv,)).fetchall()
 
-    # Training enrollments (Disabled)
-    trainings = []
+    # Shift assignments
+    shifts = db_conn.execute('SELECT * FROM PhanCa WHERE MaNV=? ORDER BY Ngay DESC', (mnv,)).fetchall()
+
+    # Training enrollments
+    trainings = db_conn.execute("""
+        SELECT d.*, k.TenKhoa, k.GiangVien, k.ThoiGian, k.DiaDiem, k.TrangThai AS TrangThaiKhoa
+        FROM DangKyDaoTao d
+        JOIN KhoaDaoTao k ON d.MaKDT=k.MaKDT
+        WHERE d.MaNV=?
+        ORDER BY d.NgayDangKy DESC
+    """, (mnv,)).fetchall()
 
     # Today's check-in status
     today_cc = db_conn.execute("SELECT * FROM ChamCong WHERE MaNV=? AND Ngay=?", (mnv, today_str)).fetchone()
@@ -560,6 +572,7 @@ def me():
         GT=explanations,
         KT=rewards_disciplines,
         TU=advances,
+        CA=shifts,
         DK_DT=trainings,
         today_cc=today_cc,
         today_str=today_str,
@@ -830,30 +843,100 @@ def request_advance():
 
     return render_template('form_advance.html', current_month=current_month)
 
-# ----------------- Evaluation Self-Assessment (Disabled) -----------------
+# ----------------- KPI Self-Assessment -----------------
 @main_bp.route('/me/kpi/self-eval', methods=['GET', 'POST'])
 @roles_required(NV, QL)
 def self_eval_kpi():
-    """Employee self-assessment is disabled per requirements."""
-    flash('Tính năng đánh giá đã được lược bỏ khỏi phạm vi hệ thống.', 'info')
-    return redirect(url_for('main.me'))
+    """Employee self-assesses KPI for current or specified month."""
+    db_conn = get_db()
+    mnv = session.get('mnv')
+    current_month = request.args.get('thang') or date.today().strftime('%Y-%m')
 
-# ----------------- Training Catalog & Registration (Disabled) -----------------
+    existing = db_conn.execute("SELECT * FROM DanhGia WHERE MaNV=? AND ThangNam=?", (mnv, current_month)).fetchone()
+
+    if request.method == 'POST':
+        diem_tu = request.form.get('DiemTuDanhGia', '').strip()
+        nhan_xet = request.form.get('NhanXetCaNhan', '').strip()
+
+        try:
+            score = float(diem_tu)
+            if not (0 <= score <= 100):
+                raise ValueError
+        except ValueError:
+            flash('Điểm tự đánh giá phải là số từ 0 đến 100.', 'err')
+            return render_template('form_kpi_self.html', current_month=current_month, existing=existing)
+
+        if existing:
+            db_conn.execute("""
+                UPDATE DanhGia
+                SET DiemTuDanhGia=?, NhanXetCaNhan=?
+                WHERE MaDG=?
+            """, (score, nhan_xet, existing['MaDG']))
+        else:
+            db_conn.execute("""
+                INSERT INTO DanhGia(MaNV, ThangNam, DiemTuDanhGia, NhanXetCaNhan, DiemKPI, XepLoai, NhanXet, NguoiDanhGia)
+                VALUES(?, ?, ?, ?, ?, N'Chờ đánh giá', N'Nhân viên đã tự đánh giá', N'Chưa duyệt')
+            """, (mnv, current_month, score, nhan_xet, score))
+
+        db_conn.commit()
+        log_activity(db_conn, 'Tự đánh giá KPI', f'Tháng {current_month}: {score} điểm')
+        flash(f'Tự đánh giá KPI tháng {current_month} thành công ({score} điểm)!', 'ok')
+        return redirect(url_for('main.me'))
+
+    return render_template('form_kpi_self.html', current_month=current_month, existing=existing)
+
+# ----------------- Training Catalog & Registration -----------------
 @main_bp.route('/training')
 @login_required
 def training_view():
-    """Browse corporate training courses - disabled per requirements."""
-    flash('Tính năng Khóa đào tạo đã được tắt theo cấu hình hệ thống.', 'w')
-    if session.get('role') == NV:
-        return redirect(url_for('main.me'))
-    return redirect(url_for('main.dash'))
+    """Browse corporate training courses and enroll."""
+    db_conn = get_db()
+    mnv = session.get('mnv')
+
+    courses = db_conn.execute("""
+        SELECT k.*, (SELECT COUNT(*) FROM DangKyDaoTao d WHERE d.MaKDT=k.MaKDT) AS SoNguoiDK,
+               (SELECT 1 FROM DangKyDaoTao d WHERE d.MaKDT=k.MaKDT AND d.MaNV=?) AS DaDangKy
+        FROM KhoaDaoTao k
+        ORDER BY k.MaKDT DESC
+    """, (mnv or '',)).fetchall()
+
+    my_courses = []
+    if mnv:
+        my_courses = db_conn.execute("""
+            SELECT d.*, k.TenKhoa, k.GiangVien, k.ThoiGian, k.DiaDiem, k.TrangThai AS TrangThaiKhoa
+            FROM DangKyDaoTao d
+            JOIN KhoaDaoTao k ON d.MaKDT=k.MaKDT
+            WHERE d.MaNV=?
+            ORDER BY d.NgayDangKy DESC
+        """, (mnv,)).fetchall()
+
+    return render_template('training.html', courses=courses, my_courses=my_courses)
 
 @main_bp.route('/training/register/<int:kid>', methods=['POST'])
 @roles_required(NV, QL)
 def register_course(kid):
-    """Enroll in a training course - disabled per requirements."""
-    flash('Tính năng Khóa đào tạo đã được tắt.', 'w')
-    return redirect(url_for('main.me'))
+    """Enroll in a training course."""
+    db_conn = get_db()
+    mnv = session.get('mnv')
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M')
+
+    course = db_conn.execute("SELECT * FROM KhoaDaoTao WHERE MaKDT=?", (kid,)).fetchone()
+    if not course:
+        abort(404)
+
+    already = db_conn.execute("SELECT 1 FROM DangKyDaoTao WHERE MaKDT=? AND MaNV=?", (kid, mnv)).fetchone()
+    if already:
+        flash(f"Bạn đã đăng ký khóa học '{course['TenKhoa']}' trước đó rồi.", 'w')
+    else:
+        db_conn.execute("""
+            INSERT INTO DangKyDaoTao(MaKDT, MaNV, NgayDangKy, TrangThai)
+            VALUES(?, ?, ?, N'Đã đăng ký')
+        """, (kid, mnv, now_str))
+        db_conn.commit()
+        log_activity(db_conn, 'Đăng ký đào tạo', course['TenKhoa'])
+        flash(f"Đăng ký tham gia khóa đào tạo '{course['TenKhoa']}' thành công!", 'ok')
+
+    return redirect(url_for('main.training_view'))
 
 # ----------------- Suggestions & Complaints -----------------
 @main_bp.route('/feedback', methods=['GET', 'POST'])
@@ -1512,15 +1595,15 @@ def ai_chat():
         return jsonify({'reply': reply})
 
     # Intent 4: Performance review suggestions ("gợi ý nội dung đánh giá")
-    if any(k in message for k in ['gợi ý nội dung đánh giá', 'gợi ý đánh giá', 'nhận xét công việc', 'nội dung đánh giá', 'mẫu nhận xét']):
+    if any(k in message for k in ['gợi ý nội dung đánh giá', 'gợi ý đánh giá', 'nhận xét kpi', 'nhận xét công việc', 'nội dung đánh giá', 'mẫu nhận xét']):
         reply = (
-            "✍️ **Gợi ý các mẫu nhận xét đánh giá hiệu quả công việc chuẩn HR:**\n\n"
+            "✍️ **Gợi ý các mẫu nhận xét đánh giá hiệu suất (KPI) chuẩn HR:**\n\n"
             "🌟 **1. Mức Xuất sắc (Điểm 90 - 100):**\n"
             "*'Hoàn thành xuất sắc và vượt chỉ tiêu công việc được giao. Có tư duy chủ động, sáng tạo trong giải quyết vấn đề và hỗ trợ đồng đội rất tích cực. Đề xuất Ban Giám đốc khen thưởng hoặc xem xét tăng lương/thăng chức.'*\n\n"
             "👍 **2. Mức Đạt yêu cầu (Điểm 75 - 89):**\n"
             "*'Nắm vững nghiệp vụ, hoàn thành đúng tiến độ các nhiệm vụ trọng tâm. Tinh thần kỷ luật tốt, chấp hành đúng nội quy công ty. Cần chủ động hơn nữa trong việc đề xuất cải tiến quy trình làm việc.'*\n\n"
             "⚠️ **3. Mức Cần cải thiện (Điểm < 70):**\n"
-            "*'Chưa đạt một số chỉ tiêu then chốt trong kỳ đánh giá. Cần chấn chỉnh kỷ luật giờ giấc làm việc (giảm thiểu đi muộn) và nâng cao sự tập trung trong các dự án quan trọng. Đề cử nâng cao kỹ năng chuyên môn.'*"
+            "*'Chưa đạt một số chỉ tiêu then chốt trong kỳ đánh giá. Cần chấn chỉnh kỷ luật giờ giấc làm việc (giảm thiểu đi muộn) và nâng cao sự tập trung trong các dự án quan trọng. Đề cử tham gia khóa đào tạo nâng cao kỹ năng.'*"
         )
         return jsonify({'reply': reply})
 
@@ -1560,7 +1643,7 @@ def ai_chat():
         f"• Tra cứu số ngày phép còn lại: *'Tôi còn bao nhiêu ngày phép?'*\n"
         f"• Hướng dẫn quy trình tạm ứng lương: *'Quy trình xin tạm ứng thế nào?'*\n"
         f"• Tóm tắt hồ sơ ứng viên tuyển dụng: *'Tóm tắt hồ sơ ứng viên'*\n"
-        f"• Gợi ý nhận xét, đánh giá nhân viên: *'Gợi ý nội dung đánh giá'*\n"
+        f"• Gợi ý nhận xét, đánh giá KPI nhân viên: *'Gợi ý nội dung đánh giá'*\n"
         f"• Giải đáp quy định giờ làm, tăng ca OT, bảo hiểm & thuế TNCN.\n\n"
         f"Hãy bấm vào câu hỏi gợi ý hoặc gõ câu hỏi để tôi hỗ trợ ngay nhé!"
     )
@@ -1970,6 +2053,21 @@ def report_hr():
         on_time_rate = db_conn.execute(cc_rate_sql, (f"{current_month}%",)).fetchone()[0]
     on_time_rate = float(on_time_rate or 100.0)
 
+    # KPI Average
+    kpi_sql = """
+        SELECT COALESCE(AVG(x.DiemKPI), 0)
+        FROM DanhGia x
+        JOIN NhanVien n ON x.MaNV=n.MaNV
+        LEFT JOIN ChucVu c ON n.MaCV=c.MaCV
+        WHERE x.ThangNam=?
+    """
+    if selected_dept:
+        kpi_sql += " AND c.MaPB=?"
+        avg_kpi = db_conn.execute(kpi_sql, (current_month, selected_dept)).fetchone()[0]
+    else:
+        avg_kpi = db_conn.execute(kpi_sql, (current_month,)).fetchone()[0]
+    avg_kpi = float(avg_kpi or 0.0)
+
     # Department breakdown for Admin when viewing company-wide
     dept_breakdown = []
     if role == AD and not selected_dept:
@@ -2015,6 +2113,7 @@ def report_hr():
         writer.writerow(['Tổng giờ tăng ca', total_ot])
         writer.writerow(['Số ngày nghỉ phép đã duyệt', total_leave_days])
         writer.writerow(['Tỷ lệ đi làm đúng giờ', f"{on_time_rate:.1f}%"])
+        writer.writerow(['Điểm KPI trung bình', f"{avg_kpi:.1f}"])
         writer.writerow([])
         if dept_breakdown:
             writer.writerow(['2. CƠ CẤU NHÂN SỰ CÁC PHÒNG BAN'])
@@ -2048,6 +2147,7 @@ def report_hr():
         total_ot=total_ot,
         total_leave_days=total_leave_days,
         on_time_rate=on_time_rate,
+        avg_kpi=avg_kpi,
         dept_breakdown=dept_breakdown
     )
 
@@ -2097,10 +2197,13 @@ def backup_view():
         ('NghiPhep', 'Nghỉ phép'),
         ('TangCa', 'Tăng ca'),
         ('ChamCong', 'Chấm công'),
-        ('DanhGia', 'Đánh giá xếp loại'),
+        ('PhanCa', 'Phân ca làm việc'),
+        ('DanhGia', 'Đánh giá KPI'),
         ('TaiLieuNhanVien', 'Bằng cấp & Giấy tờ'),
         ('GiaiTrinhCong', 'Giải trình chấm công'),
         ('KhenThuongKyLuat', 'Khen thưởng & Kỷ luật'),
+        ('KhoaDaoTao', 'Khóa đào tạo'),
+        ('DangKyDaoTao', 'Đăng ký đào tạo'),
         ('DeXuatKhieuNai', 'Đề xuất & Khiếu nại'),
         ('TamUng', 'Tạm ứng lương'),
         ('DeXuatNhanSu', 'Đề xuất nhân sự'),
@@ -2136,8 +2239,8 @@ def backup_export():
     db_conn = get_db()
     tables = [
         'PhongBan', 'ChucVu', 'NhanVien', 'HopDong', 'Luong',
-        'NghiPhep', 'TangCa', 'ChamCong', 'DanhGia', 'TaiLieuNhanVien',
-        'GiaiTrinhCong', 'KhenThuongKyLuat',
+        'NghiPhep', 'TangCa', 'ChamCong', 'PhanCa', 'DanhGia', 'TaiLieuNhanVien',
+        'GiaiTrinhCong', 'KhenThuongKyLuat', 'KhoaDaoTao', 'DangKyDaoTao',
         'DeXuatKhieuNai', 'TamUng', 'DeXuatNhanSu', 'YeuCauTuyenDung',
         'UngVien', 'QuyTrinhNhanSu', 'NhatKyHoatDong', 'ChotCong', 'ThongBao',
         'TaiKhoan', 'TaiKhoanAdmin'
@@ -2177,8 +2280,8 @@ def backup_sql():
     db_conn = get_db()
     tables = [
         'PhongBan', 'ChucVu', 'NhanVien', 'HopDong', 'Luong',
-        'NghiPhep', 'TangCa', 'ChamCong', 'DanhGia', 'TaiLieuNhanVien',
-        'GiaiTrinhCong', 'KhenThuongKyLuat',
+        'NghiPhep', 'TangCa', 'ChamCong', 'PhanCa', 'DanhGia', 'TaiLieuNhanVien',
+        'GiaiTrinhCong', 'KhenThuongKyLuat', 'KhoaDaoTao', 'DangKyDaoTao',
         'DeXuatKhieuNai', 'TamUng', 'DeXuatNhanSu', 'YeuCauTuyenDung',
         'UngVien', 'QuyTrinhNhanSu', 'NhatKyHoatDong', 'ChotCong', 'ThongBao',
         'TaiKhoan', 'TaiKhoanAdmin'

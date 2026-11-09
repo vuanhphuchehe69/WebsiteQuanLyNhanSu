@@ -2250,7 +2250,8 @@ def backup_export():
         'database': MSSQL_DATABASE,
         'exported_at': datetime.now().isoformat(),
         'system': 'Quản lý nhân sự - Nhóm 2',
-        'tables': {}
+        'tables': {} 
+      
     }
 
     for tbl in tables:
